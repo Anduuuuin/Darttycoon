@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Dart Tycoon</title>
-<meta name="dt-version" content="1.3.1">
+<meta name="dt-version" content="1.3.2">
 <meta name="theme-color" content="#0e1511">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -253,6 +253,7 @@ textarea{font-size:12px;height:90px}
 .opt[disabled]{opacity:.45}
 .numpad{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin:8px 0}.numpad button{background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:#fff;font-weight:800;padding:10px 0;font-size:15px}.numpad button:active{background:#2a2410}.numpad button[disabled]{opacity:.3}
 @keyframes cpop{from{transform:scale(.3)}to{transform:scale(1)}}
+.b121{width:100%;max-width:340px;display:block;margin:6px auto 0;touch-action:manipulation}.b121 [data-seg]{cursor:pointer}.b121 path:active,.b121 circle:active{filter:brightness(1.6)}
 </style>
 </head>
 <body>
@@ -2965,7 +2966,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='1.3.1';
+const GAME_VERSION='1.3.2';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
@@ -3503,7 +3504,7 @@ BLD.tresor={n:'Vereinstresor',i:'🔐',cost:[1000,3000,8000],d:l=>`Offline-Einna
 
 // ---------- Minispiele im Trainingsraum ----------
 function miniInfo(){S.mini=S.mini||{};if(S.mini.date!==today()){S.mini.date=today();S.mini.clicks=0;S.mini.c121=0}return S.mini}
-function miniPanel(){const M=miniInfo();return `<div class="panel"><h2>🕹 Trainingsspiele</h2><div class="grid2" style="margin-top:8px"><button class="btn ${M.clicks<3?'gold':'gray'}" id="mclick">⚡ Schnellwurf<br><span class="tiny">${3-Math.min(3,M.clicks)}/3 heute · Rekord ${M.cbest||0}</span></button><button class="btn gold" id="m121">🎯 121-Checkout<br><span class="tiny">Rekord ${M.best121?121+M.best121-1:'–'}</span></button></div><div class="tiny mut" style="margin-top:6px">Schnellwurf: 15 Sekunden so viele Ziele treffen wie möglich. 121: Finde den Checkout mit nur 3 Darts, jede Runde eins höher. Perfekt zum Üben für echte Spieler!</div></div>`}
+function miniPanel(){const M=miniInfo();return `<div class="panel"><h2>🕹 Trainingsspiele</h2><div class="grid2" style="margin-top:8px"><button class="btn ${M.clicks<3?'gold':'gray'}" id="mclick">⚡ Schnellwurf<br><span class="tiny">${3-Math.min(3,M.clicks)}/3 heute · Rekord ${M.cbest||0}</span></button><button class="btn gold" id="m121">🎯 121-Checkout<br><span class="tiny">Rekord ${M.best121?120+M.best121:'–'}</span></button></div><div class="tiny mut" style="margin-top:6px">Schnellwurf: 15 Sekunden so viele Ziele treffen wie möglich. 121: Finde den Checkout mit nur 3 Darts, jede Runde eins höher. Perfekt zum Üben für echte Spieler!</div></div>`}
 function bindMini(app){const a=app.querySelector('#mclick');if(a)a.onclick=clickerStart;const b=app.querySelector('#m121');if(b)b.onclick=start121}
 // Schnellwurf (Clicker)
 function clickerStart(){const M=miniInfo();const paid=M.clicks<3;let score=0,combo=0,t0=Date.now(),dur=15000,tmr=null,end=false;
@@ -3515,25 +3516,36 @@ function clickerStart(){const M=miniInfo();const paid=M.clicks<3;let score=0,com
     let g=0,f=0;if(paid){M.clicks++;g=score*4;f=Math.floor(score/3);S.money+=g;S.fans+=f}M.cbest=Math.max(M.cbest||0,score);save();snd('win');
     modal(`<div style="text-align:center"><div style="font-size:44px">⚡</div><h3>${score} Treffer!</h3><div class="small mut">Rekord: ${M.cbest}</div>${paid?`<div class="panel small" style="margin-top:8px">💶 +${g} € · 📣 +${f} Fans</div>`:''}</div><button class="btn block" id="cagain" ${M.clicks>=3?'':''}>Nochmal</button><button class="btn gray" onclick="closeModal();render()">Fertig</button>`);$('#cagain').onclick=clickerStart}},100)}
 // 121-Checkout-Training
-function start121(){const pl=S.players.slice().sort((a,b)=>b.lvl-a.lvl)[0];UI.c121={lvl:1,rest:121,darts:[],vals:[],mult:1,pid:(UI.c121&&UI.c121.pid)||pl.id};draw121()}
+function start121(){const pl=S.players.slice().sort((a,b)=>b.lvl-a.lvl)[0];UI.c121={lvl:1,rest:121,darts:[],vals:[],marks:[],mult:1,pid:(UI.c121&&UI.c121.pid)||pl.id};draw121()}
 const segV=(m,n)=>n===25?(m===2?50:25):n*m;const segL=(m,n)=>n===25?(m===2?'Bull':'25'):(m===3?'T':m===2?'D':'')+n;
+function board121SVG(marks){
+  const R=150,cx=160,cy=160,BO=[20,1,18,4,13,6,10,15,2,17,3,19,7,16,8,11,14,9,12,5];
+  const pol=(r,a)=>[cx+r*Math.cos(a),cy+r*Math.sin(a)];
+  const sector=(r1,r2,a1,a2)=>{const [x1,y1]=pol(r2,a1),[x2,y2]=pol(r2,a2),[x3,y3]=pol(r1,a2),[x4,y4]=pol(r1,a1);return `M${x1},${y1}A${r2},${r2} 0 0 1 ${x2},${y2}L${x3},${y3}A${r1},${r1} 0 0 0 ${x4},${y4}Z`};
+  const rings=[[.18,.47,1,'s'],[.47,.62,3,'t'],[.62,.8,1,'s'],[.8,.94,2,'d']];let h='';
+  BO.forEach((n,i)=>{const a=(-90+i*18)*Math.PI/180,a1=a-Math.PI/20,a2=a+Math.PI/20,dark=i%2===0;
+    rings.forEach(([r1,r2,m,k])=>{const col=k==='s'?(dark?'#1a1a1a':'#efe2c2'):(dark?'#d9333f':'#1f9d55');h+=`<path d="${sector(r1*R,r2*R,a1,a2)}" fill="${col}" stroke="#777" stroke-width=".6" data-seg="${m},${n}"/>`});
+    const [tx,ty]=pol(R*1.0,a);h+=`<text x="${tx}" y="${ty+4}" text-anchor="middle" font-size="12" font-weight="800" fill="#fff" pointer-events="none">${n}</text>`});
+  h+=`<circle cx="${cx}" cy="${cy}" r="${.18*R}" fill="#1f9d55" stroke="#777" stroke-width=".6" data-seg="1,25"/><circle cx="${cx}" cy="${cy}" r="${.08*R}" fill="#d9333f" stroke="#777" stroke-width=".6" data-seg="2,25"/>`;
+  h+=(marks||[]).map(([x,y])=>`<g pointer-events="none"><circle cx="${x}" cy="${y}" r="4.5" fill="#f4c430" stroke="#000" stroke-width="1.5"/></g>`).join('');
+  return `<svg class="b121" viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg"><circle cx="160" cy="160" r="${R*1.08}" fill="#111" data-seg="0,0"/>${h}</svg>`}
 function draw121(msg){const G=UI.c121,tgt=120+G.lvl,M=miniInfo(),show=!!M.show121;if(show)G.hinted=1;const way=show?coPath(G.rest):null;
   modal(`<div class="row between"><h3>🎯 121-Checkout</h3><span class="chip">Runde ${G.lvl}</span></div>
    <div class="panel" style="text-align:center"><div class="tiny mut">Checke ${tgt} mit 3 Darts · Double Out</div><div class="px" style="font-size:26px;margin:6px 0;color:var(--gold)">${G.rest}</div><div class="row" style="justify-content:center;gap:6px">${[0,1,2].map(i=>`<span class="chip" style="min-width:48px;justify-content:center">${G.darts[i]||'·'}</span>`).join('')}</div>${show?`<div class="small" style="margin-top:6px;color:var(--gold)">🗺 Weg: ${way?way.join(' · '):'kein Finish mehr möglich'}</div>`:''}${msg?`<div class="small" style="margin-top:6px">${msg}</div>`:''}</div>
    <button class="btn sm ${show?'gold':'gray'} block" id="cshow" style="margin-bottom:6px">${show?'🗺 Weg anzeigen: AN (halbe XP)':'🗺 Weg anzeigen: AUS (volle XP)'}</button>
-   <div class="row" style="gap:6px">${[[1,'Single'],[2,'Doppel'],[3,'Triple']].map(([m,l])=>`<button class="btn sm ${G.mult===m?'gold':'gray'}" style="flex:1" data-mm="${m}">${l}</button>`).join('')}</div>
-   <div class="numpad">${[...Array(20)].map((_,i)=>`<button data-nn="${i+1}">${i+1}</button>`).join('')}<button data-nn="25" ${G.mult===3?'disabled':''}>${G.mult===2?'Bull':'25'}</button><button data-nn="0">Daneben</button></div>
+   ${board121SVG(G.marks)}
+   <div class="row" style="gap:6px;margin-top:6px"><button class="btn gray sm" id="cmiss">Daneben</button></div>
    <div class="row" style="gap:6px"><button class="btn gray sm" id="cundo" ${G.darts.length?'':'disabled'}>↩ Zurück</button><button class="btn gray sm" id="chint">💡 Profi-Weg</button><button class="btn gray sm" onclick="closeModal()">Beenden</button></div>`);
-  document.querySelectorAll('[data-mm]').forEach(b=>b.onclick=()=>{G.mult=+b.dataset.mm;draw121()});
+  document.querySelectorAll('.b121 [data-seg]').forEach(el=>el.onclick=ev=>{const sv=document.querySelector('.b121'),r=sv.getBoundingClientRect(),x=(ev.clientX-r.left)/r.width*320,y=(ev.clientY-r.top)/r.height*320;const [m,n]=el.dataset.seg.split(',').map(Number);G.marks=(G.marks||[]);G.marks.push([x,y]);throw121(n,m)});
+  $('#cmiss').onclick=()=>{throw121(0,0)};
   $('#cshow').onclick=()=>{M.show121=!M.show121;save();draw121()};
-  document.querySelectorAll('[data-nn]').forEach(b=>b.onclick=()=>throw121(+b.dataset.nn));
-  $('#cundo').onclick=()=>{G.darts.pop();(G.vals||[]).pop();G.rest=tgt-(G.vals||[]).reduce((a,x)=>a+x,0);draw121()};
+  $('#cundo').onclick=()=>{G.darts.pop();(G.vals||[]).pop();(G.marks||[]).pop();G.rest=tgt-(G.vals||[]).reduce((a,x)=>a+x,0);draw121()};
   $('#chint').onclick=()=>{G.hinted=1;const p=coPath(G.rest);draw121(p?`💡 ${p.join(' · ')} <span class="tiny mut">(dann gibt es nur halbe XP)</span>`:'💡 Kein Finish mehr möglich')}}
-function throw121(n){const G=UI.c121,tgt=120+G.lvl,m=n===0?0:G.mult,v=n===0?0:segV(m,n),lbl=n===0?'–':segL(m,n);G.darts.push(lbl);G.vals=(G.vals||[]);G.vals.push(v);
+function throw121(n,mm){const G=UI.c121,tgt=120+G.lvl,m=n===0?0:mm,v=n===0?0:segV(m,n),lbl=n===0?'–':segL(m,n);G.darts.push(lbl);G.vals=(G.vals||[]);G.vals.push(v);
   G.rest-=v;snd(v?'hit':'miss');
   const dbl=(m===2);
   if(G.rest===0&&dbl){snd('checkout');const p=player(G.pid),xp=Math.round((10+G.lvl*4)*(G.hinted?.5:1));if(p){p.xp+=xp;checkLvl(p)}const M=miniInfo();M.best121=Math.max(M.best121||0,G.lvl);save();
-    G.lvl++;G.rest=120+G.lvl;G.darts=[];G.vals=[];G.mult=1;G.hinted=M.show121?1:0;return draw121(`✅ ${tgt} gecheckt! +${xp} XP. Weiter mit ${120+G.lvl}.`)}
+    G.lvl++;G.rest=120+G.lvl;G.darts=[];G.vals=[];G.marks=[];G.mult=1;G.hinted=M.show121?1:0;return draw121(`✅ ${tgt} gecheckt! +${xp} XP. Weiter mit ${120+G.lvl}.`)}
   if(G.rest<2||G.darts.length>=3){const p=coPath(tgt);const M=miniInfo();save();snd('lose');
     return modal(`<div style="text-align:center"><div style="font-size:40px">${G.rest<2?'💥':'⏱'}</div><h3>${G.rest<2?'Bust!':'Keine Darts mehr'}</h3><div class="small mut">Bei ${tgt} war Schluss. Geschafft: ${G.lvl-1} ${G.lvl-1===1?'Runde':'Runden'} · Rekord: ${M.best121?120+M.best121:'–'}</div>${p?`<div class="panel small" style="margin-top:8px">💡 Ein Profi-Weg für ${tgt}:<br><b style="color:var(--gold)">${p.join(' · ')}</b></div>`:''}</div><button class="btn gold block" id="c121r">Nochmal ab 121</button><button class="btn gray" onclick="closeModal();render()">Fertig</button>`),$('#c121r').onclick=start121}
   draw121()}

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Dart Tycoon</title>
-<meta name="dt-version" content="1.3.2">
+<meta name="dt-version" content="1.4">
 <meta name="theme-color" content="#0e1511">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -254,6 +254,7 @@ textarea{font-size:12px;height:90px}
 .numpad{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin:8px 0}.numpad button{background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:#fff;font-weight:800;padding:10px 0;font-size:15px}.numpad button:active{background:#2a2410}.numpad button[disabled]{opacity:.3}
 @keyframes cpop{from{transform:scale(.3)}to{transform:scale(1)}}
 .b121{width:100%;max-width:340px;display:block;margin:6px auto 0;touch-action:manipulation}.b121 [data-seg]{cursor:pointer}.b121 path:active,.b121 circle:active{filter:brightness(1.6)}
+.demap{width:100%;max-width:300px;margin:6px auto 2px;display:block;touch-action:manipulation}.demap rect{cursor:pointer}.hlist{display:grid;grid-template-columns:1fr 1fr;gap:4px;max-height:300px;overflow:auto}
 </style>
 </head>
 <body>
@@ -729,7 +730,7 @@ function renderNight(app){
   <div class="content"><div class="panel" style="text-align:center"><div class="small mut">${isRival(team.name)?'😈 DERBY gegen den Erzrivalen':'Ligaabend'}</div><h3 style="margin:6px 0">${esc(S.club)}</h3><div class="px" style="font-size:24px;margin:8px 0">${n.won} : ${n.lost}</div><h3>${esc(team.name)}</h3></div>
    <div class="panel">${n.lineup.map((id,i)=>{const x=n.res[i];const p=id==='sub'?null:player(id);const nm=x?x.name:(p?p.name:'Ersatzspieler');
      return `<div class="row between" style="padding:7px 0;border-bottom:1px solid var(--line)"><span>${i+1}. ${esc(nm)}</span><b style="color:${x?(x.win?'#7fdc9f':'#ff8a8a'):i===n.idx?'var(--gold)':'var(--mut)'}">${x?(x.win?'✔ ':'✖ ')+x.legs:i===n.idx?'▶ als Nächstes':'–'}</b></div>`}).join('')}</div>
-   <div class="row" style="gap:6px">${autoBtns()}<button class="btn block gold" id="lnext" style="flex:1">Einzel ${n.idx+1} starten</button></div>
+   <button class="btn block gold" id="lnext">Einzel ${n.idx+1} starten</button>
    <button class="btn red sm" id="lquit">Ligaabend aufgeben</button></div>`;
   bindHub(app);
 }
@@ -758,6 +759,7 @@ function newGame(club,pname,cls){
   const me=makePlayer(pname||'Du',cls);me.salary=0;me.look.t='#1f9d55';me.look.w='#d9333f';me.isMe=true;
   S={v:1,club:club||'Dartsport Gera',week:1,money:250,rep:0,fans:0,members:6,b:{boards:1,bar:0,training:0,sponsor:0,fanshop:0},
      players:[me],deco:[],market:[],trophies:[],played:false,inv:[],packs:{basis:1,profi:0,elite:0},ach:{},log:['Willkommen im Verein! Starte mit dem Kneipenturnier.'],run:null,stats:{runs:0,wins:0,legs:0,best:0,tons:0,s180:0,hico:0,wash:0,comeback:0,clutch:0,nightWins:0,promo:0,packs:0,legend:0},ts:Date.now()};
+  S.home=UI.home||{st:'T',city:'Gera'};applyHome(S);
   fixRival(S);rollMarket();initLeague(0,1);initPokal();fixTycoon(S);fixPrestige(S);fixTraits(S);
   UI.tab='welt';save();render();
   if(!UI.noHelp)setTimeout(()=>showHelp(true),300);UI.noHelp=false;
@@ -790,7 +792,7 @@ async function cloudSave(json){
 }
 function loadLocal(){try{const j=localStorage.getItem(SAVE_KEY);if(j)return JSON.parse(j)}catch(e){}return null}
 function fixLoaded(st){
-  if(!st)return st;
+  if(!st)return st;applyHome(st);
   if(st.run&&st.run.combat){st.run.combat.busy=false}
   if(!st.league)initLeague(0,1,st);
   if(!st.pokal)initPokal(st);
@@ -891,15 +893,17 @@ function renderTitle(app){
   $('#new').onclick=()=>{if(local)modal(`<h3>Neues Spiel starten?</h3><div class="mut small">Dein bisheriger Spielstand wird überschrieben.</div><button class="btn red" id="y">Ja, neu anfangen</button><button class="btn gray" onclick="closeModal()">Abbrechen</button>`),$('#y').onclick=()=>{closeModal();newGameDialog()};else newGameDialog()};
   $('#imp').onclick=importDialog;{const ti=$('#tinst');if(ti)ti.onclick=installDialog}
 }
-function newGameDialog(){
+function newGameDialog0(){
   modal(`<h3>Neuer Verein</h3>
-   <label class="small mut">Vereinsname</label><input type="text" id="club" value="Dartsport Gera" maxlength="28">
+   <div class="row between small" style="margin-bottom:6px"><span>📍 <b>${esc((UI.home&&UI.home.city)||'Gera')}</b>, ${esc(LAENDER[(UI.home&&UI.home.st)||'T'].n)}</span><button class="btn gray sm" id="hchg">ändern</button></div>
+   <label class="small mut">Vereinsname</label><input type="text" id="club" value="${esc('Dartsport '+((UI.home&&UI.home.city)||'Gera'))}" maxlength="28">
    <label class="small mut">Dein Spielername</label><input type="text" id="pname" value="Andreas" maxlength="18">
    <div class="small mut">Dein Spielstil</div>
    <div class="cls">${Object.entries(CLASSES).filter(([k])=>clsOpen(k)).map(([k,c])=>`<div data-c="${k}" class="${UI.newCls===k?'on':''}"><span style="font-size:24px">${c.i}</span><b>${c.n}</b><span class="tiny mut">${c.d}</span></div>`).join('')}</div>
    <button class="btn block" id="go">Verein gründen</button>`);
   document.querySelectorAll('.cls div').forEach(el=>el.onclick=()=>{UI.newCls=el.dataset.c;document.querySelectorAll('.cls div').forEach(e=>e.classList.toggle('on',e===el))});
   $('#go').onclick=()=>{const c=$('#club').value.trim(),p=$('#pname').value.trim();closeModal();newGame(c,p,UI.newCls)};
+  $('#hchg').onclick=()=>homeDialog(newGameDialog0);
 }
 function importDialog(){
   modal(`<h3>Spielstand-Code laden</h3><textarea id="code" placeholder="Code hier einfügen"></textarea><button class="btn block" id="ok">Laden</button><button class="btn gray" onclick="closeModal()">Abbrechen</button>`);
@@ -977,7 +981,7 @@ function hubVerein(){
   return `<div class="panel" style="text-align:center;background:linear-gradient(#1a3a5a33,#131b16)">
     <img class="sp" src="${houseURL()}" style="width:192px;height:136px;margin:0 auto">
     <h3 class="px" style="font-size:12px;margin-top:10px;line-height:1.5">${esc(S.club)}</h3>
-    <div class="small mut" style="margin-top:4px">Vereinsheim · ${S.players.length} Spieler im Kader</div>
+    <div class="small mut" style="margin-top:4px">${S.home?`📍 ${esc(S.home.city)}, ${esc(LAENDER[S.home.st].n)} · `:''}${S.players.length} Spieler im Kader</div>
   </div>
   <button class="btn gold block" id="ach">🏅 Erfolge (${Object.keys(S.ach).length}/${ACH.length})</button>
   <div class="panel"><div class="row between"><h2>🏆 Pokalschrank</h2><span class="tiny mut">${S.trophies.length} Titel</span></div><div class="trophies" style="margin-top:8px">${tro}</div></div>
@@ -2751,7 +2755,7 @@ function canPrestige(){return S.trophies.some(t=>t.tier===4||t.tier===10)||S.rep
 function doPrestige(){
   fixPrestige(S);const old=S,me=S.players.find(p=>p.isMe)||S.players[0],g=prestigeGain();
   const keep={lvl:old.prestige.lvl+1,pts:old.prestige.pts+g,perks:Object.assign({},old.prestige.perks),cls:old.prestige.cls||[],asc:old.prestige.asc,album:old.prestige.album,hist:old.prestige.hist.concat([{lvl:old.prestige.lvl,club:old.club,week:old.week,rep:old.rep,titles:old.trophies.filter(t=>t.tier>=0).map(t=>t.n).slice(0,12),gain:g}])};
-  UI.noHelp=true;newGame(old.club,me.name,(UI.prestCls&&clsOpen(UI.prestCls))?UI.prestCls:me.cls);UI.prestCls=null;closeModal();
+  UI.noHelp=true;UI.home=old.home||null;newGame(old.club,me.name,(UI.prestCls&&clsOpen(UI.prestCls))?UI.prestCls:me.cls);UI.prestCls=null;closeModal();
   S.prestige=keep;applyPrestigeStart();S.ach=old.ach;
   log(`🌟 Prestige ${keep.lvl}: ${S.club} startet neu, mit dem Ruhm vergangener Tage.`);save();UI.tab='ruhm';render();
   setTimeout(()=>modal(`<div style="text-align:center"><div style="font-size:48px">🌟</div><h3>Prestige ${keep.lvl}!</h3><div class="small mut" style="margin-top:6px">Neue Karriere, alter Ruhm. Du hast <b>${g} Prestigepunkte</b> bekommen. Gib sie in der Ruhmeshalle für dauerhafte Boni aus.</div></div><button class="btn gold block" onclick="closeModal()">Auf geht's!</button>`),300);
@@ -2966,7 +2970,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='1.3.2';
+const GAME_VERSION='1.4';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
@@ -3476,9 +3480,11 @@ UI.auto=false;UI.speed=1;
 const _setT=window.setTimeout.bind(window);
 window.setTimeout=(f,ms,...a)=>_setT(f,(UI&&UI.speed>1&&S&&S.run&&(S.run.combat||S.run.mode==='liga'))?(ms||0)/UI.speed:ms,...a);
 function autoScore(c){const C=S.run.combat,me=C.me,d=CARDS[c.id];if(d.t==='curse'||d.c>me.darts||(has('sammler')?0:(d.fc||0))>me.block)return -1e9;
-  if(!d.th){if(d.t==='power')return 70;if(['zwischenruf','auszeit'].includes(c.id))return C.opp.intent&&C.opp.intent.type==='co'?90:-5;if(['robin','doppelplan','coweg','letztechance'].includes(c.id))return me.rest<=170?55:10;return 40}
+  if(!d.th){if(d.t==='power')return 70;if(['zwischenruf','auszeit'].includes(c.id))return C.rule!=='nebel'&&C.opp.intent&&C.opp.intent.type==='co'?90:(C.rule==='nebel'&&C.opp.rest<=100?60:-5);if(['robin','doppelplan','coweg','letztechance'].includes(c.id))return me.rest<=170?55:10;return 40}
   const pv=preview(c);if(pv&&pv.cls==='co')return 1000;if(pv&&pv.cls==='bust')return -500;
-  const specs=thOf(c,C);let ev=0,rest=me.rest;for(const sp of specs){const a=accFor(sp);const o=outcome(sp,rest,true);if(o.co)return 900;if(o.bust)return -400;ev+=a*sp.pts+(1-a)*(sp.alt||0);rest=o.rest}
+  const specs=thOf(c,C);let ev=0,rest=me.rest,inn=!C.din||me.inn;const careful=C.rule==='buhrufe'||me.risk;
+  for(const sp of specs){const a=accFor(sp);if(!inn){if(sp.k==='double'||sp.k==='bull'){ev+=a*120;inn=a>.5}continue}const o=outcome(sp,rest,true);if(o.co)return 900;if(o.bust)return -400;ev+=a*sp.pts+(1-a)*(sp.alt||0);if(careful&&sp.ch<1)ev-=(1-a)*(me.risk?60:15);rest=o.rest}
+  if(!(!C.din||me.inn))return ev>0?ev/Math.max(1,d.c)+200:-50;
   const left=me.rest-ev;if(left<2&&me.rest>1)return -300;if(GOOD_REST[Math.round(left)])ev+=25;if(me.rest<=60&&specs.every(s=>s.k!=='double'&&s.k!=='bull'))ev*=.4;return ev/Math.max(1,d.c)}
 function autoStep(){UI.autoT=null;if(!UI.auto||!S||!S.run||!S.run.combat)return;const C=S.run.combat;if(document.querySelector('#modal.on'))return;
   if(C.phase!=='player'||C.busy){UI.autoT=_setT(autoStep,500/UI.speed);return}
@@ -3565,6 +3571,63 @@ const COACH2={
 };
 COACH_MATCH.push('▶ <b>Auto-Spiel:</b> Unten links kannst du das Match automatisch spielen lassen und zuschauen. Mit <b>1× / 2× / 3×</b> stellst du das Tempo ein.');
 
+
+/* ================= Vereinsgründung: Bundesland & Stadt ================= */
+const LAENDER={
+ S:{n:'Schleswig-Holstein',c:['Kiel','Lübeck','Flensburg','Neumünster'],col:'#2d6cdf',nb:'HMN'},
+ H:{n:'Hamburg',c:['Hamburg'],col:'#e74c3c',nb:'SN'},
+ M:{n:'Mecklenburg-Vorpommern',c:['Rostock','Schwerin','Stralsund','Greifswald','Neubrandenburg'],col:'#16a085',nb:'SGN'},
+ R:{n:'Bremen',c:['Bremen','Bremerhaven'],col:'#c0392b',nb:'N'},
+ N:{n:'Niedersachsen',c:['Hannover','Braunschweig','Oldenburg','Osnabrück','Göttingen','Wolfsburg'],col:'#f1c40f',nb:'SHRWFTAG'},
+ E:{n:'Berlin',c:['Berlin'],col:'#ff5e57',nb:'G'},
+ G:{n:'Brandenburg',c:['Potsdam','Cottbus','Frankfurt (Oder)','Brandenburg'],col:'#9b59b6',nb:'MEAX'},
+ A:{n:'Sachsen-Anhalt',c:['Magdeburg','Halle','Dessau','Wittenberg'],col:'#e67e22',nb:'NGTX'},
+ W:{n:'Nordrhein-Westfalen',c:['Köln','Düsseldorf','Dortmund','Essen','Münster','Bielefeld'],col:'#1abc9c',nb:'NFP'},
+ F:{n:'Hessen',c:['Frankfurt','Wiesbaden','Kassel','Darmstadt','Gießen'],col:'#a0522d',nb:'WNTYQP'},
+ T:{n:'Thüringen',c:['Erfurt','Jena','Gera','Weimar','Gotha','Suhl'],col:'#2ecc71',nb:'NAXYF'},
+ X:{n:'Sachsen',c:['Dresden','Leipzig','Chemnitz','Zwickau','Plauen','Görlitz'],col:'#fd79a8',nb:'GATY'},
+ P:{n:'Rheinland-Pfalz',c:['Mainz','Koblenz','Trier','Kaiserslautern','Ludwigshafen'],col:'#8e44ad',nb:'WFQL'},
+ L:{n:'Saarland',c:['Saarbrücken','Neunkirchen','Homburg'],col:'#3498db',nb:'P'},
+ Q:{n:'Baden-Württemberg',c:['Stuttgart','Karlsruhe','Mannheim','Freiburg','Ulm','Heilbronn'],col:'#f39c12',nb:'PFY'},
+ Y:{n:'Bayern',c:['München','Nürnberg','Augsburg','Regensburg','Würzburg','Hof'],col:'#4c8dd6',nb:'QFTX'},
+};
+const DMAP=[
+ '....SS....',
+ '....SSMMM.',
+ '...RHNMMMM',
+ '.NNNNNNGGG',
+ '.NNNNNAGEG',
+ 'WWNNNNAGGG',
+ 'WWWNNAAAGG',
+ 'WWWFFTTAXX',
+ 'WWFFFTTXXX',
+ 'PPFFFTTXXX',
+ 'LPPFYYYYY.',
+ '.PQQYYYYY.',
+ '.QQQYYYYY.',
+ '.QQQQYYYY.',
+ '..QQ..YY..',
+];
+const CL_PRE=['DC Bullseye','SV Triple','Dart Devils','Steel Tigers','1. DC','Darts United','DSV','Treble Twenty','Checkout Crew','Flight Club','Oche Kings','Bull Hunters','TSG Doppel 16','Zielwasser','DC 180','Arrows'];
+function applyHome(st){if(!st||!st.home)return;const L=LAENDER[st.home.st];if(!L)return;let cities=L.c.filter(c=>c!==st.home.city);for(const k of L.nb)cities=cities.concat(LAENDER[k].c);
+  let h=0;for(const ch of st.home.city)h=(h*31+ch.charCodeAt(0))>>>0;const names=[];let i=0;
+  while(names.length<16&&i<80){const c=cities[i%cities.length],pre=CL_PRE[(i*7+h)%CL_PRE.length];const nm=pre==='Arrows'?`${c} Arrows`:`${pre} ${c}`;if(!names.includes(nm)&&nm!==st.club)names.push(nm);i++}
+  CLUBS.splice(0,CLUBS.length,...names);if(!st.rival)st.rival={name:names[0],w:0,l:0}}
+function homeDialog(cb){UI.hsel=UI.hsel||null;const sel=UI.hsel,view=UI.hview||'map';
+  const cells=[];DMAP.forEach((row,y)=>[...row].forEach((k,x)=>{if(k!=='.')cells.push({k,x,y})}));const cs=22;
+  const cent={};cells.forEach(c=>{const o=cent[c.k]=cent[c.k]||{x:0,y:0,n:0};o.x+=c.x;o.y+=c.y;o.n++});
+  const svg=`<svg class="demap" viewBox="0 0 ${10*cs} ${DMAP.length*cs}">${cells.map(c=>`<rect x="${c.x*cs+1}" y="${c.y*cs+1}" width="${cs-2}" height="${cs-2}" rx="4" fill="${LAENDER[c.k].col}" opacity="${sel&&sel!==c.k?.35:1}" stroke="${sel===c.k?'#fff':'#0004'}" stroke-width="${sel===c.k?2:1}" data-land="${c.k}"/>`).join('')}${Object.entries(cent).map(([k,o])=>{const ov={G:[7.5,5.5],E:[8.5,4.5]}[k];const lx=ov?ov[0]:(o.x/o.n+.5),ly=ov?ov[1]:(o.y/o.n+.5);return `<text x="${lx*cs}" y="${ly*cs+4}" text-anchor="middle" font-size="9" font-weight="800" fill="#fff" stroke="#000" stroke-width="2" paint-order="stroke" pointer-events="none">${{S:'SH',H:'HH',M:'MV',R:'HB',N:'NI',E:'BE',G:'BB',A:'ST',W:'NW',F:'HE',T:'TH',X:'SN',P:'RP',L:'SL',Q:'BW',Y:'BY'}[k]}</text>`}).join('')}</svg>`;
+  const list=Object.entries(LAENDER).map(([k,L])=>`<button class="opt ${sel===k?'on':''}" data-land="${k}" style="padding:8px 10px;${sel===k?'border-color:var(--gold)':''}"><b class="small">${L.n}</b></button>`).join('');
+  modal(`<h3>📍 Wo gründest du deinen Verein?</h3><div class="seg"><button class="btn sm ${view==='map'?'':'gray'}" data-hv="map">🗺 Karte</button><button class="btn sm ${view==='list'?'':'gray'}" data-hv="list">📋 Liste</button></div>
+   ${view==='map'?`<div style="text-align:center">${svg}</div><div class="tiny mut" style="text-align:center">Tippe auf ein Bundesland.</div>`:`<div class="hlist">${list}</div>`}
+   ${sel?`<div class="panel"><h3>${LAENDER[sel].n}</h3><div class="tiny mut">Wähle deine Stadt. Deine Liga-Gegner und der Erzrivale kommen aus der Region.</div><div class="row" style="gap:6px;flex-wrap:wrap;margin-top:8px">${LAENDER[sel].c.map(c=>`<button class="btn sm gold" data-city="${c}">${c}</button>`).join('')}</div></div>`:''}
+   <button class="btn gray block" id="hskip">Überspringen (Gera, Thüringen)</button>`);
+  document.querySelectorAll('[data-hv]').forEach(b=>b.onclick=()=>{UI.hview=b.dataset.hv;homeDialog(cb)});
+  document.querySelectorAll('[data-land]').forEach(b=>b.onclick=()=>{UI.hsel=b.dataset.land;snd('click');homeDialog(cb)});
+  document.querySelectorAll('[data-city]').forEach(b=>b.onclick=()=>{UI.home={st:UI.hsel,city:b.dataset.city};UI.hsel=null;snd('click');cb()});
+  $('#hskip').onclick=()=>{UI.home={st:'T',city:'Gera'};UI.hsel=null;cb()}}
+function newGameDialog(){UI.home=null;homeDialog(newGameDialog0)}
+
 /* ================= Match ================= */
 function makeOpp(tier,kind,step){
   let o;
@@ -3594,6 +3657,7 @@ function startCombat(kind){
   r.combat={kind,label:roundName(r,kind),opp:makeOpp(r.tier,kind,r.step),
     me:{rest:f.start,legs:0,block:0,darts:3,hand:[],draw:[],discard:[],exhaust:[],pw:{heat:0,ice:0,walk:0,mental:0,armor:0,acc:0},accBuff:0,played:0,turnStart:301,sure:false},
     leg:1,starter:'me',turn:0,used:[],phase:'player',busy:false,firstTurn:true,stats:{s180:0,hi:0},start:f.start,need:f.need,sets:f.sets||0,din:!!f.din,aim:(r.mode!=='liga'&&kind==='b')?'all':null};
+  if(UI.auto){UI.auto=false;if(UI.autoT){clearTimeout(UI.autoT);UI.autoT=null}}
   bossSetup(r.combat);applyFlagsCombat(r.combat);scaleOpp(r.combat);ascApplyCombat(r.combat);
   UI.sel=-1;
   if(r.combat.aim)setTimeout(()=>toast('🎯 Finale: Zielmodus! Jeden Wurf wirfst du selbst.'),400);

@@ -210,6 +210,22 @@ textarea{font-size:12px;height:90px}
 #aimcv{width:min(90vw,50vh,420px);height:min(90vw,50vh,420px);border-radius:50%;border:3px solid var(--line);touch-action:none;background:#0a0c0b;box-shadow:0 0 0 6px #000,0 0 40px rgba(244,196,48,.15)}
 #aimres{font-family:'Press Start 2P';font-size:15px;min-height:20px;text-shadow:2px 2px 0 #000}
 #aimbtn{font-family:'Press Start 2P';font-size:14px;padding:16px 34px;background:var(--red);border-color:var(--rdark)}
+
+#coach{position:fixed;left:8px;right:8px;bottom:70px;z-index:40;display:flex;gap:10px;align-items:flex-start;background:#0e1511f2;border:2px solid var(--gold);border-radius:12px;padding:10px;box-shadow:0 6px 20px #000a;max-width:520px;margin:0 auto;animation:coachIn .3s ease-out}
+#coach.top{top:58px;bottom:auto}
+#coach img{width:48px;height:48px;image-rendering:pixelated;border-radius:8px;background:#1a2a20;flex:none}
+@keyframes coachIn{from{transform:translateY(16px);opacity:0}to{transform:none;opacity:1}}
+.card .fcost{position:absolute;top:-7px;right:-6px;width:22px;height:22px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#9fd3ff,#2d6cdf 60%,#123a80);border:2px solid #0a1a3a;color:#fff;font:bold 11px/18px system-ui;text-align:center;box-shadow:0 2px 0 #000;z-index:3}
+.trow{display:flex;flex-wrap:wrap;gap:3px;margin-top:4px}.trow .chip{font-size:10px;padding:2px 6px}
+.pcbtn{background:none;border:0;padding:0;display:flex;flex-direction:column;align-items:center;gap:2px;color:var(--gold);font-size:10px;cursor:pointer}
+.pcard{margin:4px auto 10px;width:100%;max-width:300px;box-sizing:border-box;border-radius:16px;padding:12px;border:3px solid #6a7a70;background:linear-gradient(160deg,#25332b,#0d1410);box-shadow:0 8px 0 #000,inset 0 0 0 2px #ffffff12;text-align:center}
+.pcard.r-u{border-color:#2fd673}.pcard.r-r{border-color:#2d6cdf;background:linear-gradient(160deg,#1c2c48,#0b1220)}.pcard.r-leg{border-color:#f4c430;background:linear-gradient(160deg,#4a3a10,#120e04);box-shadow:0 8px 0 #000,0 0 24px #f4c43055}
+.pctop{display:flex;justify-content:space-between;font-size:12px;color:var(--gold)}
+.pcimg{width:128px;height:128px;image-rendering:pixelated;margin:6px auto;display:block;border-radius:10px;background:radial-gradient(#3a4a40,#121a15)}
+.pcname{font-weight:800;font-size:17px}.pclegend{color:var(--gold);font-size:11px;letter-spacing:2px;margin-top:2px}
+.pst{display:grid;grid-template-columns:70px minmax(80px,1fr) 30px;gap:6px;align-items:center;font-size:11px;margin-top:6px;text-align:left}.pst i{height:8px;background:#0006;border-radius:4px;overflow:hidden}.pst i b{display:block;height:100%;background:linear-gradient(90deg,#1f9d55,#f4c430)}.pst em{font-style:normal;font-weight:700;text-align:right}
+.pctraits{margin-top:10px;display:flex;flex-direction:column;gap:5px;text-align:left}.pctraits div{background:#0005;border-radius:8px;padding:6px 8px;font-size:12px}.pctraits span{display:block;color:var(--mut);font-size:11px}
+.vimg{width:100%;image-rendering:pixelated;border-radius:10px;margin-bottom:8px}
 </style>
 </head>
 <body>
@@ -589,7 +605,7 @@ function makeSchedule(n){
 }
 function initLeague(div,season,st){
   st=st||S;
-  const names=shuffle(CLUBS.slice()).slice(0,5);
+  const names=shuffle(CLUBS.filter(c=>!st.rival||c!==st.rival.name)).slice(0,5);if(st.rival)names[0]=st.rival.name;
   const teams=[{name:st.club,me:true,str:0,pts:0,lf:0,la:0,w:0,l:0}].concat(names.map((n,i)=>({name:n,str:clamp(.15+R()*.6+(i===0?.2:0),0,1),pts:0,lf:0,la:0,w:0,l:0})));
   st.league={div,season,day:0,teams,sched:makeSchedule(6),results:[]};
   st.leagueDone=false;
@@ -666,7 +682,7 @@ function leagueEnd(win){
 }
 function finishNight(){
   const r=S.run,n=r.night,L=S.league,d=L.div,team=L.teams[n.oppTeam],win=n.won>n.lost;
-  const money=win?50*(d+1):10,rp=win?3+d:0,fans=win?8*(d+1):2;
+  const derby=isRival(team.name),money=(win?50*(d+1):10)*(derby?2:1),rp=(win?3+d:0)+(derby?(win?6:-2):0),fans=(win?8*(d+1):2)+(derby&&win?30:0);if(derby){win?S.rival.w++:S.rival.l++}
   S.money+=money;S.rep+=rp;S.fans+=fans;if(win)S.stats.nightWins++;
   simDay(n.won,n.lost);S.leagueDone=true;
   log(`Liga: ${S.club} ${n.won}:${n.lost} ${team.name}`);
@@ -681,7 +697,7 @@ function finishNight(){
 function renderNight(app){
   const r=S.run,n=r.night,team=S.league.teams[n.oppTeam];
   app.innerHTML=`<div class="top"><div class="st">Spieltag<b>📋 ${S.league.day+1}</b></div><div class="st">Stand<b class="px" style="font-size:13px">${n.won}:${n.lost}</b></div><div class="st">Ziel<b>${n.need} Siege</b></div></div>
-  <div class="content"><div class="panel" style="text-align:center"><div class="small mut">Ligaabend</div><h3 style="margin:6px 0">${esc(S.club)}</h3><div class="px" style="font-size:24px;margin:8px 0">${n.won} : ${n.lost}</div><h3>${esc(team.name)}</h3></div>
+  <div class="content"><div class="panel" style="text-align:center"><div class="small mut">${isRival(team.name)?'😈 DERBY gegen den Erzrivalen':'Ligaabend'}</div><h3 style="margin:6px 0">${esc(S.club)}</h3><div class="px" style="font-size:24px;margin:8px 0">${n.won} : ${n.lost}</div><h3>${esc(team.name)}</h3></div>
    <div class="panel">${n.lineup.map((id,i)=>{const x=n.res[i];const p=id==='sub'?null:player(id);const nm=x?x.name:(p?p.name:'Ersatzspieler');
      return `<div class="row between" style="padding:7px 0;border-bottom:1px solid var(--line)"><span>${i+1}. ${esc(nm)}</span><b style="color:${x?(x.win?'#7fdc9f':'#ff8a8a'):i===n.idx?'var(--gold)':'var(--mut)'}">${x?(x.win?'✔ ':'✖ ')+x.legs:i===n.idx?'▶ als Nächstes':'–'}</b></div>`}).join('')}</div>
    <button class="btn block gold" id="lnext">Einzel ${n.idx+1} starten</button>
@@ -693,26 +709,27 @@ function hubLiga(){
   const stars=s=>'★'.repeat(1+Math.round(s*4))+'☆'.repeat(4-Math.round(s*4));
   let next='';
   if(oi>=0){const t=L.teams[oi];
-    next=`<div class="panel"><div class="row between"><h2>⚔️ ${L.day+1}. Spieltag</h2><span class="tiny mut">${L.day<5?'Hinrunde':'Rückrunde'}</span></div>
+    next=`<div class="panel" ${isRival(t.name)?'style="border-color:var(--red)"':''}><div class="row between"><h2>⚔️ ${L.day+1}. Spieltag${isRival(t.name)?' <span class="chip" style="background:#d9333f">😈 DERBY · doppelte Prämie</span>':''}</h2><span class="tiny mut">${L.day<5?'Hinrunde':'Rückrunde'}</span></div>
      <div class="row between" style="margin:10px 0"><div><b>${esc(S.club)}</b><div class="tiny mut">gegen</div><b>${esc(t.name)}</b></div><div style="text-align:right"><div class="tiny mut">Stärke</div><div style="color:var(--gold)">${stars(t.str)}</div></div></div>
      ${S.leagueDone?'<div class="small mut">✔ Diese Woche gespielt. Der nächste Spieltag folgt nach dem Wochenende.</div>':`<button class="btn block" id="lplay">Ligaspiel bestreiten</button><div class="tiny mut" style="margin-top:6px">Ligaabend: ${nightN(L.div)} Einzel mit deinem Kader. Ohne Antreten bis zum Wochenende verlierst du kampflos.</div>`}</div>`}
   return `<div class="panel"><div class="row between"><h2>📋 ${DIVS[L.div]}</h2><span class="tiny mut">Saison ${L.season} · ${Math.min(L.day,total)}/${total} Spieltage</span></div>
    <div class="tiny mut" style="margin-top:4px">${L.div<4?'Platz 1–2 steigen auf':'Platz 1 wird Deutscher Meister'}${L.div>0?', Platz 6 steigt ab':''}. Pro Spieltag ein Ligaabend mit ${nightN(L.div)} Einzeln.</div></div>
   ${next}
+  ${S.rival?`<div class="panel row between" style="border-color:#5a2228"><div><b>😈 Erzrivale: ${esc(S.rival.name)}</b><div class="tiny mut">Derbys bringen doppelte Prämie und viel Ruf. Verlieren tut doppelt weh.</div></div><span class="px" style="font-size:13px">${S.rival.w}:${S.rival.l}</span></div>`:''}
   <div class="panel" style="padding:8px"><table class="tbl"><tr><th>#</th><th style="text-align:left">Verein</th><th>Sp</th><th>Spiele</th><th>Pkt</th></tr>
-  ${tab.map((t,i)=>`<tr class="${t.me?'mine':''} ${i<2&&L.div<4?'up':''} ${i===5&&L.div>0?'down':''}"><td>${i+1}</td><td class="n">${esc(t.me?S.club:t.name)}</td><td>${t.w+t.l}</td><td>${t.lf}:${t.la}</td><td><b>${t.pts}</b></td></tr>`).join('')}</table></div>
+  ${tab.map((t,i)=>`<tr class="${t.me?'mine':''} ${i<2&&L.div<4?'up':''} ${i===5&&L.div>0?'down':''}"><td>${i+1}</td><td class="n">${isRival(t.name)?'😈 ':''}${esc(t.me?S.club:t.name)}</td><td>${t.w+t.l}</td><td>${t.lf}:${t.la}</td><td><b>${t.pts}</b></td></tr>`).join('')}</table></div>
   ${L.results.length?`<div class="panel"><h2>📜 Deine Ergebnisse</h2><div class="small" style="margin-top:8px;display:flex;flex-direction:column;gap:5px">${L.results.slice().reverse().map(x=>`<div class="row between"><span>${x.day}. ${esc(x.opp)}</span><b style="color:${x.lf>x.la?'#7fdc9f':'#ff8a8a'}">${x.lf}:${x.la}</b></div>`).join('')}</div></div>`:''}`;
 }
 
 /* ================= Neues Spiel ================= */
 function makePlayer(name,cls,lvl=1){
-  return{id:uid(),name,cls,lvl,xp:0,deck:CLASSES[cls].deck.map(id=>({id,up:false,u:uid()})),look:randLook(),salary:lvl*15,trained:false,gear:{}};
+  return{id:uid(),name,cls,lvl,xp:0,deck:CLASSES[cls].deck.map(id=>({id,up:false,u:uid()})),look:randLook(),salary:lvl*15,trained:false,gear:{},traits:rollTraits()};
 }
 function newGame(club,pname,cls){
   const me=makePlayer(pname||'Du',cls);me.salary=0;me.look.t='#1f9d55';me.look.w='#d9333f';me.isMe=true;
   S={v:1,club:club||'Dartsport Gera',week:1,money:250,rep:0,fans:0,members:6,b:{boards:1,bar:0,training:0,sponsor:0,fanshop:0},
      players:[me],deco:[],market:[],trophies:[],played:false,inv:[],packs:{basis:1,profi:0,elite:0},ach:{},log:['Willkommen im Verein! Starte mit dem Kneipenturnier.'],run:null,stats:{runs:0,wins:0,legs:0,best:0,tons:0,s180:0,hico:0,wash:0,comeback:0,clutch:0,nightWins:0,promo:0,packs:0,legend:0},ts:Date.now()};
-  rollMarket();initLeague(0,1);initPokal();fixTycoon(S);fixPrestige(S);
+  fixRival(S);rollMarket();initLeague(0,1);initPokal();fixTycoon(S);fixPrestige(S);fixTraits(S);
   UI.tab='welt';save();render();
   if(!UI.noHelp)setTimeout(()=>showHelp(true),300);UI.noHelp=false;
 }
@@ -749,7 +766,7 @@ function fixLoaded(st){
   if(!st.league)initLeague(0,1,st);
   if(!st.pokal)initPokal(st);
   if(st.free){st.free.busy=false;if(st.free.turn==='op')setTimeout(()=>{if(S&&S.free&&S.free.turn==='op')fOppTurn()},700)}
-  st.inv=st.inv||[];st.deco=st.deco||[];fixTycoon(st);fixPrestige(st);st.packs=st.packs||{basis:1,profi:0,elite:0};st.ach=st.ach||{};
+  st.inv=st.inv||[];st.deco=st.deco||[];fixTycoon(st);fixPrestige(st);fixTraits(st);fixRival(st);st.packs=st.packs||{basis:1,profi:0,elite:0};st.ach=st.ach||{};
   st.stats=Object.assign({runs:0,wins:0,legs:0,best:0,tons:0,s180:0,hico:0,wash:0,comeback:0,clutch:0,nightWins:0,promo:0,packs:0,legend:0},st.stats||{});
   st.players.forEach(p=>{p.gear=p.gear||{}});
   if(st.run&&st.run.mode==='liga'&&!st.run.night){st.run.night={N:1,need:1,idx:0,won:0,lost:0,lineup:[st.run.pid],res:[],oppTeam:st.run.oppTeam}}
@@ -816,13 +833,15 @@ function player(id){id=id||(S.run&&S.run.pid);if(S.run&&S.run.sub&&id==='sub')re
 function xpNeed(l){return 60+l*50}
 
 /* ================= Rendering: Titel ================= */
-function render(){
+function render(){render0();try{coachCheck()}catch(e){}}
+function render0(){
   const app=$('#app');
-  if(!S)return renderTitle(app);
+  if(!S){const c=document.getElementById('coach');if(c)c.remove();return renderTitle(app)}
   if(S.free)return renderFree(app);
   if(S.run&&S.run.combat)return renderCombat(app);
   if(S.run&&S.run.mode==='pokal')return renderPokal(app);
   if(S.run&&S.run.mode==='liga')return renderNight(app);
+  if(S.run&&S.run.mode==='pl')return renderHub(app);
   if(S.run)return renderRun(app);
   renderHub(app);
 }
@@ -873,6 +892,9 @@ function showHelp(first){
   <b>🍺 Freies Werfen:</b> Beim Kneipenduell (501, Best of 5), in der Quali (501, Best of 3) und im Steeldart-Cup (501, Best of 5) sowie im Wurftraining zielst du komplett selbst: Board antippen, Moment abpassen, WERFEN. Double Out. Karten kosten Fokus und helfen nur. Level, Klasse und Dart-Teile machen die Hand ruhiger.<br><br>
   <b>🏆 Landespokal:</b> Läuft neben der Liga, Modus wie bei der MDSL: Gruppenphase, dann Finaltag. 8 Einzel und 2 Doppel, je 501 Best of 5. Jedes Spiel kannst du selbst spielen oder simulieren.<br><br>
   <b>🎯 Zielmodus:</b> Im Turnierfinale wirfst du jede Wurfkarte selbst, im entscheidenden Liga-Einzel jedes Doppel. Das Fadenkreuz zittert. Je höher deine Trefferchance (Klasse, Darts, Karten, Nerven), desto ruhiger die Hand. Triff das goldene Feld im richtigen Moment.<br><br>
+  <b>🧠 Tiefe im Kartenspiel:</b> <b>Rhythmus 🔥</b>: Jeder Treffer in Folge erhöht deine Trefferchance (bis +16%), ein Fehlwurf setzt ihn zurück. <b>Fokus-Karten 💎</b> kosten Fokus statt eines Darts, sind aber stark. <b>Halten 📌</b>-Karten bleiben auf der Hand, <b>Flüchtig</b>-Karten verfallen am Zugende. Gegner haben <b>Spezialaktionen</b> (Unruhe, Tempo, Psychospiel, Aufholjagd), die du im Absichts-Chip siehst. Plane deinen Weg zum Checkout über mehrere Züge.<br><br>
+  <b>🧬 Spieler-Eigenschaften:</b> Jeder Spieler hat Eigenschaften wie Nervenstark, Doppel-Spezialist oder Partylöwe. Tippe im Kader auf das Porträt, um seine Spielerkarte zu sehen.<br><br>
+  <b>😈 Rivale & 🌟 Premier-Nächte:</b> Ein Erzrivale spielt in deiner Liga, Derbys zählen doppelt. Ab ⭐160 lädt dich die Arena zu den Premier-Nächten ein: jede Woche ein Abend gegen die Weltbesten, 501 Best of 7.<br><br>
   Tippe eine Karte einmal an, um Details zu sehen, und nochmal, um sie zu werfen. Nach dem Turnier darf eine neu gewonnene Karte dauerhaft ins Deck des Spielers.
   </div><button class="btn block" onclick="closeModal()">Los geht's!</button>`);
 }
@@ -881,7 +903,7 @@ function showHelp(first){
 function weekly(){
   const b=S.b;
   const inc={'Mitgliedsbeiträge':S.members*10,'Theke':b.bar*35,'Fanshop':b.fanshop*Math.floor(S.fans/10)*3,'Sponsoren':b.sponsor*40};
-  const out={'Miete & Strom':40+b.boards*6,'Spielergehälter':S.players.reduce((a,p)=>a+(p.salary||0),0)};
+  const out={'Miete & Strom':40+b.boards*6,'Spielergehälter':S.players.reduce((a,p)=>a+Math.round((p.salary||0)*(hasT(p,'spar')?.7:1)),0)};
   if(decoSum('inc'))inc['Einrichtung']=decoSum('inc');
   fixTycoon(S);if(S.hq>0)out['Unterhalt '+HQ[S.hq].n]=HQ[S.hq].upkeep;if(HQ[S.hq].gastro)inc['Dartcenter-Gastro']=HQ[S.hq].gastro;
   if(S.hall.built){out['Unterhalt Halle']=HALL_BUILD.upkeep;if(S.hall.plan==='rent')inc['Hallenmiete']=hallRent()}
@@ -906,9 +928,10 @@ function renderHub(app){
   else if(t==='woche')body=hubWoche();
   else if(t==='halle')body=hubHalle();
   else if(t==='ruhm')body=hubRuhm();
+  else if(t==='pl')body=hubPL();
   else{UI.tab='welt';body=hubWelt()}
   const tabs=[['welt','🏙','Stadt'],['heim','🏠','Heim'],['r_buero','📋','Büro'],['shop','🛍','Shop'],['turnier','🏆','Turniere'],['woche','📅','Woche']];
-  const on=k=>UI.tab===k||(k==='welt'&&UI.tab==='halle')||(k==='r_buero'&&['liga','kader','verein','ruhm'].includes(UI.tab))||(k==='heim'&&UI.tab.startsWith('r_')&&UI.tab!=='r_buero');
+  const on=k=>UI.tab===k||(k==='welt'&&(UI.tab==='halle'||UI.tab==='pl'))||(k==='r_buero'&&['liga','kader','verein','ruhm'].includes(UI.tab))||(k==='heim'&&UI.tab.startsWith('r_')&&UI.tab!=='r_buero');
   app.innerHTML=topBar()+`<div class="content">${body}</div><div class="nav">${tabs.map(t=>`<button class="${on(t[0])?'on':''}" data-tab="${t[0]}"><span>${t[1]}</span>${t[2]}</button>`).join('')}</div>`;
   app.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{snd('click');UI.tab=b.dataset.tab;render();window.scrollTo(0,0)});
   bindHub(app);bindWorld(app);
@@ -928,9 +951,9 @@ function hubVerein(){
 function hubKader(){
   const T=S.b.training,tcost=Math.round(50*(T>=4?.7:1));
   return `<div class="panel"><h2>🎯 Dein Kader <span class="mut tiny">(${S.players.length}/4)</span></h2></div>
-  ${S.players.map(p=>`<div class="panel"><div class="row">${personImg(p.look,56)}<div style="flex:1;min-width:0">
+  ${S.players.map(p=>`<div class="panel ${p.legend?'legend':''}"><div class="row"><button class="pcbtn" data-pcard="${p.id}">${personImg(p.look,56)}<span>Karte</span></button><div style="flex:1;min-width:0">
      <div class="row between"><h3>${esc(p.name)}</h3><span class="lvl px">Lv${p.lvl}</span></div>
-     <div class="tiny mut">${CLASSES[p.cls].i} ${CLASSES[p.cls].n} · ${CLASSES[p.cls].d}</div>
+     <div class="tiny mut">${CLASSES[p.cls].i} ${CLASSES[p.cls].n} · ${CLASSES[p.cls].d}</div><div class="trow">${traitChips(p)}</div>
      <div class="bar xp" style="margin-top:6px"><i style="width:${Math.min(100,p.xp/xpNeed(p.lvl)*100)}%"></i></div>
      <div class="tiny mut" style="margin-top:3px">XP ${p.xp}/${xpNeed(p.lvl)} · ${p.deck.length} Karten · Gehalt ${p.salary||0} €</div></div></div>
      <div style="margin-top:10px;padding:6px;background:#0c130f;border-radius:8px">${dartSVG(p,230)}</div>
@@ -942,7 +965,7 @@ function hubKader(){
      </div></div>`).join('')}
   <div class="panel"><h2>🔎 Transfermarkt</h2><div class="tiny mut" style="margin-top:4px">Neue Angebote jede Woche. Höherer Ruf lockt stärkere Spieler an.</div></div>
   ${S.market.map((p,i)=>`<div class="panel"><div class="row">${personImg(p.look,48)}<div style="flex:1"><div class="row between"><h3>${esc(p.name)}</h3><span class="lvl px">Lv${p.lvl}</span></div>
-     <div class="tiny mut">${CLASSES[p.cls].i} ${CLASSES[p.cls].n} · Gehalt ${p.salary} €/Woche</div></div>
+     <div class="tiny mut">${CLASSES[p.cls].i} ${CLASSES[p.cls].n} · Gehalt ${p.salary} €/Woche</div><div class="trow">${traitChips(p)}</div></div>
      <button class="btn sm" data-buy="${i}" ${S.money<p.cost||S.players.length>=4?'disabled':''}>💶 ${p.cost}</button></div></div>`).join('')||'<div class="small mut">Keine Angebote mehr diese Woche.</div>'}`+legendPanel();
 }
 function hubTurnier(){
@@ -972,6 +995,8 @@ function hubWoche(){
   <div class="panel small mut">Bilanz: ${S.stats.runs} Turniere · ${S.stats.wins} Titel · ${S.stats.legs} Legs gewonnen</div>`;
 }
 function bindHub(app){
+  app.querySelectorAll('[data-pcard]').forEach(b=>b.onclick=()=>playerCard(player(b.dataset.pcard)));
+  {const g=app.querySelector('#plgo');if(g)g.onclick=()=>{snd('click');plPlay()};const n=app.querySelector('#plnew');if(n)n.onclick=()=>{plStart();render()}}
   app.querySelectorAll('[data-build]').forEach(b=>b.onclick=()=>doBuild(b.dataset.build));
   app.querySelectorAll('[data-deck]').forEach(b=>b.onclick=()=>showDeck(player(b.dataset.deck).deck,`Deck von ${player(b.dataset.deck).name}`));
   app.querySelectorAll('[data-train]').forEach(b=>b.onclick=()=>trainDialog(player(b.dataset.train)));
@@ -1014,7 +1039,7 @@ function trainDialog(p){
    <button class="opt" id="tr" ${S.money<cr||T<2||p.deck.length<=8||p.trained?'disabled':''}><b>🗑 Karte entfernen – ${cr} €</b><span class="small mut">${T<2?'Benötigt Trainingsraum Lv2.':p.deck.length<=8?'Mindestens 8 Karten nötig.':'Schwache Karten loswerden macht das Deck konstanter.'}</span></button>
    <button class="btn gray" onclick="closeModal()">Abbrechen</button>`);
   $('#td').onclick=()=>drillDialog(p);
-  $('#tu').onclick=()=>pickCardDialog(p.deck,'Welche Karte verbessern?',c=>!c.up&&CARDS[c.id].t!=='curse',i=>{if(i<0)return;p.deck[i].up=true;S.money-=cu;p.trained=true;p.xp+=10;checkLvl(p);toast('Karte verbessert!');save();render()});
+  $('#tu').onclick=()=>pickCardDialog(p.deck,'Welche Karte verbessern?',c=>!c.up&&CARDS[c.id].t!=='curse',i=>{if(i<0)return;p.deck[i].up=true;S.money-=cu;p.trained=true;p.xp+=trainXP(p,10);checkLvl(p);toast('Karte verbessert!');save();render()});
   $('#tr').onclick=()=>pickCardDialog(p.deck,'Welche Karte entfernen?',()=>true,i=>{if(i<0)return;p.deck.splice(i,1);S.money-=cr;p.trained=true;toast('Karte entfernt');save();render()});
 }
 function checkLvl(p){while(p.xp>=xpNeed(p.lvl)){p.xp-=xpNeed(p.lvl);p.lvl++;if(!p.isMe&&!p.legend)p.salary=p.lvl*15;toast(`⬆ ${p.name} ist jetzt Level ${p.lvl}!`);log(`${p.name} erreicht Level ${p.lvl}.`)}}
@@ -1046,9 +1071,9 @@ function endWeek(){
   const before=S.members;
   if(S.members<target)S.members=Math.min(target,S.members+rnd(1,3));
   else if(S.members>S.b.boards*capPer())S.members=S.b.boards*capPer();
-  S.fans+=Math.floor(S.rep/10)+decoSum('fans');S.rep+=decoSum('rep');
+  S.fans+=Math.floor(S.rep/10)+decoSum('fans')+2*S.players.filter(p=>hasT(p,'party')).length;S.rep+=decoSum('rep');
   log(`Wochenbilanz: ${w.net>=0?'+':''}${w.net} €${S.members>before?`, +${S.members-before} Mitglieder`:''}.`);
-  S.week++;S.played=false;S.players.forEach(p=>{p.trained=false;p.drilled=false});rollMarket();
+  if(S.pl&&plDue()){const oi=plOpp(),[x,y]=plSimMatch(0,oi);plNightResult(x>y,x,y);log(`🌟 Premier-Nacht simuliert: ${x}:${y}`)}S.plDone=false;if(S.rival&&R()<.3)log(`😈 ${S.rival.name}: ${pick(TAUNTS)}`);S.week++;S.played=false;S.players.forEach(p=>{p.trained=false;p.drilled=false});rollMarket();
   save();
   const pool=WEEK_EVENTS.filter(e=>!e.req||e.req(S));
   const summary=`<div class="panel small"><div class="row between"><span>Einnahmen</span><b style="color:#7fdc9f">+${fmt(w.ti)} €</b></div><div class="row between"><span>Ausgaben</span><b style="color:#ff8a8a">−${fmt(w.to)} €</b></div><div class="row between"><span>Neue Mitglieder</span><b>+${S.members-before}</b></div>${ligaMsg?`<div style="margin-top:6px">📋 ${esc(ligaMsg)}</div>`:''}${pokMsg?`<div style="margin-top:6px">🏆 ${esc(pokMsg)}</div>`:''}${tyMsg.map(m=>`<div style="margin-top:6px">${esc(m)}</div>`).join('')}</div>`;
@@ -1071,7 +1096,7 @@ function chooseRunPlayer(tier){
   <button class="btn gray" onclick="closeModal()">Abbrechen</button>`);
   document.querySelectorAll('[data-rp]').forEach(b=>b.onclick=()=>{closeModal();startRun(tier,b.dataset.rp)});
 }
-function startNerves(p){return 34+p.lvl*3+S.b.bar*4+(gearOf(p).nerv||0)+decoSum('nerv')+perk('nerven')*3+(p.legend==='macht'?10:0)}
+function startNerves(p){return (hasT(p,'nerv')?8:0)-(hasT(p,'party')?3:0)+34+p.lvl*3+S.b.bar*4+(gearOf(p).nerv||0)+decoSum('nerv')+perk('nerven')*3+(p.legend==='macht'?10:0)}
 function genMap(steps){
   const map=[];
   for(let s=0;s<steps;s++){
@@ -1487,7 +1512,7 @@ function endCard(icon,title,rows,btn,cb){
   $('#fend').onclick=()=>{closeModal();cb&&cb()};
 }
 const FREE_END={
-  drill:(w,F)=>{const p=fpById(F.pid),D=F.drill,xp=D.type==='t20'?Math.round(D.pts/4):D.hits*15;p.xp+=xp;p.drilled=true;checkLvl(p);log(`${p.name} absolviert ${DRILLS[D.type].n} (${D.type==='t20'?D.pts+' Punkte':D.hits+' Treffer'}).`);save();render();
+  drill:(w,F)=>{const p=fpById(F.pid),D=F.drill,xp=trainXP(p,D.type==='t20'?Math.round(D.pts/4):D.hits*15);p.xp+=xp;p.drilled=true;checkLvl(p);log(`${p.name} absolviert ${DRILLS[D.type].n} (${D.type==='t20'?D.pts+' Punkte':D.hits+' Treffer'}).`);save();render();
     endCard('🏋️','Training beendet',[[D.type==='t20'?'Punkte auf T20':'Doppel-Treffer',D.type==='t20'?D.pts:`${D.hits}/9`],['Erfahrung',`+${xp} XP`]],'Zurück zum Verein')},
   duell:(win,F)=>{const p=fpById(F.pid);let it=null;
     if(win){S.money+=120;S.rep+=4;S.fans+=8;p.xp+=20;if(R()<.35){it=makeItem(R()<.25?'r':'c');S.inv.push(it)}log(`🍺 ${p.name} gewinnt das Kneipenduell gegen ${F.opp.name} (${F.legs.join(':')}).`)}
@@ -1514,7 +1539,7 @@ function startDuell(){
 /* ================= Landespokal (nach MDSL-Vorbild) ================= */
 const PK_UNLOCK=[1,3,5],PK_FINAL=8,KO_N={g:'Gruppenphase',qf:'Viertelfinale',sf:'Halbfinale',f:'Finale'};
 function initPokal(st){st=st||S;
-  const names=shuffle(CLUBS.slice()).slice(0,15);
+  const names=shuffle(CLUBS.filter(c=>!st.rival||c!==st.rival.name)).slice(0,14).concat(st.rival?[st.rival.name]:[pick(CLUBS)]);
   const teams=[{name:st.club,me:true,str:0}].concat(names.map(n=>({name:n,str:clamp(.12+R()*.8,0,1)})));
   const order=[0].concat(shuffle([...Array(15).keys()].map(i=>i+1)));
   const groups=[0,1,2,3].map(g=>order.slice(g*4,g*4+4));
@@ -1678,7 +1703,7 @@ function hubWelt(){
   if(S.league&&oppIndex()>=0&&!S.leagueDone)due.push(['liga','📋 Ligaspiel offen']);
   if(pokalDue())due.push(['pokal','🏆 Pokalspiel offen']);
   if(!S.played)due.push(['turnier','⚔️ Turnier diese Woche frei']);
-  if(S.cupQ)due.push(['cup','🎟️ Steeldart-Cup wartet']);
+  if(S.cupQ)due.push(['cup','🎟️ Steeldart-Cup wartet']);if(S.pl&&plDue())due.push(['pl','🌟 Premier-Nacht wartet']);
   return `<div class="citywrap" id="city">${citySVG()}</div>
    <div class="tiny mut" style="text-align:center">Wische über die Stadt und tippe auf ein Gebäude oder Grundstück.</div>
    ${due.length?`<div class="panel"><h2>📌 Diese Woche</h2><div class="row" style="flex-wrap:wrap;gap:6px;margin-top:8px">${due.map(([k,t])=>`<button class="btn gray sm" data-due="${k}">${t}</button>`).join('')}</div></div>`:''}
@@ -1706,7 +1731,8 @@ const VENUES={kneipe:{n:'Kneipe „Zum Oche“',i:'🍺',d:'Hier beginnt jede Ka
   arena:{n:'Arena',i:'🏟',d:'Flutlicht, Walk-on und volle Ränge: Deutsche Meisterschaft, WM und der Steeldart-Cup.',tiers:[3,4,7,8,9,10],cup:true}};
 function venueDialog(v){
   const V=VENUES[v];
-  let h=`<h3>${V.i} ${V.n}</h3><div class="small mut">${V.d}</div>`;
+  let h=`<img class="pximg vimg" src="${venueImg(v)}"><h3>${V.i} ${V.n}</h3><div class="small mut">${V.d}</div>`;
+  if(v==='arena'){const ok=S.rep>=PL_REP;h+=`<div class="panel" style="${ok?'border-color:var(--gold)':'opacity:.55'}"><div class="row between"><div><h3>🌟 Premier-Nächte</h3><div class="tiny mut" style="margin-top:4px">Die besten 8 · jede Woche ein Abend · 501 Best of 7 · Top 4 in die Playoffs</div></div>${!ok?`<span class="chip">🔒 ⭐${PL_REP}</span>`:(!S.pl||S.pl.champ!=null)?'<button class="btn sm gold" id="vpl">Einladung annehmen</button>':'<button class="btn sm gold" data-go="pl" id="vplo">Öffnen</button>'}</div></div>`}
   if(S.played)h+=`<div class="panel small">😴 Diese Woche wurde schon ein Turnier gespielt. Beende die Woche, um wieder anzutreten.</div>`;
   else{
     h+=V.tiers.map(i=>{const T=TIERS[i],lock=S.rep<T.rep,won=S.trophies.filter(t=>t.tier===i).length;
@@ -1717,6 +1743,7 @@ function venueDialog(v){
   }
   modal(h+`<button class="btn gray" onclick="closeModal()">Zurück</button>`);
   document.querySelectorAll('[data-vt]').forEach(b=>b.onclick=()=>{closeModal();chooseRunPlayer(+b.dataset.vt)});
+  {const a=$('#vpl');if(a)a.onclick=()=>{plStart();closeModal();UI.tab='pl';render()};const b=$('#vplo');if(b)b.onclick=()=>{closeModal();UI.tab='pl';render()}}
   const q=$('#vq');if(q)q.onclick=()=>chooseFree('⚙️ Quali zum Steeldart-Cup',`3 Matches · 501 · Best of 3 · Startgeld ${QUALI.fee} €. Wer spielt?`,startQuali);
   const c=$('#vc');if(c)c.onclick=()=>chooseFree('⚙️ Steeldart-Cup','4 Runden · 501 · Best of 5. Wer vertritt den Verein?',startCup);
 }
@@ -1728,9 +1755,9 @@ function doAct(a){
   if(a.startsWith('train:'))return trainDialog(player(a.slice(6)));
   if(a==='friendly')return startFriendly();
   if(a==='liga'){UI.tab='liga';UI.lt='liga'}else if(a==='pokal'){UI.tab='liga';UI.lt='pokal'}else if(a==='kader')UI.tab='kader';else if(a==='trophy')UI.tab='verein';
-  else if(a==='pc'){modal(`<h3>💻 Vereins-PC</h3><button class="btn gray" id="ph">❔ Anleitung</button><button class="btn gray" id="pe">💾 Spielstand sichern</button><button class="btn gray" id="pm">${S.mute?'🔇 Ton ist aus':'🔊 Ton ist an'}</button><button class="btn red" id="pn">🔄 Komplett neu anfangen</button><button class="btn" onclick="closeModal()">Schließen</button>`);
+  else if(a==='pc'){modal(`<h3>💻 Vereins-PC</h3><button class="btn gray" id="ph">❔ Anleitung</button><button class="btn gray" id="pe">💾 Spielstand sichern</button><button class="btn gray" id="pm">${S.mute?'🔇 Ton ist aus':'🔊 Ton ist an'}</button><button class="btn gray" id="pfb">💬 Feedback geben</button><button class="btn gray" id="ptp">${S.tips===false?'💡 Tipps sind aus':'💡 Tipps sind an'}</button><button class="btn gray" id="pmu">${S.music?'🎵 Musik ist an':'🎵 Musik ist aus'}</button><button class="btn red" id="pn">🔄 Komplett neu anfangen</button><button class="btn" onclick="closeModal()">Schließen</button>`);
     $('#pn').onclick=()=>{modal(`<h3>Wirklich neu anfangen?</h3><div class="small mut">Dein kompletter Spielstand wird gelöscht und überschrieben, auch Prestige und Erfolge. Tipp: Vorher „Spielstand sichern“, falls du ihn behalten willst.</div><button class="btn red" id="pny">Ja, alles löschen und neu starten</button><button class="btn gray" onclick="closeModal()">Abbrechen</button>`);$('#pny').onclick=()=>{closeModal();newGameDialog()}};
-    $('#ph').onclick=()=>showHelp(false);$('#pe').onclick=exportDialog;$('#pm').onclick=()=>{S.mute=!S.mute;save();closeModal()};return}
+    $('#pfb').onclick=feedbackDialog;$('#ptp').onclick=()=>{S.tips=S.tips===false;if(S.tips)S.seen={};save();closeModal();render()};$('#pmu').onclick=()=>{musicToggle(!S.music);closeModal()};$('#ph').onclick=()=>showHelp(false);$('#pe').onclick=exportDialog;$('#pm').onclick=()=>{S.mute=!S.mute;save();closeModal()};return}
   render();window.scrollTo(0,0);
 }
 function bindWorld(app){
@@ -2290,12 +2317,25 @@ function lampPost(P,x,y){const [sx,sy]=ip(P,x,y,0);P.rect(sx,sy-14,1,14,'#3a3d44
 function fenceRect(P,x,y,w,d){const pts=[[x,y],[x+w,y],[x+w,y+d],[x,y+d]];for(let i=0;i<4;i++){const [a1,b1]=pts[i],[a2,b2]=pts[(i+1)%4];const n=Math.max(Math.abs(a2-a1),Math.abs(b2-b1));
   for(let k=0;k<=n;k+=1){const xx=a1+(a2-a1)*k/n,yy=b1+(b2-b1)*k/n,[sx,sy]=ip(P,xx,yy,0);if(i<2)continue;P.set(sx,Math.floor(sy)-4,'#c0c4c8');P.set(sx,Math.floor(sy)-2,'#c0c4c8');if(k%4===0){P.rect(sx,Math.floor(sy)-6,1,6,'#8a8f98')}}}}
 function cityPlate(P,cx,cy,txt,col='#fff',bg='#141016',acc='#f4c430'){const w=textW(txt)+8;P.rect(cx-w/2,cy,w,9,bg);P.rect(cx-w/2,cy,w,1,acc);P.rect(cx-w/2,cy+9,w,1,'#000');P.textC(cx,cy+2,txt,col,1);P.rect(cx-1,cy+10,3,2,bg)}
+function cityNight(){const h=new Date().getHours();return UI.night!=null?UI.night:(h>=19||h<6)}
+function flowerBed(P,x,y,k){const [sx,sy]=ip(P,x,y,0);P.rect(sx-4,sy-2,9,3,'#6a4026');P.rect(sx-4,sy-2,9,1,'#8a5a32');for(let i=0;i<7;i++){const c=['#d9333f','#f4c430','#fff','#ff7ab0'][(i+k)%4];P.set(sx-3+i,sy-3-(i%2),c);P.set(sx-3+i,sy-2,'#3aa04a')}}
+function benchAt(P,x,y){const [sx,sy]=ip(P,x,y,0);P.rect(sx-5,sy-4,10,2,'#8a5a32');P.rect(sx-5,sy-7,10,2,'#7a4a24');P.rect(sx-4,sy-2,1,2,'#2a2a2a');P.rect(sx+3,sy-2,1,2,'#2a2a2a')}
+function billboard(P,x,y){const [sx,sy]=ip(P,x,y,0);P.rect(sx-9,sy-16,1,16,'#5a5f68');P.rect(sx+9,sy-16,1,16,'#5a5f68');P.rect(sx-14,sy-30,30,15,'#111');P.rect(sx-13,sy-29,28,13,(i,j)=>mixc('#4a1a7a','#d9333f',(j-(sy-29))/13));P.textC(sx+1,sy-27,'PREMIER','#f4c430',1);P.textC(sx+1,sy-21,'NÄCHTE','#fff',1);P.rect(sx-13,sy-17,28,1,'#f4c430')}
+function nightify(P,lamps,bg0,skip){const W=P.w,H=P.h;for(let y=0;y<H;y++)for(let x=0;x<W;x++){const [r,g,b]=P.get(x,y);
+    if(bg0&&bg0[y*W+x]===[r,g,b].join()){const sky=b>235;P.set(x,y,sky?mixc('#0b1030','#2a2a5a',Math.min(1,(Math.floor(y/H*12+bay(x,y)))/12)):(hsh(x>>1,y>>2,5)<.12?'#ffd977':'#1c2236'));continue}
+    if(skip&&skip(x,y)){P.set(x,y,[r*.3+8,g*.32+12,b*.45+30]);continue}
+    const warm=r>225&&g>150&&b<125,neon=g>200&&r<120,glass=b>170&&g>150&&r<200&&b>=r+30;
+    if(warm||neon){P.set(x,y,[Math.min(255,r*1.05),Math.min(255,g*1.05),b]);continue}
+    if(glass&&y>40){const lit=hsh(x>>1,y>>2,13)<.55;P.set(x,y,lit?mixc('#ffd977','#ffb347',hsh(x,y,3)*.5):[18,26,48]);continue}
+    const l=(r+g+b)/3;P.set(x,y,[r*.28+8,g*.3+10,b*.42+26+l*.05])}
+  lamps.forEach(([lx,ly])=>{P.glow(lx,ly,16,'#ffd98a',.45,10);P.set(lx,ly,'#fff7d0')})}
 function renderCity(){
-  const P=PX(CW,CH);P.ox=200;P.oy=92;const b=S.b,N=CG*CT;
+  const P=PX(CW,CH);P.ox=200;P.oy=92;const b=S.b,N=CG*CT,night=cityNight();
   // Himmel
   P.fill((x,y)=>{const q=Math.min(10,Math.floor(y/CH*16+bay(x,y)))/10;return mixc('#6ab4f0','#cfe8ff',Math.min(1,q))});
   [[60,22,1],[250,14,0],[330,44,2],[140,52,1]].forEach(([cx,cy,k])=>{for(let i=0;i<4;i++)P.disc(cx+i*8-12,cy+(i%2?2:0),7+(i%2)*2,(x,y,dx,dy)=>dy>.35?'#d8e8f8':'#fff',4+(i%2))});
   for(let x=0,k=0;x<CW;k++){const w=10+Math.floor(hsh(k,1,21)*18),h=18+Math.floor(hsh(k,2,21)*40);P.rect(x,150-h,w,h+60,(i,j)=>(j===150-h)?'#b8c8dc':((i+j)%5===0&&hsh(i,j,k)<.3)?'#c8d8ea':'#a4b6cc');x+=w+1}
+  const bg0=night?Array.from({length:CW*CH},(_,i)=>P.get(i%CW,Math.floor(i/CW)).join()):null;
   // Bodenplatte
   const slab=10;P.poly([ip(P,0,N,0),ip(P,N,N,0),ip(P,N,N,-slab),ip(P,0,N,-slab)],(x,y)=>(y%4===0)?'#6a5236':hsh(x,y,3)<.1?'#8a6a46':'#7a5e3e');
   P.poly([ip(P,N,0,0),ip(P,N,N,0),ip(P,N,N,-slab),ip(P,N,0,-slab)],(x,y)=>(y%4===0)?'#4a3a26':'#5a462e');
@@ -2314,10 +2354,13 @@ function renderCity(){
   // Objekte sammeln (Painter)
   const plates=[],cityPlateD=(...a)=>plates.push(a);const objs=[];const add=(k,f)=>objs.push({k,f});const hits=[];
   // Bäume & Laternen
-  const trees=[[2,4.3],[8.6,4.3],[0.4,5.9],[11.5,4.4],[0.5,11.5],[5.6,11.4],[11.6,5.7],[2.5,6.4],[9.7,6.5],[5.5,0.4],[8.2,0.5],[0.4,0.4]];
+  const trees=[[2,4.3],[0.4,5.9],[11.5,4.4],[0.5,11.5],[5.6,11.4],[11.6,5.7],[2.5,6.4],[9.7,6.5],[5.5,0.4],[8.2,0.5],[0.4,0.4]];
   trees.forEach(([tx,ty],i)=>add(tx+ty,()=>treeAt(P,tx*CT,ty*CT,i)));
   [[3.5,9.6],[4.6,11],[3.2,11.3],[5.4,9.4]].forEach(([tx,ty],i)=>add(tx+ty,()=>treeAt(P,tx*CT,ty*CT,i+1)));
-  [[5.2,4.2],[7.8,6.2],[5.2,6.8],[7.8,4.2],[2,4.1],[10,6.1]].forEach(([tx,ty])=>add(tx+ty,()=>lampPost(P,tx*CT,ty*CT)));
+  const LAMPS=[[5.2,4.2],[7.8,6.2],[5.2,6.8],[7.8,4.2],[2,4.1],[10,6.1],[3.6,6.3],[9.2,4.3]];LAMPS.forEach(([tx,ty])=>add(tx+ty,()=>lampPost(P,tx*CT,ty*CT)));
+  [[1.2,6.3],[4.4,4.3],[8.3,6.4],[11,4.3],[5.4,8.2]].forEach(([tx,ty],i)=>add(tx+ty,()=>flowerBed(P,tx*CT,ty*CT,i)));
+  [[2.8,6.35],[10.5,6.4],[0.9,4.3]].forEach(([tx,ty])=>add(tx+ty,()=>benchAt(P,tx*CT,ty*CT)));
+  if(S.rep>=PL_REP||S.pl)add(8.7+4.5,()=>billboard(P,8.7*CT,4.5*CT));
   for(const L of CITY_LOTS){const x=L.x*CT,y=L.y*CT,w=L.w*CT,d=L.d*CT,key=L.x+L.y+(L.w+L.d)/2;
     add(key,()=>{let bx=null;
       if(L.id==='heim'){const ix=x+4,iy=y+4,iw=w-8,id=d-10,h=24;
@@ -2378,7 +2421,12 @@ function renderCity(){
       }else if(L.plot){cityPlotDraw(P,L,x,y,w,d,hits,cityPlateD);
       }else if(L.park){const [sx,sy]=ip(P,x+30,y+12,0);P.rect(sx-6,sy-4,12,2,'#7a4a24');P.rect(sx-6,sy-6,12,1,'#7a4a24');P.rect(sx-5,sy-2,1,2,'#3a2414');P.rect(sx+4,sy-2,1,2,'#3a2414')}
     })}
-  objs.sort((a,b2)=>a.k-b2.k).forEach(o=>o.f());plates.forEach(a=>cityPlate(...a));
+  objs.sort((a,b2)=>a.k-b2.k).forEach(o=>o.f());
+  if(night){nightify(P,LAMPS.map(([tx,ty])=>{const [sx,sy]=ip(P,tx*CT,ty*CT,0);return[sx,sy-14]}),bg0,(x,y)=>{const [px,py]=ip(P,72,168,0);return Math.abs(x-px)<16&&Math.abs(y-py)<9});if(S.rep>=PL_REP||S.pl){billboard(P,8.7*CT,4.5*CT);const [bx,by]=ip(P,8.7*CT,4.5*CT,0);P.glow(bx+1,by-22,20,'#d9333f',.25,12)}for(let i=0;i<70;i++){const x=Math.floor(hsh(i,1,77)*CW),y=Math.floor(hsh(i,2,77)*90);const [r,g,bb]=P.get(x,y);if(r+g+bb<200)P.set(x,y,i%7?'#c8d0ff':'#fff')}P.disc(340,30,9,(x,y,dx,dy)=>dx>.35&&dy<.2?'#c8c4a0':'#f4f0d0',4)}
+  // Schilder ohne Überlappung
+  const pr=plates.map(a=>({a,w:textW(a[3])+8,x:a[1],y:a[2]}));pr.sort((p,q)=>q.y-p.y);const placed=[];
+  pr.forEach(p=>{let guard=0,hit;do{hit=placed.find(q=>Math.abs(q.x-p.x)<(q.w+p.w)/2+2&&Math.abs(q.y-p.y)<12);if(hit)p.y=hit.y-12}while(hit&&guard++<8);p.y=Math.max(2,p.y);placed.push(p)});
+  placed.forEach(p=>{const a=p.a.slice();if(p.y!==a[2]){const [P0,cx]=a;P0.rect(cx,p.y+10,1,a[2]-p.y,'#141016')}a[2]=p.y;cityPlate(...a)});
   hits.sort((a,b2)=>(b2.attr.includes('data-plot')?1:0)-(a.attr.includes('data-plot')?1:0));
   return{url:P.url(),hits:hits.map(h=>({x:Math.round(h.x),y:Math.round(h.y),w:Math.round(h.w),h:Math.round(h.h),attr:h.attr}))};
 }
@@ -2387,7 +2435,7 @@ function carSprite(col,dir){const P=PX(14,11);P.ox=7;P.oy=3;
   else bldBox(P,2,0,5,10,3,{L:()=>shd(col,.85),R:()=>shd(col,.7),T:shd(col,1.1),oc:'#111'}),bldBox(P,3,2,3,5,5,{L:(u,z)=>z>3?'#9fd3ff':col,R:(v,z)=>z>3?'#6a9ab0':shd(col,.7),T:shd(col,1.15),oc:'#111'});
   return P.url()}
 function citySVG(){
-  fixTycoon(S);const R0=cached('city'+JSON.stringify([S.b,S.rep>=TIERS[1].rep,S.rep>=TIERS[3].rep,S.hq,S.plots,S.hall.up,S.hall.built,S.rep>=30,S.rep>=60]),renderCity);
+  fixTycoon(S);const R0=cached('city'+JSON.stringify([cityNight(),!!S.pl,S.rep>=PL_REP,S.b,S.rep>=TIERS[1].rep,S.rep>=TIERS[3].rep,S.hq,S.plots,S.hall.up,S.hall.built,S.rep>=30,S.rep>=60]),renderCity);
   const cars=cached('cars',()=>({x:['#d9333f','#2d6cdf','#f4c430'].map(c=>carSprite(c,'x')),y:['#1f9d55','#e8e8e8','#7d3cc8'].map(c=>carSprite(c,'y'))}));
   const P0={ox:200,oy:92},pt=(x,y)=>ip(P0,x,y,0);
   let anim='',els='';
@@ -2595,9 +2643,9 @@ const TYPEL={wurf:'Wurf',skill:'Taktik',power:'Dauerhaft',curse:'Fluch'};
 function cardHTML(card,o={}){
   const d=CARDS[card.id],art=cardArt(card.id);
   const cls=`card t-${d.t} r-${d.r}${card.up?' up':''}${o.sel?' sel':''}${o.dis?' dis':''}`;
-  return `<div class="${cls}" ${o.attr||''}><div class="cost">${d.c<0?'✖':d.c}</div><div class="cn">${esc(d.n)}${card.up?'+':''}</div>
+  return `<div class="${cls}" ${o.attr||''}><div class="cost">${d.c<0?'✖':d.c}</div>${d.fc?`<div class="fcost">${d.fc}</div>`:''}<div class="cn">${esc(d.n)}${card.up?'+':''}</div>
    <div class="art">${art?`<img src="${art}" alt="">`:`<span>${CICON[card.id]||(d.t==='power'?'⚡':d.t==='curse'?'☠️':'🧠')}</span>`}</div>
-   <div class="cd">${d.d(card.up)}</div><div class="ctype">${TYPEL[d.t]||''}${d.r==='leg'?' · ★':''}</div>${o.pv?`<div class="pv ${o.pv.cls||''}">${o.pv.txt}</div>`:''}</div>`;
+   <div class="cd">${d.d(card.up)}</div><div class="ctype">${TYPEL[d.t]||''}${d.keep?' · 📌Halten':''}${d.flee?' · 💨Flüchtig':''}${d.r==='leg'?' · ★':''}</div>${o.pv?`<div class="pv ${o.pv.cls||''}">${o.pv.txt}</div>`:''}</div>`;
 }
 
 /* ================= Tour-Majors ================= */
@@ -2632,7 +2680,7 @@ const LEGENDS=[
 ];
 const legPrice=L=>Math.round(L.price*(1-.1*(perk('legende'))));
 function hireLegend(key){const L=LEGENDS.find(x=>x.key===key);if(!L||S.players.length>=4||S.money<legPrice(L)||S.rep<L.rep||S.players.some(p=>p.legend===key))return;
-  const p=makePlayer(L.name,L.cls,L.lvl);p.legend=key;p.look=Object.assign({},L.look);p.salary=L.salary;p.deck.forEach(c=>c.up=true);p.deck.push({id:L.sig,up:false,u:uid()},{id:L.sig,up:false,u:uid()});
+  const p=makePlayer(L.name,L.cls,L.lvl);p.legend=key;p.traits=LEG_TRAITS[key].slice();p.look=Object.assign({},L.look);p.salary=L.salary;p.deck.forEach(c=>c.up=true);p.deck.push({id:L.sig,up:false,u:uid()},{id:L.sig,up:false,u:uid()});
   S.money-=legPrice(L);S.players.push(p);snd('win');log(`⭐ Sensation! ${L.name} unterschreibt bei ${S.club}!`);toast(`⭐ ${L.name} verpflichtet!`);save();render()}
 function legendPanel(){
   const open=LEGENDS.filter(L=>!S.players.some(p=>p.legend===L.key));
@@ -2678,6 +2726,211 @@ function hubRuhm(){
   ${P.hist.length?`<div class="panel"><h2>📜 Frühere Karrieren</h2><div class="small" style="margin-top:8px;display:flex;flex-direction:column;gap:8px">${P.hist.slice().reverse().map(h=>`<div><b>Prestige ${h.lvl} · ${esc(h.club)}</b> <span class="mut tiny">Woche ${h.week} · ⭐${h.rep} · +${h.gain} Punkte</span><div class="tiny mut">${h.titles.length?h.titles.map(esc).join(' · '):'Keine Titel'}</div></div>`).join('')}</div></div>`:''}`;
 }
 
+/* ================= Tieferes Kartensystem ================= */
+function numOf(sp){if(sp.num!=null)return sp.num;if(sp.k==='bull')return'B';if(sp.k==='triple'&&sp.pts%3===0&&sp.pts<=60)return sp.pts/3;if(sp.k==='double'&&sp.pts%2===0&&sp.pts<=40)return sp.pts/2;if(sp.k==='single'&&sp.pts>=1&&sp.pts<=20&&!sp.rand)return sp.pts;return null}
+const isBogey=r=>r<=170&&r>=2&&!fCheckout(r,3);
+const rhyLbl=n=>n==='B'?'Bull':n;
+Object.assign(CARDS,{
+ unruhe:{n:'Unruhe',c:-1,t:'curse',r:'curse',flee:true,d:()=>'Unspielbar. Verschwindet am Zugende.'},
+ nachlegen:{n:'Nachlegen',c:1,t:'wurf',r:'c',th:(C,u)=>{const rh=C.me.rhythm,b=(rh&&rh.num===20&&rh.n>=2)?(u?20:15):0;return[{pts:20+b,ch:1,k:'single',num:20}]},d:u=>`Sicher Single 20. Mit Rhythmus auf der 20 (×2+): +${u?20:15} Punkte.`},
+ ausweichen:{n:'Ausweichen auf 19',c:1,t:'wurf',r:'u',th:(C,u)=>[{pts:57,alt:19,ch:u?.72:.64,k:'triple',keep:true,bonus:C.me.missT20?.1:0}],d:u=>`Triple 19 (${u?72:64}%), +10% wenn diesen Zug eine T20 danebenging. Bricht den Rhythmus nicht.`},
+ konzwurf:{n:'Konzentrationswurf',c:1,fc:5,t:'wurf',r:'c',th:(C,u)=>[{pts:60,alt:20,ch:u?.82:.75,k:'triple'}],d:u=>`Kostet zusätzlich 5 Fokus. Triple 20 mit ${u?82:75}%.`},
+ fokusbank:{n:'Fokus-Bank',c:1,t:'power',r:'u',fx:(C,u)=>{C.me.pw.bank=u?.75:.5},d:u=>`Dauerhaft im Match: ${u?75:50}% deines übrigen Fokus bleiben für den nächsten Zug.`},
+ mental:{n:'Kopf frei',c:1,t:'skill',r:'c',fx:(C,u)=>{const n=(C.me.rhythm&&C.me.rhythm.n)||1;C.me.block+=n*(u?6:4)},d:u=>`+${u?6:4} Fokus pro Rhythmus-Stufe (mind. ${u?6:4}).`},
+ bogey:{n:'Bogey brechen',c:1,t:'wurf',r:'c',th:(C,u)=>isBogey(C.me.rest)?[{pts:19,ch:1,k:'single'}]:[{pts:20,ch:1,k:'single'}],fx:(C,u)=>draw(isBogey(C.me.rest)?2:(u?1:0)),d:u=>`Steht ein Rest ohne 3-Dart-Finish (Bogey): sicher 19 und ziehe 2. Sonst sicher 20${u?', ziehe 1':''}.`},
+ tempo:{n:'Tempomacher',c:0,t:'skill',r:'u',ex:true,fx:(C,u)=>{C.me.plusDart=(C.me.plusDart||0)+1;if(u)C.me.block+=4},d:u=>`Nächster Zug: +1 Dart${u?'. +4 Fokus':''}. Einmal pro Leg.`},
+ ruhe:{n:'Ruhe bewahren',c:1,t:'skill',r:'c',keep:true,fx:(C,u)=>{C.me.block+=u?10:7},d:u=>`<b>Behalten.</b> +${u?10:7} Fokus.`},
+ antwort:{n:'Antwort',c:1,t:'wurf',r:'u',th:(C,u)=>[{pts:60+((C.opp.lastSc||0)>=100?(u?25:20):0),alt:20,ch:u?.6:.5,k:'triple',num:20}],d:u=>`Triple 20 (${u?60:50}%). Hat der Gegner zuletzt 100+ geworfen: +${u?25:20} Punkte.`},
+ zielgerade:{n:'Zielgerade',c:1,fc:4,t:'skill',r:'r',fx:(C,u)=>{if(C.me.rest<=(u?80:60))C.me.sure=true;else draw(1)},d:u=>`Kostet 4 Fokus. Rest ≤ ${u?80:60}: Dein nächstes Doppel trifft sicher. Sonst ziehe 1.`},
+ dreierpack:{n:'Dreierpack',c:1,t:'wurf',r:'u',th:(C,u)=>[{pts:60,alt:20,ch:(C.me.triTurn||0)>=(u?1:2)?1:.5,k:'triple'}],d:u=>`Triple 20. Hast du diesen Zug schon ${u?1:2} Triple getroffen: trifft sicher.`},
+ praezision:{n:'Präzisionsmodus',c:1,t:'power',r:'r',fx:(C,u)=>{C.me.pw.prec=1;if(u)C.me.block+=6},d:u=>`Dauerhaft im Match: Rhythmus-Bonus verdoppelt${u?'. +6 Fokus':''}.`},
+ kopfspiel:{n:'Kopfspiel',c:1,fc:3,t:'skill',r:'u',fx:(C,u)=>{const it=C.opp.intent;if(it)it.cancel=true;C.opp.st.nerv+=u?2:1},d:u=>`Kostet 3 Fokus. Streicht die Spezialaktion des Gegners in diesem Zug. Gegner ${u?2:1} Zug nervös.`},
+ tafel:{n:'Anzeigetafel lesen',c:0,t:'skill',r:'c',keep:true,fx:(C,u)=>{draw(1);if(C.me.rest<=170)C.me.block+=u?6:4},d:u=>`<b>Behalten.</b> Ziehe 1. Rest ≤ 170: +${u?6:4} Fokus.`},
+ druckabbau:{n:'Druck rausnehmen',c:0,fc:6,t:'skill',r:'u',fx:(C,u)=>heal(u?7:5),d:u=>`Kostet 6 Fokus. +${u?7:5} Nerven.`},
+ scharf:{n:'Scharfschütze',c:2,fc:8,t:'wurf',r:'r',th:(C,u)=>[{pts:50,alt:25,ch:u?.95:.9,k:'bull'}],d:u=>`Kostet 8 Fokus. Bullseye mit ${u?95:90}%. Checkt bis 50 aus.`},
+ gruppieren:{n:'Gruppieren',c:1,t:'wurf',r:'c',th:(C,u)=>{const rh=C.me.rhythm,n=(rh&&rh.num===20)?rh.n:0;return[{pts:60+n*(u?8:5),alt:20+n*(u?8:5),ch:.5,k:'triple',num:20}]},d:u=>`Triple 20 (50%). +${u?8:5} Punkte pro Rhythmus-Stufe auf der 20.`},
+});
+['nachlegen','konzwurf','mental','bogey','ruhe','tafel','gruppieren'].forEach(k=>POOL.c.push(k));
+['ausweichen','fokusbank','tempo','antwort','dreierpack','kopfspiel','druckabbau'].forEach(k=>POOL.u.push(k));
+['zielgerade','praezision','scharf'].forEach(k=>POOL.r.push(k));
+Object.assign(CICON,{unruhe:'🌀',fokusbank:'🏦',mental:'🧘',tempo:'⏩',ruhe:'🍃',zielgerade:'🏁',praezision:'🔬',kopfspiel:'♟',tafel:'📊',druckabbau:'💆'});
+const OPPFX={unruhe:{i:'🌀',n:'Unruhe',d:'mischt dir eine Unruhe-Karte ins Deck'},tempo:{i:'⏱',n:'Tempo',d:'du hast nächsten Zug 1 Dart weniger'},psyche:{i:'🧠',n:'Psychotrick',d:'du wirfst nächsten Zug 1 Karte ab'},aufholen:{i:'📈',n:'Aufholjagd',d:'Gegner-Checkout +15%'}};
+function rollOppFx(C){const o=C.opp,lv=lvOf(S.run.tier||0);let ch=.18+lv*.05+(C.kind==='e'?.12:0)+(C.kind==='b'?.22:0);if(S.run.mode==='liga'||S.run.mode==='pokal')ch=.15+lv*.04;
+  if(R()<ch){const keys=Object.keys(OPPFX).filter(k=>k!=='aufholen'||o.rest<220);return pick(keys)}return null}
+
+/* ================= Spieler-Eigenschaften ================= */
+const TRAITS={
+ nerv:{n:'Nervenstark',i:'🧊',d:'+8 Start-Nerven'},party:{n:'Partylöwe',i:'🎉',d:'+2 Fans pro Woche, −3 Start-Nerven'},
+ faul:{n:'Trainingsfaul',i:'😴',d:'−40% XP aus Training, +1 Karte im ersten Zug'},fleiss:{n:'Trainingsweltmeister',i:'🏋️',d:'+50% XP aus Training'},
+ dbl:{n:'Doppel-Spezialist',i:'✌️',d:'+6% auf Doppel'},tri:{n:'Triple-Jäger',i:'💥',d:'+6% auf Triple'},
+ crowd:{n:'Publikumsliebling',i:'📣',d:'+2 Fokus pro Zug'},heim:{n:'Heimstark',i:'🏠',d:'+8% auf alle Würfe in Liga & Pokal'},
+ spar:{n:'Sparfuchs',i:'🪙',d:'Gehalt −30%'},start:{n:'Schnellstarter',i:'⚡',d:'+1 Dart im ersten Zug jedes Legs'},
+ spaet:{n:'Spätzünder',i:'🌙',d:'Ab Leg 2: +6% auf alle Würfe'},rhythm:{n:'Rhythmusgefühl',i:'🎵',d:'Rhythmus-Bonus +50%'},
+};
+const LEG_TRAITS={atom:['tri','start'],gruen:['tri','rhythm'],macht:['nerv','dbl'],kuehl:['nerv','crowd'],schlange:['crowd','party'],eis:['dbl','nerv'],highlander:['rhythm','spaet'],koenigin:['dbl','crowd']};
+function rollTraits(){const k=Object.keys(TRAITS),a=[pick(k)];if(R()<.3){const b=pick(k.filter(x=>x!==a[0]&&!(a[0]==='faul'&&x==='fleiss')&&!(a[0]==='fleiss'&&x==='faul')));a.push(b)}return a}
+const hasT=(p,t)=>!!(p&&p.traits&&p.traits.includes(t));
+function fixTraits(st){(st.players||[]).forEach(p=>{if(!p.traits)p.traits=p.legend?LEG_TRAITS[p.legend]||[]:p.isMe?['rhythm']:rollTraits()});(st.market||[]).forEach(p=>{if(!p.traits)p.traits=rollTraits()})}
+const trainXP=(p,n)=>Math.round(n*(hasT(p,'fleiss')?1.5:1)*(hasT(p,'faul')?.6:1));
+function traitChips(p){return(p.traits||[]).map(t=>`<span class="chip" title="${TRAITS[t].d}">${TRAITS[t].i} ${TRAITS[t].n}</span>`).join('')}
+function portraitURL(L){return cached('por'+JSON.stringify(L),()=>{const P=PX(30,44);P.fill((x,y)=>mixc('#22302a','#0e1410',y/44));drawChar(P,L,15,42);return P.url()})}
+function playerCard(p){
+  const sc=Math.round(100*clamp(.5+(p.cls==='scorer'?.1:0)+(hasT(p,'tri')?.06:0)+(gearOf(p).tri||0)/100+(p.lvl-1)*.02,0,1)),fi=Math.round(100*clamp(.68+(p.cls==='finisher'?.12:0)+(hasT(p,'dbl')?.06:0)+(gearOf(p).dbl||0)/100+(p.lvl-1)*.02,0,1));
+  const rar=p.legend?'leg':p.lvl>=7?'r':p.lvl>=4?'u':'c',st=(n,v,max)=>`<div class="pst"><span>${n}</span><i><b style="width:${Math.min(100,v/max*100)}%"></b></i><em>${v}</em></div>`;
+  modal(`<div class="pcard r-${rar}"><div class="pctop"><span class="px">LV${p.lvl}</span><span>${CLASSES[p.cls].i} ${CLASSES[p.cls].n}</span></div>
+   <img class="pcimg" src="${portraitURL(p.look)}" alt=""><div class="pcname">${esc(p.name)}</div>${p.legend?'<div class="pclegend">★ LEGENDE ★</div>':''}
+   ${st('Scoring',sc,100)}${st('Finishing',fi,100)}${st('Nerven',startNerves(p),90)}${st('Deck',p.deck.length,25)}
+   <div class="pctraits">${(p.traits||[]).map(t=>`<div><b>${TRAITS[t].i} ${TRAITS[t].n}</b><span>${TRAITS[t].d}</span></div>`).join('')||'<div><span>Keine Eigenschaften</span></div>'}</div></div>
+   <button class="btn gray block" onclick="closeModal()">Schließen</button>`);
+}
+
+/* ================= Rivale ================= */
+const TAUNTS=['„Eure Scheiben hängen schief, so wie eure Würfe!“','„Kommt ruhig zum Derby. Wir bringen Taschentücher mit.“','„Euer Vereinsheim? Ach, die Bretterbude am Park.“','„Unser Ersatzspieler wirft mehr 180er als euer Kapitän.“','„Wir haben gehört, ihr trainiert jetzt. Süß.“'];
+function fixRival(st){if(!st.rival){const n=pick(CLUBS.filter(c=>c!==st.club));st.rival={name:n,w:0,l:0}}}
+const isRival=n=>S&&S.rival&&S.rival.name===n;
+
+/* ================= Premier-Nächte ================= */
+const PL_REP=160;
+function plStart(){const pool=LEGENDS.filter(L=>!S.players.some(p=>p.legend===L.key)).map(L=>({name:L.name,look:L.look,str:.7+R()*.25})),extra=['Rob „Hochspannung“ Kreuzer','Johnny „Frettchen“ Klaiber','Steffen „Die Kugel“ Brandt','Nate „Die Natter“ Aschberg'];
+  while(pool.length<7)pool.push({name:extra[pool.length%4],look:randLook(),str:.65+R()*.25});
+  const me=S.players.slice().sort((a,b)=>b.lvl-a.lvl)[0];
+  S.pl={season:S.league.season,night:0,pid:me.id,table:[{name:me.name,me:true,pts:0,lf:0,la:0,w:0,l:0}].concat(shuffle(pool).slice(0,7).map(x=>({...x,pts:0,lf:0,la:0,w:0,l:0}))),sched:makeSchedule(8).slice(0,7),done:false,po:null,champ:null};
+  S.plDone=false;log('🌟 Einladung angenommen: Premier-Nächte!');save()}
+function plTable(){return S.pl.table.map((t,i)=>({...t,i})).sort((a,b)=>b.pts-a.pts||(b.lf-b.la)-(a.lf-a.la))}
+function plStr(i){if(i===0){const p=fpById(S.pl.pid);return clamp(.2+p.lvl*.08,0,1)}return S.pl.table[i].str}
+function plSimMatch(a,b){const pa=clamp(.5+(plStr(a)-plStr(b))*.6,.15,.85);let x=0,y=0;while(x<4&&y<4)R()<pa?x++:y++;return[x,y]}
+function plApply(a,b,x,y){const T=S.pl.table;T[a].lf+=x;T[a].la+=y;T[b].lf+=y;T[b].la+=x;if(x>y){T[a].pts+=2;T[a].w++;T[b].l++}else{T[b].pts+=2;T[b].w++;T[a].l++}}
+function plOpp(){const P=S.pl;if(P.night<7){const pr=P.sched[P.night].find(p=>p.includes(0));return pr[0]===0?pr[1]:pr[0]}if(P.po&&!P.po.done){const pr=P.po.pairs.find(p=>p.includes(0));return pr?(pr[0]===0?pr[1]:pr[0]):-1}return -1}
+function plDue(){return S.pl&&!S.pl.champ&&!S.plDone&&plOpp()>=0}
+function plPlay(){const P=S.pl,oi=plOpp(),p=fpById(P.pid),mx=startNerves(p);
+  S.run={mode:'pl',tier:4,pid:p.id,deck:p.deck.map(c=>({id:c.id,up:c.up,u:uid()})),gear:gearOf(p),relics:[],nerves:mx,maxN:mx,gold:0,step:3,steps:99,map:[],path:[],added:[],combat:null,won:0,matches:0,plOpp:oi};
+  startCombat('e');const C=S.run.combat,O=P.table[oi];C.opp.name=O.name;C.opp.nick=O.name.split('„')[1]?O.name.split('„')[1].split('“')[0]:O.name;if(O.look)C.opp.look=Object.assign({},O.look);C.label=P.night<7?`Premier-Nacht ${P.night+1}/7`:(P.po.round==='sf'?'Premier · Halbfinale':'Premier · Finale');save();render()}
+function plNightResult(myWin,x,y){const P=S.pl,oi=plOpp();
+  if(P.night<7){plApply(0,oi,x,y);P.sched[P.night].forEach(([a,b])=>{if(a!==0&&b!==0){const[q,w]=plSimMatch(a,b);plApply(a,b,q,w)}});P.night++;
+    if(P.night===7){const t=plTable().slice(0,4).map(t=>t.i);P.po={round:'sf',pairs:[[t[0],t[3]],[t[1],t[2]]],done:false,win:[]};if(!t.includes(0)){plFinishSim();}}}
+  else{const po=P.po,w=[];po.pairs.forEach(([a,b])=>{if(a===0||b===0)w.push(myWin?0:(a===0?b:a));else{const[q,z]=plSimMatch(a,b);w.push(q>z?a:b)}});
+    if(po.round==='sf'){if(!w.includes(0)){po.pairs=[[w[0],w[1]]];po.round='f';plFinishSim()}else{po.pairs=[[w[0],w[1]]];po.round='f'}}else{P.champ=w[0];po.done=true}}
+  const money=myWin?300:50;S.money+=money;if(myWin)S.rep+=3;
+  if(P.champ===0){S.money+=3000;S.rep+=25;S.fans+=150;S.trophies.push({tier:31,n:'Premier-Nächte',i:'🌟',w:S.week});S.stats.wins++;log('🌟🏆 Sieg in den Premier-Nächten!')}
+  return money}
+function plFinishSim(){const P=S.pl;while(!P.champ){const w=P.po.pairs.map(([a,b])=>{const[q,z]=plSimMatch(a,b);return q>z?a:b});if(P.po.round==='sf'){P.po.pairs=[[w[0],w[1]]];P.po.round='f'}else{P.champ=w[0];P.po.done=true}}}
+function plGameEnd(win){const r=S.run,C=r.combat,x=win?C.need:C.me.legs,y=win?C.opp.legs:C.need;const m=plNightResult(win,x,y);S.plDone=true;S.run=null;UI.tab='pl';save();render();snd(win?'win':'lose');
+  modal(`<div style="text-align:center"><div style="font-size:44px">${win?'🌟':'😤'}</div><h3>${win?'Sieg in der Premier-Nacht!':'Niederlage'}</h3><div class="px" style="font-size:18px;margin:8px 0">${x} : ${y}</div></div><div class="panel small"><div class="row between"><span>Prämie</span><b>+${m} €</b></div>${S.pl.champ===0?'<div class="row between"><span>🏆 Premier-Champion!</span><b>+3.000 €</b></div>':''}</div><button class="btn block" onclick="closeModal()">Weiter</button>`)}
+function hubPL(){
+  if(!S.pl)return `<div class="navrow"><button class="btn gray sm" data-go="welt">◀ Stadt</button></div><div class="panel small mut">Noch keine Einladung. Ab ${PL_REP} Ruf lädt dich die Arena zu den Premier-Nächten ein.</div>`;
+  const P=S.pl,tab=plTable(),oi=plOpp(),nm=i=>esc(P.table[i].name);
+  let next='';
+  if(P.champ!=null)next=`<div class="panel" style="text-align:center"><div style="font-size:30px">🏆</div><b>Premier-Champion: ${nm(P.champ)}</b><div class="tiny mut" style="margin-top:6px">Neue Einladung nächste Saison.</div><button class="btn gray sm" id="plnew" style="margin-top:8px">Neue Premier-Saison starten</button></div>`;
+  else if(oi<0)next=`<div class="panel small mut">Du bist raus. Die Playoffs laufen ohne dich.</div>`;
+  else next=`<div class="panel"><h2>${P.night<7?`🌙 Nacht ${P.night+1} von 7`:P.po.round==='sf'?'🔥 Playoff-Halbfinale':'🏆 Finale'}</h2><div class="small" style="margin:8px 0"><b>${esc(fpById(P.pid).name)}</b> <span class="mut">gegen</span> <b>${nm(oi)}</b></div>
+   ${S.plDone?'<div class="small mut">✔ Diese Woche gespielt.</div>':'<button class="btn gold block" id="plgo">Premier-Nacht spielen · 501 Best of 7</button>'}<div class="tiny mut" style="margin-top:6px">Nicht gespielt bis Wochenende = wird simuliert.</div></div>`;
+  return `<div class="navrow"><button class="btn gray sm" data-go="welt">◀ Stadt</button><b class="small">🌟 Premier-Nächte</b></div>
+  <div class="panel"><div class="tiny mut">Die besten 8 Spieler der Welt, jede Woche ein Abend. Nach 7 Nächten spielen die Top 4 die Playoffs. Sieg 2 Punkte.</div></div>${next}
+  <div class="panel" style="padding:8px"><table class="tbl"><tr><th>#</th><th style="text-align:left">Spieler</th><th>Sp</th><th>Legs</th><th>Pkt</th></tr>${tab.map((t,i)=>`<tr class="${t.me?'mine':''} ${i<4?'up':''}"><td>${i+1}</td><td class="n">${esc(t.name)}</td><td>${t.w+t.l}</td><td>${t.lf}:${t.la}</td><td><b>${t.pts}</b></td></tr>`).join('')}</table></div>`;
+}
+
+/* ================= Turnierorte innen ================= */
+function crowdRow(P,x0,x1,y0,z,seed){for(let x=x0;x<x1;x+=3){const [sx,sy]=ip(P,x,y0,z);const c=['#d9333f','#2d6cdf','#f4c430','#1f9d55','#e8e8e8','#7d3cc8'][Math.floor(hsh(x,y0,seed)*6)];P.rect(sx-1,sy-6,3,3,SKINS[Math.floor(hsh(x,seed,2)*5)]);P.rect(sx-1,sy-3,3,3,c);P.set(sx,sy-7,'#2b1d14')}}
+function renderVenue(v){
+  const P=PX(RW,RHT);P.ox=88;P.oy=70;
+  if(v==='kneipe'){
+    roomShell(P,(x,y)=>{const pl=Math.floor(y/6);if(y%6<.9)return'#3a2210';return hsh(Math.floor(x/3),pl,2)<.15?'#6a4026':'#7a4c2a'},skirt((a,z)=>z<20?(a%6===0?'#3a2010':'#5a3420'):((a+z)%9===0?'#5a2a20':'#6a3428')),skirt((a,z)=>z<20?(a%6===0?'#3a2010':'#5a3420'):((a+z)%9===0?'#5a2a20':'#6a3428')));
+    wallR(P,(x,z)=>z===34||z===44?'#3a2010':null,6,50,34,46);for(let i=0;i<11;i++)wallR(P,(x,z)=>z>=36&&z<42?['#2fd673','#d9333f','#f4c430','#9fd3ff'][i%4]:null,8+i*4,10+i*4,36,42);
+    wallText(P,'R',54,58,'BIER','#ffb347','#ff8a20',2);
+    const bx=P.ox-1-40,by=Math.floor(P.oy+20)-34;boardPx(P,0,0,7,(dx,dy)=>[bx+dx,by+dy]);
+    isoFloor(P,(x,y)=>(Math.abs(x-30)<.8&&y>34&&y<46)?'#f4c430':null);
+    isoBox(P,6,14,0,40,9,16,'#5a2a14',{top:'#3a1a0a'});charAt(P,NPC(5),22,8);
+    [[20,50],[48,40],[56,62]].forEach(([x,y],i)=>{isoBox(P,x+3,y+3,0,2,2,9,'#2a1a0a',{outline:false});isoBox(P,x,y,9,8,8,2,'#8a5a32');charAt(P,NPC(i+6),x+10,y+4)});
+    charAt(P,NPC(9),30,40,{pose:'throw'});
+    P.light(...ip(P,30,30,0),46,.3,24);P.glow(...ip(P,30,30,IH-4),26,'#ffb347',.25,10);
+  }else if(v==='halle'){
+    roomShell(P,(x,y)=>(Math.floor(x/8)+Math.floor(y/8))%2?'#8a8f98':'#7a808a',skirt((a,z)=>z>40?'#a8aeb8':(a%10===0?'#6d737c':'#9aa0aa'),'#4a4f58'),skirt((y,z)=>z>40?'#a8aeb8':'#9aa0aa','#4a4f58'));
+    wallR(P,(x,z)=>(z===48||z===60||x===10||x===70)?'#2b2f3a':'#d9333f',10,71,48,61);wallText(P,'R',16,58,'STADTMEISTER','#fff');
+    isoBox(P,4,2,0,72,18,6,'#3a3d48',{top:'#4a2a5a'});
+    [[24,34],[52,34]].forEach(([cx,cz])=>wallBoard(P,cx,cz,6,true));
+    isoFloor(P,(x,y)=>(Math.abs(y-30)<.7&&((x>18&&x<30)||(x>46&&x<58)))?'#f4c430':null);
+    charAt(P,NPC(2),24,32,{pose:'throw'});charAt(P,NPC(4),52,32);
+    for(let r=0;r<3;r++){isoBox(P,8,44+r*10,0,60,6,6,'#e8e8e8',{top:'#f4f4f0'});crowdRow(P,10,66,52+r*10,0,r)}
+    P.light(...ip(P,38,14,0),40,.35,18);
+  }else{
+    roomShell(P,(x,y)=>hsh(Math.floor(x),Math.floor(y),3)<.1?'#14141c':'#1a1a24',skirt((a,z)=>z>30?((a+z)%4===0?'#2a2a3a':'#1e1e2a'):'#14141c','#000'),skirt((y,z)=>z>30?((y+z)%4===0?'#2a2a3a':'#1e1e2a'):'#14141c','#000'));
+    for(let r=0;r<5;r++){wallL(P,(y,z)=>{const c=hsh(y,z+r*7,4);return c<.33?'#d9333f':c<.5?'#f4c430':c<.65?'#e8e8e8':c<.8?'#2d6cdf':'#2a2a3a'},2,78,34+r*5,37+r*5)}
+    wallR(P,(x,z)=>(x===14||x===66||z===30||z===56)?'#111':hsh(x,z,9)<.03?'#fff':mixc('#0b1020','#1a3a6a',(z-30)/26),14,67,30,57);wallText(P,'R',28,50,'WELTMEISTER','#3aff8c');wallText(P,'R',30,40,'501 : 501','#f4c430');
+    isoBox(P,20,6,0,40,26,8,'#2a2a34',{top:(x,y)=>(x+y)%6===0?'#3a3a4a':'#30303c'});
+    wallBoard(P,40,30,6,true);
+    charAt(P,NPC(10),36,26,{pose:'throw'});charAt(P,NPC(11),52,24);
+    for(let r=0;r<3;r++)crowdRow(P,6,74,52+r*8,0,r+3);
+    [[20,10],[60,10]].forEach(([x,y])=>{const [sx,sy]=ip(P,x,y,IH);for(let k=0;k<60;k++){const t=k/60;P.glow(sx+(ip(P,40,26,8)[0]-sx)*t,sy+(ip(P,40,26,8)[1]-sy)*t,4,'#fff6d0',.08)}});
+    P.glow(...ip(P,40,20,10),40,'#7a5aff',.18,16);
+  }
+  return P.url();
+}
+const venueImg=v=>cached('ven_'+v,()=>renderVenue(v));
+function combatVenue(){const r=S.run;if(!r)return null;if(r.mode==='liga'||r.mode==='pokal')return roomImg('scheiben').url;if(r.mode==='pl')return venueImg('arena');const t=r.tier;return venueImg(t===0||t===5?'kneipe':[1,2,6].includes(t)?'halle':'arena')}
+
+/* ================= Trainer-Tipps (Tutorial) ================= */
+const COACH={
+ welt:'Willkommen in deiner Stadt! Tippe aufs <b>Vereinsheim</b>, um reinzugehen. Rechts liegen <b>Kneipe, Stadthalle und Arena</b> für Turniere, links der <b>Dartshop</b>. Freie Grundstücke kannst du später kaufen und bebauen.',
+ heim:'Dein Vereinsheim hat vier Räume. In jedem Raum tippst du auf Möbel, um sie <b>auszubauen</b>. Türen führen in den nächsten Raum.',
+ r_theke:'Die <b>Theke</b> bringt jede Woche Geld und dir mehr Nerven im Turnier. Goldene <b>➕</b> sind freie Plätze für Einrichtung aus dem Shop.',
+ r_scheiben:'Mehr <b>Scheiben</b> = mehr Platz für Mitglieder (die zahlen Beitrag!). Am Oche startest du ein <b>Freundschaftsspiel</b> zum Üben.',
+ r_training:'Im <b>Trainingsraum</b> verbesserst oder entfernst du Karten und machst Wurftraining für Erfahrung.',
+ r_buero:'Im <b>Büro</b> steuerst du Liga, Pokal und deinen Kader. Am PC findest du Anleitung, Speichern und Feedback.',
+ turnier:'Einmal pro Woche schickst du einen Spieler ins <b>Turnier</b>. Fang mit dem <b>Kneipenturnier</b> an, später warten Majors wie die Palast-WM.',
+ run:'Das ist dein <b>Turnierweg</b>. Wähle die nächste Station: ⚔️ Match, 💀 Favorit (schwer, gibt Ausrüstung), 🍺 Theke (Nerven auffüllen), 🛒 Händler, ❓ Ereignis. Ganz oben wartet das Finale.',
+ shop:'Im Shop gibt es <b>Packs mit Dart-Teilen</b> (Spitze, Barrel, Schaft, Flight) und <b>Einrichtung</b> fürs Vereinsheim.',
+ kader:'Dein <b>Kader</b>: Tippe aufs Bild eines Spielers für seine <b>Spielerkarte</b> mit Werten und Eigenschaften. Unten: Transfermarkt und Legenden.',
+ liga:'<b>Liga</b>: Jeden Spieltag ein Ligaabend gegen einen anderen Verein. Platz 1–2 steigen auf. 😈 markiert euren <b>Erzrivalen</b>, Derbys zählen doppelt.',
+ woche:'Hier beendest du die <b>Woche</b>: Einnahmen, Ausgaben und neue Mitglieder. Danach darfst du wieder ins Turnier.',
+ free:'<b>Freies Werfen</b>: Tippe aufs Board, um zu zielen, und drück WERFEN, wenn das Fadenkreuz richtig steht. 501, das letzte Dart muss ein Doppel sein.',
+ halle:'Deine <b>Halle</b>: Jede Woche vermieten oder ein eigenes Turnier ausrichten. Ausbauten bringen mehr Zuschauer und Geld.',
+ ruhm:'<b>Prestige</b>: Nach einem WM-Titel neu starten und dauerhafte Boni sammeln.',
+ pl:'Die <b>Premier-Nächte</b>: 7 Abende gegen die Weltbesten, danach Playoffs der Top 4.',
+};
+const COACH_MATCH=[
+ '<b>Ziel:</b> Bring deinen Rest auf genau 0. Der letzte Wurf muss ein <b>Doppel oder Bull</b> sein. Fällt der Rest unter 2 ohne Checkout, ist es ein <b>Bust</b>.',
+ 'Jede Karte kostet <b>Darts</b> (Zahl oben links), du hast 3 pro Zug. Manche kosten zusätzlich <b>Fokus</b> (blaue Zahl oben rechts). Tippe eine Karte an, nochmal tippen = werfen.',
+ 'Oben siehst du, was der Gegner vorhat: 🎯 Punkte und 💢 <b>Druck</b>. Druck kostet dich Nerven ❤️. Dein <b>Fokus 🛡</b> blockt Druck, also spar etwas davon auf!',
+ '🎵 <b>Rhythmus:</b> Wirfst du mehrmals hintereinander auf dieselbe Zahl, wirst du genauer (+4% pro Wurf). Wechselst du die Zahl, ist der Rhythmus weg.',
+ 'Achte auf <b>Spezialaktionen</b> des Gegners wie 🌀 Unruhe oder ⏱ Tempo. Karten wie <b>Kampfansage</b> oder <b>Kopfspiel</b> stoppen sie. Viel Erfolg!',
+];
+function coachKey(){if(!S)return null;if(S.free)return'free';if(S.run&&S.run.combat)return'match';if(S.run&&!S.run.mode)return'run';if(S.run)return null;
+  const t=UI.tab;if(t==='liga'&&UI.lt==='pokal')return null;return COACH[t]?t:null}
+function coachCheck(){
+  const el=document.getElementById('coach');if(!S||S.tips===false){if(el)el.remove();return}
+  S.seen=S.seen||{};const k=coachKey();let txt=null,step=null;
+  if(k==='match'){const n=S.seen.matchStep||0;if(n<COACH_MATCH.length){txt=COACH_MATCH[n];step=n}}
+  else if(k&&!S.seen[k])txt=COACH[k];
+  if(!txt||document.querySelector('#modal.on')){if(el)el.remove();if(txt&&!el)setTimeout(coachCheck,600);return}
+  const box=el||document.createElement('div');box.id='coach';box.className=k==='match'||k==='free'?'top':'';
+  box.innerHTML=`<img src="${portraitURL({h:'#8a8a8a',s:'#f1c9a5',t:'#1f9d55',w:'#d9333f',p:'#222',beard:true})}" alt=""><div><b class="tiny" style="color:var(--gold)">Trainer Kalle${step!=null?` · ${step+1}/${COACH_MATCH.length}`:''}</b><div class="small">${txt}</div>
+   <div class="row" style="gap:6px;margin-top:6px"><button class="btn sm" id="coachok">${step!=null&&step<COACH_MATCH.length-1?'Weiter':'Verstanden'}</button><button class="btn gray sm" id="coachoff">Tipps aus</button></div></div>`;
+  if(!el)document.body.appendChild(box);
+  box.querySelector('#coachok').onclick=()=>{if(step!=null)S.seen.matchStep=step+1;else S.seen[k]=true;save();coachCheck()};
+  box.querySelector('#coachoff').onclick=()=>{S.tips=false;save();coachCheck();toast('Tipps aus. Am PC im Büro wieder einschaltbar.')};
+}
+
+/* ================= Musik ================= */
+let MUS=null;
+function musicToggle(on){S.music=on;save();if(on)musicStart();else musicStop()}
+function musicStop(){if(MUS){clearInterval(MUS.t);try{MUS.ctx.close()}catch(e){}MUS=null}}
+function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.AudioContext||window.webkitAudioContext)(),g=ctx.createGain();g.gain.value=.035;g.connect(ctx.destination);
+  const bass=[45,45,52,52,50,50,47,52],arp=[[69,72,76],[69,72,76],[71,76,79],[71,76,79],[69,74,77],[69,74,77],[67,71,74],[71,76,79]],bpm=112,step=60/bpm/2;let i=0,t0=ctx.currentTime+.1;
+  const note=(m,t,d,type,v)=>{const o=ctx.createOscillator(),e=ctx.createGain();o.type=type;o.frequency.value=440*Math.pow(2,(m-69)/12);e.gain.setValueAtTime(v,t);e.gain.exponentialRampToValueAtTime(.001,t+d);o.connect(e);e.connect(g);o.start(t);o.stop(t+d+.02)};
+  const sched=()=>{while(t0<ctx.currentTime+.6){const bar=Math.floor(i/8)%8,s=i%8;if(s%2===0)note(bass[bar]-12,t0,step*1.8,'triangle',.9);const ch=arp[bar];note(ch[s%3]+(s>=6?12:0),t0,step*.9,'square',.35);if(s===4)note(84,t0,.05,'square',.15);i++;t0+=step}};
+  sched();MUS={ctx,t:setInterval(sched,200)}}catch(e){}}
+document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
+
+/* ================= Feedback ================= */
+const GAME_VERSION='0.9';
+function feedbackDialog(){
+  modal(`<h3>💬 Feedback</h3><div class="small mut">Was gefällt dir, was nervt, was ist kaputt? Jede Rückmeldung hilft!</div><textarea id="fbt" placeholder="Dein Feedback …" style="min-height:110px"></textarea>
+   <button class="btn block" id="fbgh">📮 Als GitHub-Issue senden</button><button class="btn gray block" id="fbcp">📋 Text kopieren (für WhatsApp & Co.)</button><button class="btn gray" onclick="closeModal()">Abbrechen</button>`);
+  const info=()=>`\n\n---\nVersion ${GAME_VERSION} · Woche ${S.week} · Ruf ${S.rep} · Liga ${DIVS[S.league.div]} · ${navigator.userAgent.slice(0,80)}`;
+  $('#fbgh').onclick=()=>{const t=$('#fbt').value.trim();if(!t)return toast('Schreib erst etwas 🙂');const url=`https://github.com/Anduuuuin/darttycoon/issues/new?title=${encodeURIComponent('Feedback: '+t.slice(0,50))}&body=${encodeURIComponent(t+info())}`;const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove()};
+  $('#fbcp').onclick=async()=>{const t=$('#fbt').value.trim()+info();try{await navigator.clipboard.writeText('Dart Tycoon Feedback:\n'+t);toast('Kopiert!')}catch(e){$('#fbt').select();toast('Bitte manuell kopieren')}};
+}
+
 /* ================= Match ================= */
 function makeOpp(tier,kind,step){
   let o;
@@ -2698,6 +2951,7 @@ function roundName(r,kind){
 }
 function fmtFor(r,kind){
   if(r.mode==='liga')return{start:301,need:2};
+  if(r.mode==='pl')return{start:501,need:4};
   if(r.mode==='pokal')return r.pk&&r.pk.sd==='pending'?{start:501,need:1}:{start:501,need:3};
   const T=TIERS[r.tier];if(T.sets)return{start:501,need:3,sets:kind==='b'?3:2,din:false};return{start:T.st||301,need:kind==='b'?(T.bn||2):(T.ln||2),din:!!T.din};
 }
@@ -2734,9 +2988,11 @@ function startPlayerTurn(){
   const C=S.run.combat,me=C.me;
   C.turn++;
   me.block=me.pw.walk+(C.firstTurn&&has('chalkboard')?6:0)+(has('fanclub')?3:0)+GE('focus');me.got180=false;me.gotTon=false;me.hitsTurn=0;
-  me.darts=3+(C.firstTurn&&has('energy')?1:0);
+  const pp=player();me.block+=(me.carry||0)+(hasT(pp,'crowd')?2:0);me.carry=0;
+  me.darts=3+(C.firstTurn&&has('energy')?1:0)+(C.firstTurn&&hasT(pp,'start')?1:0)+(me.plusDart||0)-(me.minusDart||0);me.plusDart=0;me.minusDart=0;me.rhythm=null;me.missT20=false;
   me.accBuff=0;me.played=0;me.sure=false;me.sureAll=false;me.dblNext=0;me.triTurn=0;me.turnStart=me.rest;
-  draw((me.pw.routine||0)+5+(has('talisman')?1:0)+(C.firstTurn?(has('dartbag')?2:0)+GE('draw'):0));
+  draw((me.pw.routine||0)+5+(has('talisman')?1:0)+(C.firstTurn?(has('dartbag')?2:0)+GE('draw')+(hasT(pp,'faul')?1:0):0));
+  if(me.psyche){me.psyche=false;const pl=me.hand.filter(c=>CARDS[c.id].t!=='curse');if(pl.length){const c=pick(pl);me.hand.splice(me.hand.indexOf(c),1);me.discard.push(c);setTimeout(()=>toast(`🧠 Psychotrick: ${CARDS[c.id].n} abgeworfen`),200)}}
   C.firstTurn=false;
   rollIntent();C.phase='player';C.busy=false;UI.sel=-1;
   save();render();
@@ -2750,7 +3006,7 @@ function rollIntent(){
   if(o.rest-sc<2)sc=Math.max(0,o.rest-pick([40,32,36,24,20,16]));
   let dr=0;if(R()<(o.ab.includes('druck')?1:.38))dr=rnd(Math.max(1,o.dr-1),o.dr+2);
   if((C.start||301)>301)dr=Math.round(dr*.65);
-  o.intent={type:'sc',score:sc,druck:dr};
+  o.intent={type:'sc',score:sc,druck:dr,fx:rollOppFx(C)};
 }
 function intentView(){
   const o=S.run.combat.opp,it=o.intent;if(!it)return '';
@@ -2758,7 +3014,8 @@ function intentView(){
   if(it.type==='co'){const ch=clamp(it.ch-(nerv?.2:0),0,1);return `<span class="chip">🎯 Checkout-Versuch ${Math.round(ch*100)}%</span>`}
   let sc=it.score;if(nerv)sc=Math.round(sc*.75);sc=Math.max(0,sc-o.st.dist);
   let dr=it.druck;if(nerv)dr=Math.ceil(dr/2);if(o.st.sil>0)dr=0;if(has('earplugs'))dr=Math.max(0,dr-2);dr=Math.max(0,dr-(S.run.combat.me.pw.armor||0)-GE('armor'));
-  return `<span class="chip">🎯 wirft ${sc}</span>${dr>0?`<span class="chip">💢 Druck ${dr}</span>`:''}`;
+  const F=it.fx&&!it.cancel&&!(o.st.sil>0)?OPPFX[it.fx]:null;
+  return `<span class="chip">🎯 wirft ${sc}</span>${dr>0?`<span class="chip">💢 Druck ${dr}</span>`:''}${F?`<span class="chip" data-oppfx="${it.fx}" style="border-color:#a259e6">${F.i} ${F.n}</span>`:''}`;
 }
 function accFor(sp){
   const C=S.run.combat,me=C.me,p=player();
@@ -2767,7 +3024,9 @@ function accFor(sp){
   if(me.sureAll)return 1;
   let b=me.accBuff+(me.pw.acc||0)+GE('acc')/100;const lg=p&&p.legend;
   if(lg==='gruen')b+=.06;if(lg==='macht')b+=.05;if(lg==='atom'&&(sp.k==='triple'||sp.k==='bull'))b+=.12;if((lg==='eis'&&(sp.k==='double'||sp.k==='bull')))b+=.12;if(lg==='koenigin'&&(sp.k==='double'||sp.k==='bull'))b+=.10;
-  if(sp.k==='double'||sp.k==='bull')b+=(me.dblNext||0);if(sp.k==='double'&&(sp.pts===32||sp.pts===40))b+=(me.pw.fav||0);
+  if(sp.k==='double'||sp.k==='bull')b+=(me.dblNext||0);b+=(sp.bonus||0);
+  {const rn=numOf(sp);if(rn!=null&&me.rhythm&&me.rhythm.num===rn)b+=Math.min(4,me.rhythm.n)*.04*(me.pw.prec?2:1)*(hasT(p,'rhythm')?1.5:1)}
+  if(hasT(p,'dbl')&&(sp.k==='double'))b+=.06;if(hasT(p,'tri')&&sp.k==='triple')b+=.06;if(hasT(p,'heim')&&(S.run.mode==='liga'||S.run.mode==='pokal'))b+=.08;if(hasT(p,'spaet')&&C.leg>=2)b+=.06;if(sp.k==='double'&&(sp.pts===32||sp.pts===40))b+=(me.pw.fav||0);
   if(sp.k==='triple'||sp.k==='bull'){if(p.cls==='scorer')b+=.10;if(has('tungsten'))b+=.08;b+=GE('tri')/100}
   if(sp.k==='double'||sp.k==='bull'){if(p.cls==='finisher')b+=.12;if(has('flights'))b+=.08;b+=me.pw.ice+GE('dbl')/100}
   if(S.run.nerves<S.run.maxN*.3)b-=.10;
@@ -2802,6 +3061,8 @@ function throwDart(sp,forced){
   if(hit&&sp.k==='double'&&me.sure)me.sure=false;
   if(sp.ch<1&&me.sureAll)me.sureAll=false;if((sp.k==='double'||sp.k==='bull')&&me.dblNext)me.dblNext=0;
   if(hit&&sp.k==='triple'){me.triTurn=(me.triTurn||0)+1;if(me.pw.comboF)me.block+=me.pw.comboF}
+  if(!hit&&sp.k==='triple'&&sp.pts===60)me.missT20=true;
+  {const rn=numOf(sp);if(rn!=null&&!sp.keep){if(me.rhythm&&me.rhythm.num===rn)me.rhythm.n++;else me.rhythm={num:rn,n:1}}}
   if(C.din&&!me.inn){if(hit&&(sp.k==='double'||sp.k==='bull'))me.inn=true;else return{hit,pts:0,noin:true}}
   const o=outcome(sp,me.rest,hit);
   if(o.co){me.rest=0;return{co:true}}
@@ -2817,6 +3078,8 @@ async function playCard(i){
   const d=CARDS[card.id];
   if(d.t==='curse'){toast('Diese Karte ist unspielbar');return}
   if(d.c>me.darts){toast('Nicht genug Darts übrig');document.querySelector('.darts')?.classList.add('shake');return}
+  if((d.fc||0)>me.block){toast(`Nicht genug Fokus (${d.fc} nötig)`);return}
+  me.block-=(d.fc||0);
   me.darts-=d.c;me.hand.splice(i,1);UI.sel=-1;
   let res=null,turnPts=0,msgs=[];
   if(d.th){
@@ -2858,7 +3121,8 @@ function endTurn(force){
   const me=C.me;
   const fieber=me.hand.filter(c=>c.id==='fieber').length;
   if(fieber){S.run.nerves-=2*fieber;toast(`😰 Lampenfieber: −${2*fieber} Nerven`)}
-  me.discard.push(...me.hand);me.hand=[];UI.sel=-1;
+  me.carry=me.pw.bank?Math.floor(me.block*me.pw.bank):0;
+  const keep=me.hand.filter(c=>CARDS[c.id].keep);me.discard.push(...me.hand.filter(c=>!CARDS[c.id].keep&&!CARDS[c.id].flee));me.exhaust.push(...me.hand.filter(c=>CARDS[c.id].flee));me.hand=keep;UI.sel=-1;
   if(S.run.nerves<=0){S.run.nerves=0;return matchLost()}
   C.phase='opp';C.busy=true;save();render();
   setTimeout(oppTurn,700);
@@ -2880,6 +3144,9 @@ function oppTurn(){
     if(dr>0){if(nerv)dr=Math.ceil(dr/2);if(o.st.sil>0)dr=0;if(has('earplugs'))dr=Math.max(0,dr-2);dr=Math.max(0,dr-(me.pw.armor||0)-GE('armor'));if(me.pw.ice2)dr=Math.ceil(dr/2);if(player().legend==='kuehl')dr=Math.ceil(dr/2);
       const bl=Math.min(me.block,dr);me.block-=bl;dr-=bl;
       if(dr>0){S.run.nerves-=dr;txt+=` · −${dr} ❤️`;setTimeout(()=>{snd('hurt');buzz(60)},120)}else if(bl>0)txt+=' · geblockt'}
+    o.lastSc=sc;
+    if(it.fx&&!it.cancel&&!(o.st.sil>0)&&!(nerv&&R()<.5)){const F=OPPFX[it.fx];txt+=` · ${F.i} ${F.n}`;
+      if(it.fx==='unruhe')me.draw.splice(Math.floor(R()*(me.draw.length+1)),0,{id:'unruhe',up:false,u:uid()});else if(it.fx==='tempo')me.minusDart=1;else if(it.fx==='psyche')me.psyche=true;else if(it.fx==='aufholen')o.coBonus+=.15}
     render();fx(txt,'#ffb3b3');
   }
   if(o.st.nerv>0)o.st.nerv--;if(o.st.sil>0)o.st.sil--;
@@ -2908,6 +3175,7 @@ function matchWon(){
   {const C0=S.run.combat;if(C0){if(C0.opp.legs===0)S.stats.wash++;if(C0.down)S.stats.comeback++}}
   if(S.run.mode==='liga')return leagueEnd(true);
   if(S.run.mode==='pokal')return pokalGameEnd(true);
+  if(S.run.mode==='pl')return plGameEnd(true);
   snd('win');
   const r=S.run,C=r.combat,T=TIERS[r.tier];
   r.won++;r.matches++;
@@ -2932,6 +3200,7 @@ function matchLost(){
   const r=S.run;if(!r)return;
   if(r.mode==='liga')return leagueEnd(false);
   if(r.mode==='pokal')return pokalGameEnd(false);
+  if(r.mode==='pl')return plGameEnd(false);
   snd('lose');r.combat=null;save();runEnd(false);
 }
 function runEnd(champ){
@@ -2972,16 +3241,16 @@ function renderCombat(app){
      <div class="small" style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(o.name)}</div>${o.club?`<div class="tiny mut">${esc(o.club)}</div>`:''}
      <div class="row" style="gap:8px"><span class="score" style="color:#ff8a8a">${o.rest}</span>${o.st.nerv>0?`<span class="chip">😵 nervös ${o.st.nerv}</span>`:''}${o.st.dist>0?`<span class="chip">🌀 −${o.st.dist}</span>`:''}</div>
      <div class="intent">${C.phase==='player'?intentView():'<span class="chip">⏳ wirft…</span>'}${o.ab.map(a=>`<span class="chip" data-ab="${a}">${AB_ICON[a]}</span>`).join('')}</div></div></div>
-   <div class="arena"><img class="sp" src="${boardURL()}" style="width:min(38vw,150px);height:min(38vw,150px)">
+   <div class="arena" style="${combatVenue()?`background:linear-gradient(rgba(10,15,12,.55),rgba(10,15,12,.75)),url(${combatVenue()}) center/cover;image-rendering:pixelated`:''}"><img class="sp" src="${boardURL()}" style="width:min(38vw,150px);height:min(38vw,150px)">
      <div style="text-align:center"><div class="tiny mut">DEIN REST</div><div class="score">${me.rest}</div>${me.rest<=50&&me.rest>=2?'<div class="tiny" style="color:var(--gold)">Checkout möglich!</div>':''}</div></div>
    <div class="me">
      <div class="row" style="gap:8px"><span class="small">❤️</span><div class="bar" style="flex:1"><i style="width:${Math.max(0,r.nerves/r.maxN*100)}%"></i></div><span class="small" style="min-width:52px;text-align:right">${r.nerves}/${r.maxN}</span></div>
-     <div class="row between"><div class="row" style="gap:10px"><div class="darts">${[0,1,2,3].slice(0,Math.max(3,me.darts)).map(i=>`<i class="${i<me.darts?'':'off'}"></i>`).join('')}</div><span class="chip">🛡 ${me.block}</span>${Object.entries(me.pw).filter(([k,v])=>v>0).map(([k,v])=>`<span class="chip">${{heat:'🔥',ice:'🧊',walk:'🚶',mental:'🧘',chain:'⛓',fav:'💘',comboF:'🌀',routine:'📚',ice2:'🧱',acc:'🎯',armor:'🛡'}[k]||'✦'}${k==='ice'||k==='fav'||k==='acc'?Math.round(v*100)+'%':v}</span>`).join('')}</div>
+     <div class="row between"><div class="row" style="gap:10px"><div class="darts">${[0,1,2,3].slice(0,Math.max(3,me.darts)).map(i=>`<i class="${i<me.darts?'':'off'}"></i>`).join('')}</div><span class="chip">🛡 ${me.block}</span>${me.rhythm&&me.rhythm.n>=2?`<span class="chip" style="border-color:#2fd673">🎵 ${rhyLbl(me.rhythm.num)} ×${me.rhythm.n}</span>`:''}${Object.entries(me.pw).filter(([k,v])=>v>0).map(([k,v])=>`<span class="chip">${{heat:'🔥',ice:'🧊',walk:'🚶',mental:'🧘',chain:'⛓',fav:'💘',comboF:'🌀',routine:'📚',ice2:'🧱',acc:'🎯',armor:'🛡'}[k]||'✦'}${k==='ice'||k==='fav'||k==='acc'?Math.round(v*100)+'%':v}</span>`).join('')}</div>
        <div class="row" style="gap:6px"><span class="chip" id="dp">📚 ${me.draw.length}</span><span class="chip" id="dc">🗑 ${me.discard.length}</span></div></div>
      ${r.relics.length?`<div class="relics">${relicChips(r.relics)}</div>`:''}
    </div>
    <div class="detail">${sel?`<div style="flex:1"><b>${esc(CARDS[sel.id].n)}${sel.up?'+':''}</b> <span class="tiny mut">${RAR[CARDS[sel.id].r]} · ${CARDS[sel.id].c<0?'–':CARDS[sel.id].c+' Dart'}</span><div class="small">${CARDS[sel.id].d(sel.up)}</div></div><button class="btn sm" id="throw" ${CARDS[sel.id].c>me.darts||CARDS[sel.id].t==='curse'?'disabled':''}>${CARDS[sel.id].th?'Werfen':'Spielen'}</button>`:`<span class="small mut">${myTurn?'Tippe eine Karte an. Nochmal tippen = werfen.':'Gegner ist am Zug…'}</span>`}</div>
-   <div class="hand ${n>5?'many':''}" style="${n>5?`--n:${n}`:''}">${me.hand.map((c,i)=>cardHTML(c,{sel:i===UI.sel,dis:CARDS[c.id].c>me.darts||CARDS[c.id].t==='curse',pv:preview(c),attr:`data-h="${i}"`})).join('')}</div>
+   <div class="hand ${n>5?'many':''}" style="${n>5?`--n:${n}`:''}">${me.hand.map((c,i)=>cardHTML(c,{sel:i===UI.sel,dis:CARDS[c.id].c>me.darts||(CARDS[c.id].fc||0)>me.block||CARDS[c.id].t==='curse',pv:preview(c),attr:`data-h="${i}"`})).join('')}</div>
    <div class="cbbot"><button class="btn gold block" id="end" ${myTurn?'':'disabled'}>Zug beenden ➜</button></div>
   </div>`;
   bindRelics(app);

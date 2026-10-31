@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Dart Tycoon</title>
-<meta name="dt-version" content="2.0">
+<meta name="dt-version" content="2.0.1">
 <meta name="theme-color" content="#0e1511">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -538,14 +538,22 @@ function openPack(type,free){
   $('#pk-again').onclick=()=>openPack(type,free);
   render();
 }
+
+const GW={tri:1,dbl:1,acc:2.2,heat:2,grip:.4,nerv:.5,focus:1.6,armor:1.8,draw:4};
+function itemScore(it,p){let sc=0;for(const k in it.fx){let w=GW[k]||1;if(p&&p.cls==='scorer'&&k==='tri')w*=1.35;if(p&&(p.cls==='finisher'||p.cls==='rechner')&&k==='dbl')w*=1.35;if(p&&p.cls==='bulljaeger'&&(k==='tri'||k==='dbl'))w*=1.15;sc+=w*it.fx[k]}return sc}
+function bestGear(p,silent){p.gear=p.gear||{};let ch=0;for(const sl in SLOTS){const cur=itemById(p.gear[sl]);const opts=S.inv.filter(it=>it.slot===sl&&(!ownerOf(it.id)||ownerOf(it.id)===p));const best=opts.sort((a,b)=>itemScore(b,p)-itemScore(a,p))[0];
+  if(best&&(!cur||itemScore(best,p)>itemScore(cur,p))){p.gear[sl]=best.id;ch++}}if(!silent){snd(ch?'power':'click');toast(ch?`⭐ ${ch} ${ch===1?'Teil':'Teile'} besser ausgerüstet`:'Schon optimal ausgerüstet')}save();return ch}
+function bestGearAll(){let ch=0;S.players.slice().sort((a,b)=>b.lvl-a.lvl).forEach(p=>ch+=bestGear(p,true));snd(ch?'power':'click');toast(ch?`⭐ Alle Spieler optimal ausgerüstet (${ch} Wechsel)`:'Alle sind schon optimal ausgerüstet');save();render()}
 function loadoutDialog(p){
   const g=gearOf(p);
   modal(`<h3>🎯 Dart von ${esc(p.name)}</h3>
    <div class="panel" style="background:#0c130f">${dartSVG(p,280)}</div>
    <div class="small">${Object.keys(g).length?Object.entries(g).map(([k,v])=>`<span class="chip" style="margin:2px">${GFX[k].f(v)}</span>`).join(''):'<span class="mut">Noch keine Teile ausgerüstet. Hol dir Packs im Shop!</span>'}</div>
    ${Object.entries(SLOTS).map(([sl,S0])=>{const it=itemById(p.gear[sl]);return `<button class="opt slotbtn" data-slot="${sl}"><span style="font-size:24px">${S0.i}</span><div style="flex:1"><b>${S0.n}${it?`: <span style="color:${GRAR[it.rar].col}">${esc(it.name)}</span>`:''}</b><span class="small mut">${it?fxText(it.fx):'leer – tippen zum Ausrüsten'}</span></div><span class="mut">›</span></button>`}).join('')}
+   <button class="btn gold" id="bestg">⭐ Bestes anlegen</button><div class="tiny mut" style="margin:-4px 0 6px">Wählt automatisch die stärksten freien Teile, passend zum Spielstil.</div>
    <button class="btn gray" onclick="closeModal();render()">Fertig</button>`);
   document.querySelectorAll('[data-slot]').forEach(b=>b.onclick=()=>slotPicker(p,b.dataset.slot));
+  $('#bestg').onclick=()=>{bestGear(p);loadoutDialog(p)};
 }
 function slotPicker(p,sl){
   const order={l:0,e:1,r:2,c:3};
@@ -991,7 +999,7 @@ function hubVerein(){
 }
 function hubKader(){
   const T=S.b.training,tcost=Math.round(50*(T>=4?.7:1));
-  return `<div class="panel"><h2>🎯 Dein Kader <span class="mut tiny">(${S.players.length}/4)</span></h2></div>
+  return `<div class="panel"><div class="row between"><h2>🎯 Dein Kader <span class="mut tiny">(${S.players.length}/4)</span></h2>${S.inv.length?'<button class="btn sm gold" id="bestall">⭐ Alle optimal ausrüsten</button>':''}</div></div>
   ${S.players.map(p=>`<div class="panel ${p.legend?'legend':''}"><div class="row"><button class="pcbtn" data-pcard="${p.id}">${personImg(p.look,56)}<span>Karte</span></button><div style="flex:1;min-width:0">
      <div class="row between"><h3>${esc(p.name)}</h3><span class="lvl px">Lv${p.lvl}</span></div>
      <div class="tiny mut">${CLASSES[p.cls].i} ${CLASSES[p.cls].n} · 🌍 #${rankOf(p)}</div><div class="trow">${traitChips(p)}${condChips(p)}</div>
@@ -1036,6 +1044,7 @@ function hubWoche0(){
   <div class="panel small mut">Bilanz: ${S.stats.runs} Turniere · ${S.stats.wins} Titel · ${S.stats.legs} Legs gewonnen</div>`;
 }
 function bindHub(app){
+  {const ba=app.querySelector('#bestall');if(ba)ba.onclick=bestGearAll}
   bindMg(app);bindMini(app);bindAuto(app);
   {const dl=app.querySelector('#daily');if(dl)dl.onclick=()=>{snd('click');startDaily()};app.querySelectorAll('[data-asc]').forEach(b=>b.onclick=()=>{ascInfo().cur=+b.dataset.asc;save();render()});const pr=app.querySelector('#pres');if(pr)pr.onclick=()=>modal(`<h3>📈 Konkurrenzdruck ${Math.round((pressure()-1)*100)}%</h3><div class="small" style="line-height:1.5">Die Konkurrenz schläft nicht: Nach ein paar Saisons werden alle Gegner Woche für Woche stärker. Irgendwann kommst du nicht mehr weiter, dann ist es Zeit für einen <b>Prestige-Neustart</b>. Jede Prestige-Stufe macht deine Spieler dauerhaft genauer (jetzt +${Math.round(presBonus()*100)}%), und der Druck beginnt wieder bei 0.</div><button class="btn block" onclick="closeModal()">Verstanden</button>`);app.querySelectorAll('[data-pcls]').forEach(b=>b.onclick=()=>{UI.prestCls=b.dataset.pcls;snd('click');render()})}
   app.querySelectorAll('[data-pcard]').forEach(b=>b.onclick=()=>playerCard(player(b.dataset.pcard)));
@@ -2971,7 +2980,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='2.0';
+const GAME_VERSION='2.0.1';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};

@@ -4,6 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Dart Tycoon</title>
+<meta name="dt-version" content="1.0">
+<meta name="theme-color" content="#0e1511">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dart Tycoon">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
@@ -226,6 +235,7 @@ textarea{font-size:12px;height:90px}
 .pst{display:grid;grid-template-columns:70px minmax(80px,1fr) 30px;gap:6px;align-items:center;font-size:11px;margin-top:6px;text-align:left}.pst i{height:8px;background:#0006;border-radius:4px;overflow:hidden}.pst i b{display:block;height:100%;background:linear-gradient(90deg,#1f9d55,#f4c430)}.pst em{font-style:normal;font-weight:700;text-align:right}
 .pctraits{margin-top:10px;display:flex;flex-direction:column;gap:5px;text-align:left}.pctraits div{background:#0005;border-radius:8px;padding:6px 8px;font-size:12px}.pctraits span{display:block;color:var(--mut);font-size:11px}
 .vimg{width:100%;image-rendering:pixelated;border-radius:10px;margin-bottom:8px}
+#updbar{position:fixed;top:8px;left:50%;transform:translateX(-50%);z-index:60;background:#0e1511f5;border:2px solid var(--gold);border-radius:12px;padding:8px 12px;display:flex;gap:10px;align-items:center;font-size:13px;box-shadow:0 6px 20px #000a;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -854,13 +864,13 @@ function renderTitle(app){
     <div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:300px">
       ${local?`<button class="btn block" id="cont">▶ Weiterspielen</button>`:''}
       <button class="btn ${local?'gray':''} block" id="new">＋ Neues Spiel</button>
-      <button class="btn gray block" id="imp">⤵ Spielstand-Code laden</button>
+      <button class="btn gray block" id="imp">⤵ Spielstand-Code laden</button>${pwaOK()&&!isStandalone()?'<button class="btn gold block" id="tinst">📲 Als App installieren</button>':''}
     </div>
     <div class="cloud">${cloudOn?'☁️ Speicherung in deinem Konto aktiv':'Spielstand wird in diesem Browser gespeichert'}</div>
   </div>`;
   if(local)$('#cont').onclick=()=>{S=fixLoaded(local);render()};
   $('#new').onclick=()=>{if(local)modal(`<h3>Neues Spiel starten?</h3><div class="mut small">Dein bisheriger Spielstand wird überschrieben.</div><button class="btn red" id="y">Ja, neu anfangen</button><button class="btn gray" onclick="closeModal()">Abbrechen</button>`),$('#y').onclick=()=>{closeModal();newGameDialog()};else newGameDialog()};
-  $('#imp').onclick=importDialog;
+  $('#imp').onclick=importDialog;{const ti=$('#tinst');if(ti)ti.onclick=installDialog}
 }
 function newGameDialog(){
   modal(`<h3>Neuer Verein</h3>
@@ -1755,9 +1765,9 @@ function doAct(a){
   if(a.startsWith('train:'))return trainDialog(player(a.slice(6)));
   if(a==='friendly')return startFriendly();
   if(a==='liga'){UI.tab='liga';UI.lt='liga'}else if(a==='pokal'){UI.tab='liga';UI.lt='pokal'}else if(a==='kader')UI.tab='kader';else if(a==='trophy')UI.tab='verein';
-  else if(a==='pc'){modal(`<h3>💻 Vereins-PC</h3><button class="btn gray" id="ph">❔ Anleitung</button><button class="btn gray" id="pe">💾 Spielstand sichern</button><button class="btn gray" id="pm">${S.mute?'🔇 Ton ist aus':'🔊 Ton ist an'}</button><button class="btn gray" id="pfb">💬 Feedback geben</button><button class="btn gray" id="ptp">${S.tips===false?'💡 Tipps sind aus':'💡 Tipps sind an'}</button><button class="btn gray" id="pmu">${S.music?'🎵 Musik ist an':'🎵 Musik ist aus'}</button><button class="btn red" id="pn">🔄 Komplett neu anfangen</button><button class="btn" onclick="closeModal()">Schließen</button>`);
+  else if(a==='pc'){modal(`<h3>💻 Vereins-PC</h3><button class="btn gray" id="ph">❔ Anleitung</button><button class="btn gray" id="pe">💾 Spielstand sichern</button><button class="btn gray" id="pm">${S.mute?'🔇 Ton ist aus':'🔊 Ton ist an'}</button>${isStandalone()?'':'<button class="btn gold" id="pin">📲 Als App installieren</button>'}<button class="btn gray" id="pfb">💬 Feedback geben</button><button class="btn gray" id="ptp">${S.tips===false?'💡 Tipps sind aus':'💡 Tipps sind an'}</button><button class="btn gray" id="pmu">${S.music?'🎵 Musik ist an':'🎵 Musik ist aus'}</button><button class="btn red" id="pn">🔄 Komplett neu anfangen</button><button class="btn" onclick="closeModal()">Schließen</button>`);
     $('#pn').onclick=()=>{modal(`<h3>Wirklich neu anfangen?</h3><div class="small mut">Dein kompletter Spielstand wird gelöscht und überschrieben, auch Prestige und Erfolge. Tipp: Vorher „Spielstand sichern“, falls du ihn behalten willst.</div><button class="btn red" id="pny">Ja, alles löschen und neu starten</button><button class="btn gray" onclick="closeModal()">Abbrechen</button>`);$('#pny').onclick=()=>{closeModal();newGameDialog()}};
-    $('#pfb').onclick=feedbackDialog;$('#ptp').onclick=()=>{S.tips=S.tips===false;if(S.tips)S.seen={};save();closeModal();render()};$('#pmu').onclick=()=>{musicToggle(!S.music);closeModal()};$('#ph').onclick=()=>showHelp(false);$('#pe').onclick=exportDialog;$('#pm').onclick=()=>{S.mute=!S.mute;save();closeModal()};return}
+    $('#pfb').onclick=feedbackDialog;{const pi=$('#pin');if(pi)pi.onclick=installDialog}$('#ptp').onclick=()=>{S.tips=S.tips===false;if(S.tips)S.seen={};save();closeModal();render()};$('#pmu').onclick=()=>{musicToggle(!S.music);closeModal()};$('#ph').onclick=()=>showHelp(false);$('#pe').onclick=exportDialog;$('#pm').onclick=()=>{S.mute=!S.mute;save();closeModal()};return}
   render();window.scrollTo(0,0);
 }
 function bindWorld(app){
@@ -2922,7 +2932,24 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='0.9';
+const GAME_VERSION='1.0';
+/* ================= App (PWA): Installieren & Updates ================= */
+let installEvt=null;
+const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
+const isIOS=()=>/iphone|ipad|ipod/i.test(navigator.userAgent);
+const pwaOK=()=>location.protocol==='https:'&&'serviceWorker'in navigator&&!/claude|anthropic/.test(location.hostname);
+try{window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e});window.addEventListener('appinstalled',()=>{installEvt=null;toast('📲 Dart Tycoon ist jetzt als App installiert!')})}catch(e){}
+function installDialog(){
+  if(isStandalone())return modal(`<h3>📲 App</h3><div class="small">Du spielst schon die installierte App. Updates kommen automatisch.</div><button class="btn block" onclick="closeModal()">Super</button>`);
+  if(installEvt){const ev=installEvt;installEvt=null;ev.prompt();ev.userChoice.then(r=>{if(r.outcome==='accepted')toast('📲 Wird installiert …')});return}
+  const ios=isIOS();
+  modal(`<h3>📲 Als App installieren</h3><div class="small" style="line-height:1.6">${ios?
+   '<b>iPhone/iPad (Safari):</b><br>1. Unten auf <b>Teilen</b> ⬆️ tippen<br>2. <b>„Zum Home-Bildschirm“</b> wählen<br>3. <b>Hinzufügen</b> tippen':
+   '<b>Android (Chrome):</b><br>1. Oben rechts auf <b>⋮</b> tippen<br>2. <b>„App installieren“</b> oder <b>„Zum Startbildschirm hinzufügen“</b> wählen<br><br><b>PC (Chrome/Edge):</b> In der Adressleiste rechts auf das Installieren-Symbol klicken.'}
+   <br><br>Danach startet Dart Tycoon wie eine echte App im Vollbild, auch offline. Updates kommen automatisch, dein Spielstand bleibt erhalten.</div><button class="btn block" onclick="closeModal()">Alles klar</button>`)}
+function updateBanner(){if(document.getElementById('updbar'))return;const d=document.createElement('div');d.id='updbar';d.innerHTML='🆕 Neue Version verfügbar <button class="btn sm gold">Neu laden</button>';d.querySelector('button').onclick=()=>{try{save()}catch(e){}location.reload()};document.body.appendChild(d)}
+async function checkUpdate(){try{const r=await fetch('index.html?u='+Date.now(),{cache:'no-store'});if(!r.ok)return;const t=await r.text();const m=t.match(/name="dt-version" content="([^"]+)"/);const cur=document.querySelector('meta[name="dt-version"]').content;if(m&&m[1]!==cur)updateBanner()}catch(e){}}
+if(pwaOK()){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});setInterval(checkUpdate,10*60*1000)});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkUpdate()})}
 function feedbackDialog(){
   modal(`<h3>💬 Feedback</h3><div class="small mut">Was gefällt dir, was nervt, was ist kaputt? Jede Rückmeldung hilft!</div><textarea id="fbt" placeholder="Dein Feedback …" style="min-height:110px"></textarea>
    <button class="btn block" id="fbgh">📮 Als GitHub-Issue senden</button><button class="btn gray block" id="fbcp">📋 Text kopieren (für WhatsApp & Co.)</button><button class="btn gray" onclick="closeModal()">Abbrechen</button>`);

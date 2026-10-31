@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Dart Tycoon</title>
-<meta name="dt-version" content="1.2">
+<meta name="dt-version" content="1.3">
 <meta name="theme-color" content="#0e1511">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -196,8 +196,8 @@ textarea{font-size:12px;height:90px}
 .pximg{display:block;width:100%;height:auto;image-rendering:pixelated;image-rendering:crisp-edges}
 .hitsvg{position:absolute;inset:0;width:100%;height:100%}
 .hitr{fill:transparent;cursor:pointer;stroke:transparent;stroke-width:1.5;vector-effect:non-scaling-stroke}
-.hitr:hover,.hitr:active{fill:rgba(244,196,48,.12)}
-.hitr.obj{animation:hitp 3.2s ease-in-out infinite}
+.hitr:active{fill:rgba(255,255,255,.07)}
+.hitr.obj{}
 @keyframes hitp{50%{stroke:rgba(244,196,48,.5)}}
 .smoke{animation:smoke 3.9s linear infinite;opacity:0}
 @keyframes smoke{0%{transform:translate(0,0);opacity:0}15%{opacity:.55}100%{transform:translate(7px,-16px);opacity:0}}
@@ -251,6 +251,8 @@ textarea{font-size:12px;height:90px}
 .album .foil .card{border-color:#f4c430;background:linear-gradient(135deg,#3a2a50,#123a3a,#4a3a10);box-shadow:0 0 10px #f4c43088}
 .vtabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:8px}.vtabs button{background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:var(--mut);font-size:10px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer}.vtabs button span{font-size:16px}.vtabs button.on{border-color:var(--gold);color:#fff;background:#2a2410}
 .opt[disabled]{opacity:.45}
+.numpad{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin:8px 0}.numpad button{background:var(--panel2);border:1px solid var(--line);border-radius:8px;color:#fff;font-weight:800;padding:10px 0;font-size:15px}.numpad button:active{background:#2a2410}.numpad button[disabled]{opacity:.3}
+@keyframes cpop{from{transform:scale(.3)}to{transform:scale(1)}}
 </style>
 </head>
 <body>
@@ -726,7 +728,7 @@ function renderNight(app){
   <div class="content"><div class="panel" style="text-align:center"><div class="small mut">${isRival(team.name)?'😈 DERBY gegen den Erzrivalen':'Ligaabend'}</div><h3 style="margin:6px 0">${esc(S.club)}</h3><div class="px" style="font-size:24px;margin:8px 0">${n.won} : ${n.lost}</div><h3>${esc(team.name)}</h3></div>
    <div class="panel">${n.lineup.map((id,i)=>{const x=n.res[i];const p=id==='sub'?null:player(id);const nm=x?x.name:(p?p.name:'Ersatzspieler');
      return `<div class="row between" style="padding:7px 0;border-bottom:1px solid var(--line)"><span>${i+1}. ${esc(nm)}</span><b style="color:${x?(x.win?'#7fdc9f':'#ff8a8a'):i===n.idx?'var(--gold)':'var(--mut)'}">${x?(x.win?'✔ ':'✖ ')+x.legs:i===n.idx?'▶ als Nächstes':'–'}</b></div>`}).join('')}</div>
-   <button class="btn block gold" id="lnext">Einzel ${n.idx+1} starten</button>
+   <div class="row" style="gap:6px">${autoBtns()}<button class="btn block gold" id="lnext" style="flex:1">Einzel ${n.idx+1} starten</button></div>
    <button class="btn red sm" id="lquit">Ligaabend aufgeben</button></div>`;
   bindHub(app);
 }
@@ -859,7 +861,7 @@ function player(id){id=id||(S.run&&S.run.pid);if(S.run&&S.run.sub&&id==='sub')re
 function xpNeed(l){return 60+l*50}
 
 /* ================= Rendering: Titel ================= */
-function render(){if(S&&S.players)fixMg(S);render0();try{coachCheck()}catch(e){}if(S&&!(S.run&&S.run.combat)&&!S.free)setTimeout(()=>{try{metaTick();storyCheck();mgQueueCheck()}catch(e){console.error(e)}},60)}
+function render(){if(S&&S.players)fixMg(S);render0();try{autoKick()}catch(e){}if(S&&S.players&&!UI.offOnce){UI.offOnce=1;setTimeout(offlineCheck,300)}try{coachCheck()}catch(e){}if(S&&!(S.run&&S.run.combat)&&!S.free)setTimeout(()=>{try{metaTick();storyCheck();mgQueueCheck()}catch(e){console.error(e)}},60)}
 function render0(){
   const app=$('#app');
   if(!S){const c=document.getElementById('coach');if(c)c.remove();return renderTitle(app)}
@@ -1028,7 +1030,7 @@ function hubWoche0(){
   <div class="panel small mut">Bilanz: ${S.stats.runs} Turniere · ${S.stats.wins} Titel · ${S.stats.legs} Legs gewonnen</div>`;
 }
 function bindHub(app){
-  bindMg(app);
+  bindMg(app);bindMini(app);bindAuto(app);
   {const dl=app.querySelector('#daily');if(dl)dl.onclick=()=>{snd('click');startDaily()};app.querySelectorAll('[data-asc]').forEach(b=>b.onclick=()=>{ascInfo().cur=+b.dataset.asc;save();render()});const pr=app.querySelector('#pres');if(pr)pr.onclick=()=>modal(`<h3>📈 Konkurrenzdruck ${Math.round((pressure()-1)*100)}%</h3><div class="small" style="line-height:1.5">Die Konkurrenz schläft nicht: Nach ein paar Saisons werden alle Gegner Woche für Woche stärker. Irgendwann kommst du nicht mehr weiter, dann ist es Zeit für einen <b>Prestige-Neustart</b>. Jede Prestige-Stufe macht deine Spieler dauerhaft genauer (jetzt +${Math.round(presBonus()*100)}%), und der Druck beginnt wieder bei 0.</div><button class="btn block" onclick="closeModal()">Verstanden</button>`);app.querySelectorAll('[data-pcls]').forEach(b=>b.onclick=()=>{UI.prestCls=b.dataset.pcls;snd('click');render()})}
   app.querySelectorAll('[data-pcard]').forEach(b=>b.onclick=()=>playerCard(player(b.dataset.pcard)));
   {const g=app.querySelector('#plgo');if(g)g.onclick=()=>{snd('click');plPlay()};const n=app.querySelector('#plnew');if(n)n.onclick=()=>{plStart();render()}}
@@ -1268,6 +1270,7 @@ function aimZone(sp){
   return null;
 }
 function aimActive(sp){
+  if(UI.auto)return false;
   const C=S&&S.run&&S.run.combat;if(!C||!C.aim||sp.ch>=1)return false;
   if(C.aim==='dbl'&&sp.k!=='double')return false;
   if(accFor(sp)>=1)return false;
@@ -1755,7 +1758,7 @@ function hubRoom(id){
     <button class="btn" data-act="liga">📋 Liga</button><button class="btn ${pd?'gold':''}" data-act="pokal">🏆 Pokal${pd?' ❗':''}</button>
     <button class="btn gray" data-act="kader">🎯 Kader & Transfers</button><button class="btn gray" data-act="trophy">🏅 Pokale & Erfolge</button>
     <button class="btn gray" data-act="pc">💻 Anleitung & Sichern</button><button class="btn gray" data-go="woche">📅 Wochenbilanz</button></div><div class="grid2"><button class="btn ${mgReadyCount()?'gold':''}" data-go="jobs">🗂 Aufträge${mgReadyCount()?' ❗':''}</button><button class="btn" data-go="verw">🏛 Verwaltung</button></div><button class="btn gold block" data-go="ruhm">🌟 Ruhmeshalle & Prestige${canPrestige()?' ❗':''}</button>`}
-  else if(id==='training'){acts=buildCard('training')+(S.b.training>0?S.players.map(p=>`<div class="panel"><div class="row">${personImg(p.look,40)}<div style="flex:1"><b class="small">${esc(p.name)} <span class="lvl px">Lv${p.lvl}</span></b><div class="tiny mut">${p.drilled?'✔ Wurftraining':'🎯 Wurftraining frei'} · ${p.trained?'✔ Kartentraining':'🃏 Kartentraining frei'}</div></div><button class="btn sm" data-train="${p.id}" ${p.trained&&p.drilled?'disabled':''}>Trainieren</button></div></div>`).join(''):'<div class="panel small mut">Baue den Trainingsraum aus, um deine Spieler zu trainieren.</div>')}
+  else if(id==='training'){acts=miniPanel()+buildCard('training')+(S.b.training>0?S.players.map(p=>`<div class="panel"><div class="row">${personImg(p.look,40)}<div style="flex:1"><b class="small">${esc(p.name)} <span class="lvl px">Lv${p.lvl}</span></b><div class="tiny mut">${p.drilled?'✔ Wurftraining':'🎯 Wurftraining frei'} · ${p.trained?'✔ Kartentraining':'🃏 Kartentraining frei'}</div></div><button class="btn sm" data-train="${p.id}" ${p.trained&&p.drilled?'disabled':''}>Trainieren</button></div></div>`).join(''):'<div class="panel small mut">Baue den Trainingsraum aus, um deine Spieler zu trainieren.</div>')}
   else if(id==='theke')acts=buildCard('bar')+buildCard('fanshop');
   else if(id==='scheiben')acts=`<button class="btn block gold" data-act="friendly">🎯 Freundschaftsspiel · 501 · Best of 3</button><div class="tiny mut" style="margin:-4px 0 4px">Freies Werfen gegen ein Vereinsmitglied, jederzeit, ohne Einsatz.</div>`+buildCard('boards')+buildCard('sponsor');
   const dk=Object.keys(DECO).filter(k=>DECO[k].room===id);
@@ -2934,18 +2937,19 @@ const COACH_MATCH=[
  'Achte auf <b>Spezialaktionen</b> des Gegners wie 🌀 Unruhe oder ⏱ Tempo. Karten wie <b>Kampfansage</b> oder <b>Kopfspiel</b> stoppen sie. Viel Erfolg!',
 ];
 function coachKey(){if(!S)return null;if(S.free)return'free';if(S.run&&S.run.combat)return'match';if(S.run&&!S.run.mode)return'run';if(S.run)return null;
-  const t=UI.tab;if(t==='liga'&&UI.lt==='pokal')return null;return COACH[t]?t:null}
+  const t=UI.tab;if(t==='liga'&&UI.lt==='pokal')return null;return COACH[t]||COACH2[t]?t:null}
 function coachCheck(){
   const el=document.getElementById('coach');if(!S||S.tips===false){if(el)el.remove();return}
   S.seen=S.seen||{};const k=coachKey();let txt=null,step=null;
   if(k==='match'){const n=S.seen.matchStep||0;if(n<COACH_MATCH.length){txt=COACH_MATCH[n];step=n}}
-  else if(k&&!S.seen[k])txt=COACH[k];
+  let sk=k;
+  if(k&&k!=='match'&&!S.seen[k])txt=COACH[k];else if(k&&COACH2[k]&&!S.seen[k+'2']){txt=COACH2[k];sk=k+'2'}
   if(!txt||document.querySelector('#modal.on')){if(el)el.remove();if(txt&&!el)setTimeout(coachCheck,600);return}
   const box=el||document.createElement('div');box.id='coach';box.className=k==='match'||k==='free'?'top':'';
   box.innerHTML=`<img src="${portraitURL({h:'#8a8a8a',s:'#f1c9a5',t:'#1f9d55',w:'#d9333f',p:'#222',beard:true})}" alt=""><div><b class="tiny" style="color:var(--gold)">Trainer Kalle${step!=null?` · ${step+1}/${COACH_MATCH.length}`:''}</b><div class="small">${txt}</div>
    <div class="row" style="gap:6px;margin-top:6px"><button class="btn sm" id="coachok">${step!=null&&step<COACH_MATCH.length-1?'Weiter':'Verstanden'}</button><button class="btn gray sm" id="coachoff">Tipps aus</button></div></div>`;
   if(!el)document.body.appendChild(box);
-  box.querySelector('#coachok').onclick=()=>{if(step!=null)S.seen.matchStep=step+1;else S.seen[k]=true;save();coachCheck()};
+  box.querySelector('#coachok').onclick=()=>{if(step!=null)S.seen.matchStep=step+1;else{S.seen[sk]=true;if(sk!==k)S.seen[k]=true}save();coachCheck()};
   box.querySelector('#coachoff').onclick=()=>{S.tips=false;save();coachCheck();toast('Tipps aus. Am PC im Büro wieder einschaltbar.')};
 }
 
@@ -2961,7 +2965,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='1.2';
+const GAME_VERSION='1.3';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
@@ -3463,6 +3467,89 @@ WEEK_EVENTS.push(
 function weekly(){return mgWeeklyAdd(weekly0())}
 setInterval(()=>{try{if(!S||!S.mg||S.run||S.free)return;let nw=0;S.mg.jobs.active.forEach(a=>{if(jobReady(a)&&!a.note){a.note=1;nw++}});if(nw){toast('🗂 Ein Auftrag ist fertig! Abholen im Auftragsbrett.');save()}if(UI.tab==='jobs'&&!document.querySelector('#modal.on'))render()}catch(e){}},5000);
 
+
+/* ================= Auto-Spiel, Offline, Minispiele ================= */
+// ---------- Auto-Spiel & Tempo ----------
+UI.auto=false;UI.speed=1;
+const _setT=window.setTimeout.bind(window);
+window.setTimeout=(f,ms,...a)=>_setT(f,(UI&&UI.speed>1&&S&&S.run&&(S.run.combat||S.run.mode==='liga'))?(ms||0)/UI.speed:ms,...a);
+function autoScore(c){const C=S.run.combat,me=C.me,d=CARDS[c.id];if(d.t==='curse'||d.c>me.darts||(has('sammler')?0:(d.fc||0))>me.block)return -1e9;
+  if(!d.th){if(d.t==='power')return 70;if(['zwischenruf','auszeit'].includes(c.id))return C.opp.intent&&C.opp.intent.type==='co'?90:-5;if(['robin','doppelplan','coweg','letztechance'].includes(c.id))return me.rest<=170?55:10;return 40}
+  const pv=preview(c);if(pv&&pv.cls==='co')return 1000;if(pv&&pv.cls==='bust')return -500;
+  const specs=thOf(c,C);let ev=0,rest=me.rest;for(const sp of specs){const a=accFor(sp);const o=outcome(sp,rest,true);if(o.co)return 900;if(o.bust)return -400;ev+=a*sp.pts+(1-a)*(sp.alt||0);rest=o.rest}
+  const left=me.rest-ev;if(left<2&&me.rest>1)return -300;if(GOOD_REST[Math.round(left)])ev+=25;if(me.rest<=60&&specs.every(s=>s.k!=='double'&&s.k!=='bull'))ev*=.4;return ev/Math.max(1,d.c)}
+function autoStep(){UI.autoT=null;if(!UI.auto||!S||!S.run||!S.run.combat)return;const C=S.run.combat;if(document.querySelector('#modal.on'))return;
+  if(C.phase!=='player'||C.busy){UI.autoT=_setT(autoStep,500/UI.speed);return}
+  const me=C.me;let bi=-1,bs=0;me.hand.forEach((c,i)=>{const sc=autoScore(c);if(sc>bs){bs=sc;bi=i}});
+  if(bi<0){endTurn();return}
+  UI.sel=bi;render();UI.autoT=_setT(()=>{playCard(bi).then(()=>{if(UI.auto&&!UI.autoT)UI.autoT=_setT(autoStep,750/UI.speed)})},350/UI.speed)}
+function autoKick(){if(!UI.auto||UI.autoT||!S||!S.run)return;if(S.run.combat){const C=S.run.combat;if(C.phase==='player'&&!C.busy)UI.autoT=_setT(autoStep,600/UI.speed)}
+  else if(S.run.mode==='liga'&&!document.querySelector('#modal.on')){UI.autoT=_setT(()=>{UI.autoT=null;const b=document.querySelector('#lnext');if(UI.auto&&b)b.click()},1400/UI.speed)}}
+function autoBtns(){return `<button class="btn ${UI.auto?'gold':'gray'}" id="auto" style="flex:none;padding:10px 10px" title="Automatisch spielen">${UI.auto?'⏸':'▶'} Auto</button><button class="btn gray" id="spd" style="flex:none;padding:10px 8px">${UI.speed}×</button>`}
+function bindAuto(app){const a=app.querySelector('#auto');if(a)a.onclick=()=>{UI.auto=!UI.auto;if(UI.autoT){clearTimeout(UI.autoT);UI.autoT=null}snd('click');toast(UI.auto?'▶ Auto-Spiel an: lehn dich zurück!':'⏸ Auto-Spiel aus');render()};
+  const s=app.querySelector('#spd');if(s)s.onclick=()=>{UI.speed=UI.speed===1?2:UI.speed===2?3:1;snd('click');render()}}
+
+// ---------- Offline-Einnahmen ----------
+const SEEN_KEY='dartTycoon_seen';
+const offCapH=()=>2+2*bl('tresor')+(stf('kassenwart')>=3?1:0);
+function markSeen(){try{if(S)localStorage.setItem(SEEN_KEY,String(Date.now()))}catch(e){}}
+setInterval(markSeen,20000);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')markSeen();else offlineCheck()});window.addEventListener('pagehide',markSeen);
+function offlineCheck(){if(!S||!S.players||S.run||S.free)return;let last=0;try{last=+localStorage.getItem(SEEN_KEY)||0}catch(e){}markSeen();if(!last)return;const ms=Date.now()-last;if(ms<5*60000)return;
+  const capH=offCapH(),h=Math.min(ms/3.6e6,capH),w=weekly();const rate=Math.max(30,w.ti*.2);const money=Math.round(rate*h),fans=Math.round((2+S.rep/40)*h);if(money<=0&&fans<=0)return;
+  S.money+=money;S.fans+=fans;save();const full=ms/3.6e6>capH;
+  setTimeout(()=>modal(`<div style="text-align:center"><div style="font-size:44px">💤</div><h3>Willkommen zurück!</h3><div class="small mut">Du warst ${ms>=3.6e6?Math.floor(ms/3.6e6)+' Std. '+Math.floor(ms/60000)%60+' Min.':Math.floor(ms/60000)+' Min.'} weg. Der Verein lief weiter:</div><div class="panel small" style="margin-top:8px"><div class="row between"><span>Einnahmen</span><b style="color:#7fdc9f">+${fmt(money)} €</b></div><div class="row between"><span>Neue Fans</span><b>+${fans}</b></div></div>${full?`<div class="tiny" style="color:var(--gold)">Dein Speicher war nach ${capH} Std. voll! Mit dem 🔐 Vereinstresor (Verwaltung → Ausbau) sammelst du länger.</div>`:`<div class="tiny mut">Offline-Speicher: bis ${capH} Std.</div>`}</div><button class="btn gold block" onclick="closeModal()">Einsammeln</button>`),400)}
+BLD.tresor={n:'Vereinstresor',i:'🔐',cost:[1000,3000,8000],d:l=>`Offline-Einnahmen bis ${2+2*l} Std. statt 2 Std.`};
+
+// ---------- Minispiele im Trainingsraum ----------
+function miniInfo(){S.mini=S.mini||{};if(S.mini.date!==today()){S.mini.date=today();S.mini.clicks=0;S.mini.c121=0}return S.mini}
+function miniPanel(){const M=miniInfo();return `<div class="panel"><h2>🕹 Trainingsspiele</h2><div class="grid2" style="margin-top:8px"><button class="btn ${M.clicks<3?'gold':'gray'}" id="mclick">⚡ Schnellwurf<br><span class="tiny">${3-Math.min(3,M.clicks)}/3 heute · Rekord ${M.cbest||0}</span></button><button class="btn gold" id="m121">🎯 121-Checkout<br><span class="tiny">Rekord ${M.best121?121+M.best121-1:'–'}</span></button></div><div class="tiny mut" style="margin-top:6px">Schnellwurf: 15 Sekunden so viele Ziele treffen wie möglich. 121: Finde den Checkout mit nur 3 Darts, jede Runde eins höher. Perfekt zum Üben für echte Spieler!</div></div>`}
+function bindMini(app){const a=app.querySelector('#mclick');if(a)a.onclick=clickerStart;const b=app.querySelector('#m121');if(b)b.onclick=start121}
+// Schnellwurf (Clicker)
+function clickerStart(){const M=miniInfo();const paid=M.clicks<3;let score=0,combo=0,t0=Date.now(),dur=15000,tmr=null,end=false;
+  modal(`<div class="row between"><h3>⚡ Schnellwurf</h3><b class="px" id="ctime" style="font-size:14px">15</b></div><div class="row between small"><span>Treffer: <b id="cscore">0</b></span><span id="ccombo" style="color:var(--gold)"></span></div><div id="carena" style="position:relative;height:320px;margin-top:8px;border-radius:12px;background:radial-gradient(#1a2a20,#0b120e);overflow:hidden;touch-action:manipulation"></div><div class="tiny mut" style="margin-top:6px">${paid?'Belohnung: Geld & Fans je nach Treffern.':'Heute keine Belohnung mehr, nur zum Spaß.'}</div>`);
+  const ar=$('#carena');const spawn=()=>{ar.querySelectorAll('.ctgt').forEach(e=>e.remove());const s=Math.max(30,64-score*1.2),x=Math.random()*(ar.clientWidth-s),y=Math.random()*(ar.clientHeight-s);const e=document.createElement('img');e.className='ctgt';e.src=boardURL();e.style.cssText=`position:absolute;left:${x}px;top:${y}px;width:${s}px;height:${s}px;image-rendering:pixelated;cursor:pointer;animation:cpop .18s ease-out`;
+    e.onpointerdown=ev=>{ev.stopPropagation();if(end)return;score++;combo++;snd('hit');$('#cscore').textContent=score;$('#ccombo').textContent=combo>=5?`🔥 Combo ×${combo}`:'';if(combo>0&&combo%10===0){score+=3;fx&&toast('Combo-Bonus +3!')}spawn()};ar.appendChild(e)};
+  ar.onpointerdown=()=>{if(!end){combo=0;$('#ccombo').textContent='';snd('miss')}};spawn();
+  tmr=setInterval(()=>{const left=Math.max(0,dur-(Date.now()-t0));const el=$('#ctime');if(el)el.textContent=Math.ceil(left/1000);if(!el){clearInterval(tmr);return}if(left<=0){clearInterval(tmr);end=true;
+    let g=0,f=0;if(paid){M.clicks++;g=score*4;f=Math.floor(score/3);S.money+=g;S.fans+=f}M.cbest=Math.max(M.cbest||0,score);save();snd('win');
+    modal(`<div style="text-align:center"><div style="font-size:44px">⚡</div><h3>${score} Treffer!</h3><div class="small mut">Rekord: ${M.cbest}</div>${paid?`<div class="panel small" style="margin-top:8px">💶 +${g} € · 📣 +${f} Fans</div>`:''}</div><button class="btn block" id="cagain" ${M.clicks>=3?'':''}>Nochmal</button><button class="btn gray" onclick="closeModal();render()">Fertig</button>`);$('#cagain').onclick=clickerStart}},100)}
+// 121-Checkout-Training
+function start121(){const pl=S.players.slice().sort((a,b)=>b.lvl-a.lvl)[0];UI.c121={lvl:1,rest:121,darts:[],vals:[],mult:1,pid:(UI.c121&&UI.c121.pid)||pl.id};draw121()}
+const segV=(m,n)=>n===25?(m===2?50:25):n*m;const segL=(m,n)=>n===25?(m===2?'Bull':'25'):(m===3?'T':m===2?'D':'')+n;
+function draw121(msg){const G=UI.c121,tgt=120+G.lvl;
+  modal(`<div class="row between"><h3>🎯 121-Checkout</h3><span class="chip">Runde ${G.lvl}</span></div>
+   <div class="panel" style="text-align:center"><div class="tiny mut">Checke ${tgt} mit 3 Darts · Double Out</div><div class="px" style="font-size:26px;margin:6px 0;color:var(--gold)">${G.rest}</div><div class="row" style="justify-content:center;gap:6px">${[0,1,2].map(i=>`<span class="chip" style="min-width:48px;justify-content:center">${G.darts[i]||'·'}</span>`).join('')}</div>${msg?`<div class="small" style="margin-top:6px">${msg}</div>`:''}</div>
+   <div class="row" style="gap:6px">${[[1,'Single'],[2,'Doppel'],[3,'Triple']].map(([m,l])=>`<button class="btn sm ${G.mult===m?'gold':'gray'}" style="flex:1" data-mm="${m}">${l}</button>`).join('')}</div>
+   <div class="numpad">${[...Array(20)].map((_,i)=>`<button data-nn="${i+1}">${i+1}</button>`).join('')}<button data-nn="25" ${G.mult===3?'disabled':''}>${G.mult===2?'Bull':'25'}</button><button data-nn="0">Daneben</button></div>
+   <div class="row" style="gap:6px"><button class="btn gray sm" id="cundo" ${G.darts.length?'':'disabled'}>↩ Zurück</button><button class="btn gray sm" id="chint">💡 Profi-Weg</button><button class="btn gray sm" onclick="closeModal()">Beenden</button></div>`);
+  document.querySelectorAll('[data-mm]').forEach(b=>b.onclick=()=>{G.mult=+b.dataset.mm;draw121()});
+  document.querySelectorAll('[data-nn]').forEach(b=>b.onclick=()=>throw121(+b.dataset.nn));
+  $('#cundo').onclick=()=>{G.darts.pop();(G.vals||[]).pop();G.rest=tgt-(G.vals||[]).reduce((a,x)=>a+x,0);draw121()};
+  $('#chint').onclick=()=>{G.hinted=1;const p=coPath(G.rest);draw121(p?`💡 ${p.join(' · ')} <span class="tiny mut">(dann gibt es nur halbe XP)</span>`:'💡 Kein Finish mehr möglich')}}
+function throw121(n){const G=UI.c121,tgt=120+G.lvl,m=n===0?0:G.mult,v=n===0?0:segV(m,n),lbl=n===0?'–':segL(m,n);G.darts.push(lbl);G.vals=(G.vals||[]);G.vals.push(v);
+  G.rest-=v;snd(v?'hit':'miss');
+  const dbl=(m===2);
+  if(G.rest===0&&dbl){snd('checkout');const p=player(G.pid),xp=Math.round((10+G.lvl*4)*(G.hinted?.5:1));if(p){p.xp+=xp;checkLvl(p)}const M=miniInfo();M.best121=Math.max(M.best121||0,G.lvl);save();
+    G.lvl++;G.rest=120+G.lvl;G.darts=[];G.vals=[];G.mult=1;G.hinted=0;return draw121(`✅ ${tgt} gecheckt! +${xp} XP. Weiter mit ${120+G.lvl}.`)}
+  if(G.rest<2||G.darts.length>=3){const p=coPath(tgt);const M=miniInfo();save();snd('lose');
+    return modal(`<div style="text-align:center"><div style="font-size:40px">${G.rest<2?'💥':'⏱'}</div><h3>${G.rest<2?'Bust!':'Keine Darts mehr'}</h3><div class="small mut">Bei ${tgt} war Schluss. Geschafft: ${G.lvl-1} ${G.lvl-1===1?'Runde':'Runden'} · Rekord: ${M.best121?120+M.best121:'–'}</div>${p?`<div class="panel small" style="margin-top:8px">💡 Ein Profi-Weg für ${tgt}:<br><b style="color:var(--gold)">${p.join(' · ')}</b></div>`:''}</div><button class="btn gold block" id="c121r">Nochmal ab 121</button><button class="btn gray" onclick="closeModal();render()">Fertig</button>`),$('#c121r').onclick=start121}
+  draw121()}
+
+Object.assign(COACH,{
+ jobs:'🗂 <b>Auftragsbrett</b>: Schick Mitglieder und Spieler auf Jobs. Kurze laufen ein paar Minuten in Echtzeit, auch wenn das Spiel zu ist, lange über Spielwochen. Mehr Ruf = bessere Jobs. Wer unterwegs ist, fehlt in Liga und Turnier!',
+ verw:'🏛 <b>Verwaltung</b>: Oben die Bereiche: Mitgliedsbeitrag & Zufriedenheit, Personal, Jugend, Sponsorverträge mit Zielen, eigene Turniere, Ausbau (der 🔐 Tresor verlängert deine Offline-Einnahmen), Finanzen und Filialen in anderen Städten.',
+ album:'📖 <b>Sammelalbum</b>: Jede Karte, die in einem Deck landet, kommt ins Album. Mit etwas Glück als ✨ Glanzkarte. Bei 25/50/75/100% gibt es fette Belohnungen.',
+});
+const COACH2={
+ turnier:'🆕 Oben siehst du jetzt die <b>🌍 Weltrangliste</b>, das tägliche <b>📅 Tages-Turnier</b> (gratis!) und die <b>🔥 Druckstufen</b>: Nach jedem Turniersieg wird es härter, bringt aber mehr. „Druck“ zeigt, wie stark die Konkurrenz schon geworden ist.',
+ r_buero:'🆕 Im Büro gibt es jetzt das <b>🗂 Auftragsbrett</b> und die <b>🏛 Verwaltung</b> für Mitglieder, Personal, Jugend, Sponsoren, Events, Ausbau, Finanzen und Filialen.',
+ r_training:'🆕 Neue <b>Trainingsspiele</b>: ⚡ Schnellwurf (3× täglich Belohnung) und 🎯 <b>121-Checkout</b>: Finde mit 3 Darts den Checkout, jede Runde eins höher. Super Übung für echte Dartspieler!',
+ woche:'🆕 Unten findest du jetzt die <b>📋 Wochenaufgaben</b>. Alle drei geschafft = Profi-Pack!',
+ ruhm:'🆕 In der Ruhmeshalle wählst du jetzt auch deinen <b>Charakter für den Neustart</b>. Neue Charaktere schaltest du durch Erfolge frei, nach 5 Prestiges den Auserwählten 👑.',
+ kader:'🆕 Spieler haben jetzt <b>Verträge, Form und Müdigkeit</b> und stehen in der 🌍 Weltrangliste. Wer zu viel spielt, wird müde und trifft schlechter.',
+};
+COACH_MATCH.push('▶ <b>Auto-Spiel:</b> Unten links kannst du das Match automatisch spielen lassen und zuschauen. Mit <b>1× / 2× / 3×</b> stellst du das Tempo ein.');
+
 /* ================= Match ================= */
 function makeOpp(tier,kind,step){
   let o;
@@ -3807,9 +3894,9 @@ function renderCombat(app){
    </div>
    <div class="detail">${sel?`<div style="flex:1"><b>${esc(CARDS[sel.id].n)}${sel.up?'+':''}</b> <span class="tiny mut">${RAR[CARDS[sel.id].r]} · ${CARDS[sel.id].c<0?'–':CARDS[sel.id].c+' Dart'}</span><div class="small">${CARDS[sel.id].d(sel.up)}</div></div><button class="btn sm" id="throw" ${CARDS[sel.id].c>me.darts||CARDS[sel.id].t==='curse'?'disabled':''}>${CARDS[sel.id].th?'Werfen':'Spielen'}</button>`:`<span class="small mut">${myTurn?'Tippe eine Karte an. Nochmal tippen = werfen.':'Gegner ist am Zug…'}</span>`}</div>
    <div class="hand ${n>5?'many':''}" style="${n>5?`--n:${n}`:''}">${me.hand.map((c,i)=>cardHTML(c,{sel:i===UI.sel,dis:CARDS[c.id].c>me.darts||(CARDS[c.id].fc||0)>me.block||CARDS[c.id].t==='curse',pv:preview(c),attr:`data-h="${i}"`})).join('')}</div>
-   <div class="cbbot"><div class="row" style="gap:6px;flex:1"><button class="btn ${me.risk?'red':'gray'}" id="risk" style="flex:none;padding:10px 12px" ${myTurn&&me.played===0&&!me.risk?'':'disabled'} title="Risiko: Treffer ×1,5, ein Fehlwurf kostet alle Punkte des Zugs">🎲${me.risk?' AN':''}</button><button class="btn gold block" id="end" style="flex:1" ${myTurn?'':'disabled'}>Zug beenden ➜</button></div></div>
+   <div class="cbbot"><div class="row" style="gap:6px;flex:1"><button class="btn ${me.risk?'red':'gray'}" id="risk" style="flex:none;padding:10px 12px" ${myTurn&&me.played===0&&!me.risk?'':'disabled'} title="Risiko: Treffer ×1,5, ein Fehlwurf kostet alle Punkte des Zugs">🎲${me.risk?' AN':''}</button>${autoBtns()}<button class="btn gold block" id="end" style="flex:1" ${myTurn?'':'disabled'}>Zug beenden ➜</button></div></div>
   </div>`;
-  bindRelics(app);
+  bindRelics(app);bindAuto(app);
   app.querySelectorAll('[data-h]').forEach(el=>el.onclick=()=>{if(!myTurn)return;const i=+el.dataset.h;if(UI.sel===i)playCard(i);else{UI.sel=i;snd('click');render()}});
   const th=$('#throw');if(th)th.onclick=()=>playCard(UI.sel);
   $('#end').onclick=()=>endTurn();

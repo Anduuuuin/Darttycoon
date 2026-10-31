@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Dart Tycoon</title>
-<meta name="dt-version" content="2.0.1">
+<meta name="dt-version" content="2.1">
 <meta name="theme-color" content="#0e1511">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -255,6 +255,12 @@ textarea{font-size:12px;height:90px}
 @keyframes cpop{from{transform:scale(.3)}to{transform:scale(1)}}
 .b121{width:100%;max-width:340px;display:block;margin:6px auto 0;touch-action:manipulation}.b121 [data-seg]{cursor:pointer}.b121 path:active,.b121 circle:active{filter:brightness(1.6)}
 .demap{width:100%;max-width:290px;margin:6px auto 2px;display:block;touch-action:manipulation}.demap rect{cursor:pointer}.hlist{display:grid;grid-template-columns:1fr 1fr;gap:4px;max-height:300px;overflow:auto}
+.scgrid{display:grid;gap:6px;margin-bottom:8px}.scp{background:var(--panel);border:2px solid var(--line);border-radius:10px;padding:8px;text-align:center}.scp.on{border-color:var(--gold);background:#2a2410}
+.numpad.sc{grid-template-columns:repeat(3,1fr)}.numpad.sc button{padding:14px 0;font-size:20px}.numpad .ok{background:var(--green);border-color:var(--gdark)}
+#walkon{position:fixed;inset:0;z-index:70;background:#000d;display:flex;align-items:center;justify-content:center;overflow:hidden;animation:fadein .3s}#walkon.out{opacity:0;transition:opacity .35s}
+#walkon .wc{text-align:center;z-index:2;animation:walkin 1s ease-out}#walkon img{width:140px;height:140px;image-rendering:pixelated;margin:10px auto;display:block;filter:drop-shadow(0 0 18px #f4c43088)}#walkon .wn{font-size:16px;line-height:1.5;color:#fff;text-shadow:0 0 12px #f4c430}
+#walkon .wl,#walkon .wr{position:absolute;top:-20%;width:50%;height:140%;background:conic-gradient(from 180deg at 50% 0%,transparent 40%,#f4c43033 50%,transparent 60%);animation:sweep 2.4s ease-in-out infinite alternate}#walkon .wl{left:-10%}#walkon .wr{right:-10%;animation-delay:-1.2s}
+@keyframes walkin{from{transform:translateY(40px) scale(.8);opacity:0}to{transform:none;opacity:1}}@keyframes sweep{from{transform:rotate(-18deg)}to{transform:rotate(18deg)}}@keyframes fadein{from{opacity:0}}
 </style>
 </head>
 <body>
@@ -939,6 +945,8 @@ function showHelp(first){
   <b>👑 Bosse & Talismane:</b> Jeder Finalgegner hat eine eigene Regel. Seltene <b>Talismane</b> (goldener Rahmen) verändern die Spielregeln komplett. Karten, mit denen du oft triffst, <b>entwickeln sich</b> weiter.<br><br>
   <b>🌍 Fortschritt:</b> Klettere in der Weltrangliste, schalte <b>Druckstufen</b> frei, spiel das tägliche Tages-Turnier, füll dein <b>Sammelalbum</b> und erledige Wochenaufgaben. Durch Erfolge schaltest du neue Charaktere frei. Mit der Zeit wird die Konkurrenz immer stärker: Dann bringt dich ein <b>Prestige-Neustart</b> dauerhaft weiter.<br><br>
   <b>🏛 Verein managen:</b> Im Büro findest du das <b>Auftragsbrett</b> (Spieler und Mitglieder auf Jobs schicken, Echtzeit oder Spielwochen) und die <b>Verwaltung</b>: Mitgliedsbeitrag & Zufriedenheit, Personal, Jugendabteilung, Sponsorenverträge mit Zielen, eigene Turniere ausrichten, Ausbau, Finanzen und Dartcenter in anderen Städten.<br><br>
+  <b>🎯 Echtes Dart:</b> Am Oche im Scheibenraum gibt es einen <b>Scorer</b> für echte Matches am Board und du kannst <b>echtes Training eintragen</b>. Echte 180er, High-Finishes und Training bringen XP und Geld.<br><br>
+  <b>🎫 Profi-Karriere:</b> Spieler ab Level 4 können über die <b>Q-School</b> die Tour-Karte holen. Damit dürfen sie bei den Players Championships (doppelte Ranglistenpunkte) spielen. Nach 40 Wochen muss man in den Top 64 sein, sonst ist die Karte weg. Im Finale gibt es <b>Walk-on-Musik</b>, auswählbar auf der Spielerkarte. Zu Halloween, Weihnachten und im Sommer gibt es <b>Event-Turniere</b> mit exklusiven Karten.<br><br>
   <b>🧬 Spieler-Eigenschaften:</b> Jeder Spieler hat Eigenschaften wie Nervenstark, Doppel-Spezialist oder Partylöwe. Tippe im Kader auf das Porträt, um seine Spielerkarte zu sehen.<br><br>
   <b>😈 Rivale & 🌟 Premier-Nächte:</b> Ein Erzrivale spielt in deiner Liga, Derbys zählen doppelt. Ab ⭐160 lädt dich die Arena zu den Premier-Nächten ein: jede Woche ein Abend gegen die Weltbesten, 501 Best of 7.<br><br>
   Tippe eine Karte einmal an, um Details zu sehen, und nochmal, um sie zu werfen. Nach dem Turnier darf eine neu gewonnene Karte dauerhaft ins Deck des Spielers.
@@ -978,9 +986,10 @@ function renderHub(app){
   else if(t==='album')body=hubAlbum();
   else if(t==='jobs')body=hubJobs();
   else if(t==='verw')body=hubVerw();
+  else if(t==='scorer')body=hubScorer();
   else{UI.tab='welt';body=hubWelt()}
   const tabs=[['welt','🏙','Stadt'],['heim','🏠','Heim'],['r_buero','📋','Büro'],['shop','🛍','Shop'],['turnier','🏆','Turniere'],['woche','📅','Woche']];
-  const on=k=>UI.tab===k||(k==='welt'&&(UI.tab==='halle'||UI.tab==='pl'))||(k==='turnier'&&UI.tab==='album')||(k==='r_buero'&&['liga','kader','verein','ruhm','jobs','verw'].includes(UI.tab))||(k==='heim'&&UI.tab.startsWith('r_')&&UI.tab!=='r_buero');
+  const on=k=>UI.tab===k||(k==='welt'&&(UI.tab==='halle'||UI.tab==='pl'))||(k==='turnier'&&UI.tab==='album')||(k==='r_buero'&&['liga','kader','verein','ruhm','jobs','verw'].includes(UI.tab))||(k==='heim'&&((UI.tab.startsWith('r_')&&UI.tab!=='r_buero')||UI.tab==='scorer'));
   app.innerHTML=topBar()+`<div class="content">${body}</div><div class="nav">${tabs.map(t=>`<button class="${on(t[0])?'on':''}" data-tab="${t[0]}"><span>${t[1]}</span>${t[2]}</button>`).join('')}</div>`;
   app.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{snd('click');UI.tab=b.dataset.tab;render();window.scrollTo(0,0)});
   bindHub(app);bindWorld(app);
@@ -1024,7 +1033,7 @@ function hubTurnier0(){
   <div class="panel" style="border-color:${S.cupQ?'var(--gold)':'var(--line)'};${qLock?'opacity:.55':''}"><div class="row between"><div><h3>⚙️ Steeldart-Cup${S.cupQ?' <span class="chip">🎟️ qualifiziert</span>':''}</h3>
    <div class="tiny mut" style="margin-top:4px">Freies Werfen: Du zielst selbst. ${S.cupQ?`4 Runden · 501 · Best of 5 · Sieger +${CUPF.champ} € & Pokal`:`Erst die Quali: 3 Matches · 501 · Best of 3 · Startgeld ${QUALI.fee} €`}${cupWon?` · 🏆×${cupWon}`:''}</div></div>
    ${qLock?`<span class="chip">🔒 ⭐${QUALI.rep}</span>`:`<button class="btn sm ${S.cupQ?'gold':''}" id="${S.cupQ?'cupgo':'qgo'}" ${!S.cupQ&&S.money<QUALI.fee?'disabled':''}>${S.cupQ?'Cup spielen':'Zur Quali'}</button>`}</div></div>
-  ${TIERS.map((T,i)=>{const lock=S.rep<T.rep||(T.pres||0)>pLvl(),won=S.trophies.filter(t=>t.tier===i).length;
+  ${TIERS.map((T,i)=>{if(tierHidden(T))return '';const lock=S.rep<T.rep||(T.pres||0)>pLvl(),won=S.trophies.filter(t=>t.tier===i).length;
    return `<div class="panel" style="${lock?'opacity:.55':''}"><div class="row between"><div><h3>${T.i} ${T.n}</h3>
    <div class="tiny mut" style="margin-top:4px">${T.steps} Stationen · ~${T.prize} € pro Sieg · Startgeld ${T.fee} €${won?` · 🏆×${won}`:''}</div>
    <div class="tiny" style="color:#7fbf95">${T.sets?'Satzmodus: Best of 3 Sätze, Finale Best of 5 (Satz = Best of 5 Legs)':`${T.st} · Best of ${T.ln*2-1}${T.bn!==T.ln?` · Finale Best of ${T.bn*2-1}`:''}`}${T.din?' · <b>Double-In</b>':''}${T.allElite?' · nur Favoriten':''}</div>${T.tag?`<div class="tiny mut" style="font-style:italic">${T.tag}</div>`:''}
@@ -1044,6 +1053,9 @@ function hubWoche0(){
   <div class="panel small mut">Bilanz: ${S.stats.runs} Turniere · ${S.stats.wins} Titel · ${S.stats.legs} Legs gewonnen</div>`;
 }
 function bindHub(app){
+  {const q=(id,f)=>{const e=app.querySelector(id);if(e)e.onclick=f};q('#scstart',()=>{if(S.realCur){UI.tab='scorer';render()}else scorerSetup()});q('#rtrain',()=>realTrainDialog());
+   if(S.realCur){const M=S.realCur;app.querySelectorAll('[data-sk]').forEach(b=>b.onclick=()=>{const k=b.dataset.sk;if(k==='del')M.inp=M.inp.slice(0,-1);else if(k==='ok')return scSubmit(+(M.inp||0));else if(M.inp.length<3)M.inp+=k;snd('click');render()});
+    app.querySelectorAll('[data-sq]').forEach(b=>b.onclick=()=>scSubmit(+b.dataset.sq));q('#scundo',scUndo);q('#scquit',()=>modal(`<h3>Match abbrechen?</h3><div class="small mut">Das laufende Match wird nicht gewertet.</div><button class="btn red" id="scq2">Abbrechen</button><button class="btn gray" onclick="closeModal()">Weiterspielen</button>`)||($('#scq2').onclick=()=>{S.realCur=null;closeModal();UI.tab='r_scheiben';save();render()}))}}
   {const ba=app.querySelector('#bestall');if(ba)ba.onclick=bestGearAll}
   bindMg(app);bindMini(app);bindAuto(app);
   {const dl=app.querySelector('#daily');if(dl)dl.onclick=()=>{snd('click');startDaily()};app.querySelectorAll('[data-asc]').forEach(b=>b.onclick=()=>{ascInfo().cur=+b.dataset.asc;save();render()});const pr=app.querySelector('#pres');if(pr)pr.onclick=()=>modal(`<h3>📈 Konkurrenzdruck ${Math.round((pressure()-1)*100)}%</h3><div class="small" style="line-height:1.5">Die Konkurrenz schläft nicht: Nach ein paar Saisons werden alle Gegner Woche für Woche stärker. Irgendwann kommst du nicht mehr weiter, dann ist es Zeit für einen <b>Prestige-Neustart</b>. Jede Prestige-Stufe macht deine Spieler dauerhaft genauer (jetzt +${Math.round(presBonus()*100)}%), und der Druck beginnt wieder bei 0.</div><button class="btn block" onclick="closeModal()">Verstanden</button>`);app.querySelectorAll('[data-pcls]').forEach(b=>b.onclick=()=>{UI.prestCls=b.dataset.pcls;snd('click');render()})}
@@ -1145,7 +1157,7 @@ function endWeek(){
 function chooseRunPlayer(tier){
   const T=TIERS[tier];
   modal(`<h3>${T.i} ${T.n}</h3><div class="small mut">Wer tritt für ${esc(S.club)} an? Startgeld: ${T.fee} €</div>
-  ${S.players.map(p=>`<button class="opt" data-rp="${p.id}" ${p.away?'disabled':''}><div class="row">${personImg(p.look,40)}<div><b>${esc(p.name)} <span class="lvl px">Lv${p.lvl}</span></b><span class="small mut">${CLASSES[p.cls].i} ${CLASSES[p.cls].n} · ${p.deck.length} Karten · ${startNerves(p)} Nerven</span></div></div></button>`).join('')}
+  ${S.players.map(p=>`<button class="opt" data-rp="${p.id}" ${p.away||!tourOk(T,p)?'disabled':''}><div class="row">${personImg(p.look,40)}<div><b>${esc(p.name)} <span class="lvl px">Lv${p.lvl}</span></b><span class="small mut">${CLASSES[p.cls].i} ${CLASSES[p.cls].n} · ${p.deck.length} Karten · ${startNerves(p)} Nerven</span></div></div></button>`).join('')}
   <button class="btn gray" onclick="closeModal()">Abbrechen</button>`);
   document.querySelectorAll('[data-rp]').forEach(b=>b.onclick=()=>{closeModal();startRun(tier,b.dataset.rp)});
 }
@@ -1775,7 +1787,7 @@ function hubRoom(id){
     <button class="btn gray" data-act="pc">💻 Anleitung & Sichern</button><button class="btn gray" data-go="woche">📅 Wochenbilanz</button></div><div class="grid2"><button class="btn ${mgReadyCount()?'gold':''}" data-go="jobs">🗂 Aufträge${mgReadyCount()?' ❗':''}</button><button class="btn" data-go="verw">🏛 Verwaltung</button></div><button class="btn gold block" data-go="ruhm">🌟 Ruhmeshalle & Prestige${canPrestige()?' ❗':''}</button>`}
   else if(id==='training'){acts=miniPanel()+buildCard('training')+(S.b.training>0?S.players.map(p=>`<div class="panel"><div class="row">${personImg(p.look,40)}<div style="flex:1"><b class="small">${esc(p.name)} <span class="lvl px">Lv${p.lvl}</span></b><div class="tiny mut">${p.drilled?'✔ Wurftraining':'🎯 Wurftraining frei'} · ${p.trained?'✔ Kartentraining':'🃏 Kartentraining frei'}</div></div><button class="btn sm" data-train="${p.id}" ${p.trained&&p.drilled?'disabled':''}>Trainieren</button></div></div>`).join(''):'<div class="panel small mut">Baue den Trainingsraum aus, um deine Spieler zu trainieren.</div>')}
   else if(id==='theke')acts=buildCard('bar')+buildCard('fanshop');
-  else if(id==='scheiben')acts=`<button class="btn block gold" data-act="friendly">🎯 Freundschaftsspiel · 501 · Best of 3</button><div class="tiny mut" style="margin:-4px 0 4px">Freies Werfen gegen ein Vereinsmitglied, jederzeit, ohne Einsatz.</div>`+buildCard('boards')+buildCard('sponsor');
+  else if(id==='scheiben')acts=`<button class="btn block gold" data-act="friendly">🎯 Freundschaftsspiel · 501 · Best of 3</button><div class="tiny mut" style="margin:-4px 0 4px">Freies Werfen gegen ein Vereinsmitglied, jederzeit, ohne Einsatz.</div><div class="panel"><h2>🎯 Echtes Dart</h2><div class="grid2" style="margin-top:8px"><button class="btn" id="scstart">📟 ${S.realCur?'Match fortsetzen':'Scorer starten'}</button><button class="btn" id="rtrain">📝 Training eintragen</button></div><div class="tiny mut" style="margin-top:6px">Für dein echtes Board: Punkte zählen, Checkout-Wege, Statistik. Echte Leistungen bringen Belohnungen im Spiel.</div></div>${realStatsPanel()}`+buildCard('boards')+buildCard('sponsor');
   const dk=Object.keys(DECO).filter(k=>DECO[k].room===id);
   return `<div class="navrow"><button class="btn gray sm" data-go="heim">◀ Vereinsheim</button><b class="small">${R0.i} ${R0.n}</b></div>
   <div class="roomframe">${roomSVG(id)}</div><div class="tiny mut" style="text-align:center">Tippe auf Dinge im Raum, auf Türen für den nächsten Raum oder auf ➕ für neue Einrichtung.</div>${acts}
@@ -2838,7 +2850,8 @@ function playerCard(p){
    <img class="pcimg" src="${portraitURL(p.look)}" alt=""><div class="pcname">${esc(p.name)}</div>${p.legend?'<div class="pclegend">★ LEGENDE ★</div>':''}
    ${st('Scoring',sc,100)}${st('Finishing',fi,100)}${st('Nerven',startNerves(p),90)}${st('Deck',p.deck.length,25)}
    <div class="pctraits">${(p.traits||[]).map(t=>`<div><b>${TRAITS[t].i} ${TRAITS[t].n}</b><span>${TRAITS[t].d}</span></div>`).join('')||'<div><span>Keine Eigenschaften</span></div>'}</div></div>
-   <button class="btn gray block" onclick="closeModal()">Schließen</button>`);
+   <button class="btn gray block" id="pcwalk">🎵 Walk-on: ${WALK[(p.walk||0)%WALK.length].n} ▶</button><button class="btn gray block" onclick="closeModal()">Schließen</button>`);
+  {const w=$('#pcwalk');if(w)w.onclick=()=>{p.walk=((p.walk||0)+1)%WALK.length;save();playWalk(p.walk,2.2);w.textContent=`🎵 Walk-on: ${WALK[p.walk].n} ▶`}}
 }
 
 /* ================= Rivale ================= */
@@ -2980,7 +2993,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='2.0.1';
+const GAME_VERSION='2.1';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
@@ -3237,9 +3250,10 @@ function storyCheck(){if(!S||S.run||S.free||document.querySelector('#modal.on'))
 function metaTick(){if(!S||!S.stats)return;clsCheck();questTick();albumScan();if(pressure()>=1.15&&!S.warnP){S.warnP=1;log('📈 Die Konkurrenz zieht an. Zeit, über einen Prestige-Neustart nachzudenken?')}}
 
 function metaPanels(){
+  const sn=seasonNow();const sb=sn?`<div class="panel" style="border-color:var(--gold);background:linear-gradient(#3a2a0a,#131b16)"><h3>${SEASON[sn].i} Event: ${SEASON[sn].n}</h3><div class="tiny mut" style="margin-top:4px">${SEASON[sn].d} Unten in der Turnierliste, der Sieger bekommt exklusive Event-Karten.</div></div>`:'';
   const A=ascInfo(),D=dailyInfo(),M=dailyMod(),ids=ALBUM_IDS(),al=albumData(),have=ids.filter(k=>al.c[k]).length;
   const rk=S.players.slice().sort((a,b)=>rankOf(a)-rankOf(b)).slice(0,4);
-  return `<div class="panel"><h2>🌍 Weltrangliste</h2>${rk.map(p=>{const n=rankNext(p);return `<div class="row between" style="margin-top:8px"><span class="small"><b>#${rankOf(p)}</b> ${esc(p.name)}</span><span class="tiny mut">${n?`noch ${n.need} Pkt bis Top ${n.m}`:'👑 Nummer 1'}</span></div>`}).join('')}<div class="tiny mut" style="margin-top:6px">Ranglistenpunkte gibt es für jeden Turniersieg-Match, mehr bei großen Turnieren und höheren Druckstufen.</div></div>
+  return sb+`<div class="panel"><h2>🌍 Weltrangliste</h2>${rk.map(p=>{const n=rankNext(p);return `<div class="row between" style="margin-top:8px"><span class="small"><b>#${rankOf(p)}</b> ${esc(p.name)}</span><span class="tiny mut">${n?`noch ${n.need} Pkt bis Top ${n.m}`:'👑 Nummer 1'}</span></div>`}).join('')}<div class="tiny mut" style="margin-top:6px">Ranglistenpunkte gibt es für jeden Turniersieg-Match, mehr bei großen Turnieren und höheren Druckstufen.</div></div>
   <div class="panel" style="border-color:${D.done?'var(--line)':'var(--gold)'}"><div class="row between"><div><h3>📅 Tages-Turnier</h3><div class="tiny mut" style="margin-top:4px">Heute: ${TIERS[M.tier].i} ${TIERS[M.tier].n} mit ${RELICS[M.tal].i} ${RELICS[M.tal].n}. Kostenlos, zählt nicht als Wochenturnier.${D.best?` · Rekord: ${D.best} Siege`:''}</div></div>${D.done?`<span class="chip">✔ ${D.last!=null?D.last+' Siege':'läuft'}</span>`:'<button class="btn sm gold" id="daily">Spielen</button>'}</div></div>
   <div class="panel"><div class="row between"><h3>🔥 Druckstufe ${A.cur}</h3><span class="tiny mut">max ${A.max}</span></div><div class="tiny mut" style="margin-top:4px">${A.cur?ASC_TXT.slice(1,A.cur+1).join(' · '):'Gewinne ein Turnier, um Druckstufe 1 freizuschalten.'}${A.cur?` · Belohnung: +${A.cur*15}% Preisgeld, +${A.cur*20}% Ranglistenpunkte`:''}</div>
    <div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap">${Array.from({length:A.max+1},(_,i)=>`<button class="btn sm ${i===A.cur?'gold':'gray'}" data-asc="${i}">${i}</button>`).join('')}</div></div>
@@ -3349,7 +3363,7 @@ function contractWeek(){S.players.forEach(p=>{if(p.isMe)return;p.contract=(p.con
     mgQ({t:'💼 Transferangebot',x:`${esc(club)} bietet <b>${g} €</b> für ${esc(p.name)} (Lv${p.lvl}).`,o:[['💶 Verkaufen',()=>{S.money+=g;S.players=S.players.filter(x=>x!==p);log(`💼 ${p.name} wechselt für ${g} € zu ${club}.`)}],['🚫 Ablehnen (Spieler fühlt sich geschätzt: Form +1)',()=>{p.form=Math.min(2,(p.form||0)+1)}]]})}}
 function fatigueWeek(){S.players.forEach(p=>{p.fat=Math.max(0,(p.fat||0)-20-bl('gym')*8);const r=R();p.form=clamp((p.form||0)+(r<.25?-1:r>.75?1:0),-2,2)})}
 const formTxt=f=>['😩 Formtief','😕 Schwach','😐 Normal','🙂 Gut','🔥 Topform'][(f||0)+2];
-function condChips(p){return `${p.isMe?'':`<span class="chip">📝 ${p.contract} Wo.</span>`}<span class="chip">${formTxt(p.form)}</span>${(p.fat||0)>=30?`<span class="chip" style="${p.fat>60?'border-color:#d9333f':''}">😮‍💨 ${p.fat}%</span>`:''}${p.away?'<span class="chip" style="border-color:var(--gold)">🚌 unterwegs</span>':''}`}
+function condChips(p){return `${p.tour?'<span class="chip" style="border-color:#2fd673">🎫 Tour-Karte</span>':''}${p.isMe?'':`<span class="chip">📝 ${p.contract} Wo.</span>`}<span class="chip">${formTxt(p.form)}</span>${(p.fat||0)>=30?`<span class="chip" style="${p.fat>60?'border-color:#d9333f':''}">😮‍💨 ${p.fat}%</span>`:''}${p.away?'<span class="chip" style="border-color:var(--gold)">🚌 unterwegs</span>':''}`}
 const condAcc=p=>p?((p.form||0)*.02-((p.fat||0)>60?.06:0)):0;
 
 // ---------- Sponsoren ----------
@@ -3411,7 +3425,7 @@ function mgEndWeek(w){fixMg(S);const M=MG();
   if(M.happy<40&&S.members>4){const n=rnd(1,3);S.members-=n;log(`😠 ${n} unzufriedene Mitglieder sind ausgetreten.`)}
   S.fans+=8*stf('social')+15*bl('studio');
   M.jobs.active.forEach(a=>{if(a.wk)a.wk--});
-  youthWeek();contractWeek();fatigueWeek();sponsorWeek();eventWeek();branchWeek();
+  youthWeek();contractWeek();tourCheck();fatigueWeek();sponsorWeek();eventWeek();branchWeek();
   if(S.week%6===5)versammlung();
   M.fin.push({w:S.week,inc:w.ti,out:w.to,money:S.money});if(M.fin.length>30)M.fin.shift()}
 function mgTargetMul(){fixMg(S);return memFactor()}
@@ -3639,6 +3653,103 @@ function homeDialog(cb){const sel=UI.hsel||null,view=UI.hview||'map';
   document.querySelectorAll('[data-city]').forEach(b=>b.onclick=()=>{UI.home={st:UI.hsel,city:b.dataset.city};UI.hsel=null;snd('click');cb()})}
 function newGameDialog(){UI.home=null;homeDialog(newGameDialog0)}
 
+
+/* ================= Echtes Dart: Scorer & Training ================= */
+const BADV=[163,166,169,172,173,175,176,178,179];
+function realInfo(){S.real=S.real||{hist:[],tr:[],tot:{m:0,d:0,pts:0,s180:0,t140:0,t100:0,hico:0,co:0},day:'',rew:{}};if(S.real.day!==today()){S.real.day=today();S.real.rew={}}return S.real}
+function realRew(k,cap){const R0=realInfo();R0.rew[k]=(R0.rew[k]||0)+1;return R0.rew[k]<=cap}
+const meP=()=>S.players.find(p=>p.isMe)||S.players[0];
+function scorerSetup(){const nm=S.players.map(p=>p.name);UI.scs=UI.scs||{names:[nm[0]||'Spieler 1',nm[1]||'Gast'],start:501,legs:3};const c=UI.scs;
+  modal(`<h3>📟 Scorer für echte Spiele</h3><div class="small mut">Zählt dein echtes Match am Board: Rest, Checkout-Weg und Statistik. Echte 180er und Checkouts bringen dir Belohnungen im Spiel.</div>
+   ${c.names.map((n,i)=>`<label class="small mut">Spieler ${i+1}</label><input type="text" data-scn="${i}" value="${esc(n)}" maxlength="18">`).join('')}
+   <div class="row" style="gap:6px">${c.names.length<4?'<button class="btn gray sm" id="scadd">+ Spieler</button>':''}${c.names.length>1?'<button class="btn gray sm" id="screm">− Spieler</button>':''}</div>
+   <div class="small" style="margin-top:6px"><b>Spielart</b></div><div class="row" style="gap:6px">${[301,501,701].map(v=>`<button class="btn sm ${c.start===v?'gold':'gray'}" data-scst="${v}">${v}</button>`).join('')}</div>
+   <div class="small" style="margin-top:6px"><b>Legs zum Sieg</b></div><div class="row" style="gap:6px">${[1,2,3,4,5,6].map(v=>`<button class="btn sm ${c.legs===v?'gold':'gray'}" data-scl="${v}">${v}</button>`).join('')}</div>
+   <div class="tiny mut" style="margin-top:4px">Double Out. Gezählt wird ehrlich, das Spiel vertraut dir 😉</div>
+   <button class="btn gold block" id="scgo">Match starten</button><button class="btn gray" onclick="closeModal()">Abbrechen</button>`);
+  const sync=()=>document.querySelectorAll('[data-scn]').forEach(e=>c.names[+e.dataset.scn]=e.value.trim()||`Spieler ${+e.dataset.scn+1}`);
+  const q=(id,f)=>{const e=$(id);if(e)e.onclick=f};
+  q('#scadd',()=>{sync();c.names.push(`Spieler ${c.names.length+1}`);scorerSetup()});q('#screm',()=>{sync();c.names.pop();scorerSetup()});
+  document.querySelectorAll('[data-scst]').forEach(b=>b.onclick=()=>{sync();c.start=+b.dataset.scst;scorerSetup()});
+  document.querySelectorAll('[data-scl]').forEach(b=>b.onclick=()=>{sync();c.legs=+b.dataset.scl;scorerSetup()});
+  $('#scgo').onclick=()=>{sync();S.realCur={start:c.start,need:c.legs,leg:0,turn:0,starter:0,pl:c.names.map(n=>({n,rest:c.start,legs:0,d:0,pts:0,s180:0,t140:0,t100:0,hico:0,hist:[]})),inp:''};closeModal();UI.tab='scorer';save();render()}}
+function hubScorer(){const M=S.realCur;if(!M){UI.tab='r_scheiben';return hubRoom('scheiben')}const P=M.pl[M.turn],way=coPath(P.rest),avg=p=>p.d?(p.pts/p.d*3).toFixed(1):'–';
+  return `<div class="navrow"><button class="btn gray sm" id="scquit">✖ Beenden</button><b class="small">📟 ${M.start} · First to ${M.need}</b></div>
+  <div class="scgrid" style="grid-template-columns:repeat(${M.pl.length},1fr)">${M.pl.map((p,i)=>`<div class="scp ${i===M.turn?'on':''}"><div class="tiny" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.n)}</div><div class="px" style="font-size:${M.pl.length>2?18:24}px;margin:6px 0">${p.rest}</div><div class="tiny mut">Legs ${p.legs} · Ø ${avg(p)}</div><div class="tiny mut">${p.hist.slice(-1)[0]!=null?'Letzte: '+p.hist.slice(-1)[0]:''}</div></div>`).join('')}</div>
+  <div class="panel" style="text-align:center;padding:8px"><b>${esc(P.n)}</b> wirft${way?` · <span style="color:var(--gold)">🎯 ${way.join(' · ')}</span>`:P.rest<=170&&P.rest>1?' · <span style="color:#ff8a8a">kein Finish</span>':''}<div class="px" style="font-size:28px;margin-top:6px">${M.inp||'0'}</div></div>
+  <div class="numpad sc">${[1,2,3,4,5,6,7,8,9].map(n=>`<button data-sk="${n}">${n}</button>`).join('')}<button data-sk="del">⌫</button><button data-sk="0">0</button><button data-sk="ok" class="ok">OK</button></div>
+  <div class="row" style="gap:5px;flex-wrap:wrap;justify-content:center">${[26,41,45,60,81,85,100,140,180].map(v=>`<button class="btn gray sm" data-sq="${v}">${v}</button>`).join('')}<button class="btn gray sm" id="scundo">↩</button></div>`}
+function scSubmit(v){const M=S.realCur,P=M.pl[M.turn];if(isNaN(v)||v<0||v>180||BADV.includes(v)){toast('Ungültige Aufnahme');M.inp='';return render()}
+  const nr=P.rest-v;
+  if(nr===0){return modal(`<h3>🎯 Checkout ${P.rest}!</h3><div class="small mut">Mit wie vielen Darts?</div><div class="row" style="gap:6px">${[1,2,3].map(n=>`<button class="btn gold" style="flex:1" data-cod="${n}">${n}</button>`).join('')}</div><button class="btn gray" onclick="closeModal()">Doch nicht</button>`),document.querySelectorAll('[data-cod]').forEach(b=>b.onclick=()=>{closeModal();scApply(v,+b.dataset.cod,true)})}
+  if(nr<2){toast('BUST!');snd('bust');return scApply(0,3,false,true)}
+  scApply(v,3,false)}
+function scApply(v,darts,co,bust){const M=S.realCur,P=M.pl[M.turn];P.hist.push(bust?'Bust':v);M.undo={turn:M.turn,rest:P.rest,v:bust?0:v,darts,co};P.d+=darts;P.pts+=bust?0:v;P.rest-=bust?0:v;M.inp='';
+  if(v===180){P.s180++;caller('ONE HUNDRED AND EIGHTYYY!');snd('win')}else if(v>=140)P.t140++;else if(v>=100)P.t100++;
+  if(co){P.hico=Math.max(P.hico,v);P.legs++;snd('checkout');if(v>=100)caller(`${v} CHECKOUT!`);
+    if(P.legs>=M.need)return scEnd(M.turn);M.leg++;M.starter=(M.starter+1)%M.pl.length;M.turn=M.starter;M.pl.forEach(p=>p.rest=M.start);toast(`Leg an ${P.n}!`)}
+  else M.turn=(M.turn+1)%M.pl.length;save();render()}
+function scUndo(){const M=S.realCur,u=M.undo;if(!u)return;const P=M.pl[u.turn];if(u.co){toast('Ein Checkout kann nicht zurückgenommen werden');return}P.hist.pop();P.d-=u.darts;P.pts-=u.v;P.rest=u.rest;if(u.v===180)P.s180--;else if(u.v>=140)P.t140--;else if(u.v>=100)P.t100--;M.turn=u.turn;M.undo=null;save();render()}
+function scEnd(w){const M=S.realCur,R0=realInfo(),me=M.pl[0];R0.hist.unshift({w:S.week,date:today(),start:M.start,pl:M.pl.map(p=>({n:p.n,legs:p.legs,avg:p.d?+(p.pts/p.d*3).toFixed(1):0,s180:p.s180,hico:p.hico})),win:M.pl[w].n});R0.hist=R0.hist.slice(0,30);
+  const T=R0.tot;T.m++;T.d+=me.d;T.pts+=me.pts;T.s180+=me.s180;T.t140+=me.t140;T.t100+=me.t100;T.hico=Math.max(T.hico,me.hico);
+  let money=0,xp=0;const out=[];if(realRew('match',3)){money+=60;xp+=25;out.push('Match gespielt')}for(let i=0;i<me.s180;i++)if(realRew('180',5)){money+=80;xp+=30}if(me.s180)out.push(`${me.s180}× 180`);if(me.hico>=100&&realRew('co100',3)){money+=120;xp+=40;out.push(`High-Finish ${me.hico}`)}
+  S.money+=money;const p=meP();if(p&&xp){p.xp+=xp;checkLvl(p)}S.realCur=null;save();snd('win');UI.tab='r_scheiben';
+  modal(`<div style="text-align:center"><div style="font-size:44px">🏆</div><h3>${esc(M.pl[w].n)} gewinnt!</h3></div><div class="panel small">${M.pl.map(p=>`<div class="row between"><b>${esc(p.n)}</b><span>Legs ${p.legs} · Ø ${p.d?(p.pts/p.d*3).toFixed(1):'–'} · 180: ${p.s180} · HF ${p.hico||'–'}</span></div>`).join('')}</div>${money?`<div class="panel small" style="border-color:var(--gold)">🎁 Belohnung für ${esc(me.n)}: +${money} € · +${xp} XP<br><span class="tiny mut">${out.join(' · ')}</span></div>`:'<div class="tiny mut">Tageslimit für Belohnungen erreicht, Statistik wird trotzdem gespeichert.</div>'}<button class="btn block" onclick="closeModal();render()">Fertig</button>`)}
+const RTR={t20:{n:'100 Darts auf T20',u:'Treffer',max:100,xp:v=>Math.round(v*1.5),i:'🎯'},bull:{n:'50 Darts auf Bull',u:'Treffer (25 + 50)',max:50,xp:v=>v*2,i:'🐂'},rtw:{n:'Doppel-Rundlauf D1–D20',u:'Darts gebraucht',max:300,xp:v=>Math.max(10,Math.round(160-v*.8)),i:'🔄'},co121:{n:'121-Checkout (9 Darts)',u:'höchster Checkout',max:170,xp:v=>Math.max(0,(v-120)*6),i:'✅'},min:{n:'Freies Training',u:'Minuten',max:240,xp:v=>Math.round(v*.8),i:'⏱'}};
+function realTrainDialog(sel){const R0=realInfo();sel=sel||'t20';const X=RTR[sel];
+  const prev=R0.tr.filter(t=>t.k===sel).slice(0,8).reverse();
+  modal(`<h3>📝 Echtes Training eintragen</h3><div class="small mut">Du hast am echten Board trainiert? Trag es ein, dein Spieler ${esc(meP().name)} bekommt XP. Je Übung einmal pro Tag.</div>
+   <div class="hlist" style="max-height:none">${Object.entries(RTR).map(([k,t])=>`<button class="opt ${k===sel?'on':''}" data-rt="${k}" style="padding:8px;${k===sel?'border-color:var(--gold)':''}"><b class="small">${t.i} ${t.n}</b></button>`).join('')}</div>
+   <label class="small mut">${X.u}</label><input type="number" id="rtv" min="0" max="${X.max}" inputmode="numeric" placeholder="z. B. ${Math.round(X.max/3)}">
+   ${prev.length>1?`<div class="tiny mut">Dein Verlauf: ${prev.map(t=>t.v).join(' → ')}</div>`:''}
+   <button class="btn gold block" id="rtok">Eintragen</button><button class="btn gray" onclick="closeModal()">Abbrechen</button>`);
+  document.querySelectorAll('[data-rt]').forEach(b=>b.onclick=()=>realTrainDialog(b.dataset.rt));
+  $('#rtok').onclick=()=>{const v=Math.round(+$('#rtv').value);if(isNaN(v)||v<0||v>X.max||$('#rtv').value==='')return toast(`Bitte 0 bis ${X.max} eingeben`);const best=Math.max(0,...R0.tr.filter(t=>t.k===sel).map(t=>t.v));R0.tr.unshift({k:sel,v,date:today()});R0.tr=R0.tr.slice(0,80);
+    let xp=0;if(realRew('tr_'+sel,1)){xp=X.xp(v);const p=meP();p.xp+=xp;checkLvl(p)}const rec=sel!=='rtw'?v>best&&best>0:false;save();closeModal();snd('coin');toast(`${X.i} Eingetragen${xp?` · +${xp} XP`:' · heute schon belohnt'}${rec?' · 🏅 Neuer Rekord!':''}`);render()}}
+function realStatsPanel(){const R0=realInfo(),T=R0.tot;if(!T.m&&!R0.tr.length)return '';return `<div class="panel"><h2>📈 Deine echten Statistiken</h2><div class="small" style="margin-top:6px">${T.m?`${T.m} Matches · Ø ${T.d?(T.pts/T.d*3).toFixed(1):'–'} · 180er: ${T.s180} · 140+: ${T.t140} · 100+: ${T.t100} · High-Finish: ${T.hico||'–'}`:''}</div>${R0.hist.slice(0,3).map(h=>`<div class="tiny mut" style="margin-top:4px">${h.date}: ${h.pl.map(p=>`${esc(p.n)} ${p.legs}`).join(' : ')} (Sieger ${esc(h.win)})</div>`).join('')}</div>`}
+
+/* ================= Walk-on ================= */
+const WALK=[{n:'Sternenstaub',bpm:132,m:[72,76,79,84,79,76,72,79,74,77,81,86,81,77,74,81]},{n:'Donnerhall',bpm:120,m:[57,57,64,57,62,62,69,62,60,60,67,60,64,64,71,64]},{n:'Bierzelt-Stomp',bpm:150,m:[67,72,72,76,72,76,79,76,74,71,74,77,79,77,76,74]},{n:'Neon-Nacht',bpm:124,m:[69,72,76,81,76,72,69,76,67,71,74,79,74,71,67,74]},{n:'Gipfelsturm',bpm:140,m:[60,64,67,72,74,72,67,64,65,69,72,77,79,77,72,69]},{n:'Disco-Pfeil',bpm:128,m:[76,76,88,76,74,74,86,74,72,72,84,72,71,74,76,79]}];
+function playWalk(i,dur){if(S&&S.mute)return;try{const W=WALK[i%WALK.length],ctx=new(window.AudioContext||window.webkitAudioContext)(),g=ctx.createGain();g.gain.value=.05;g.connect(ctx.destination);const st=60/W.bpm/2;let t=ctx.currentTime+.05;const n=Math.floor(dur/st);
+  for(let k=0;k<n;k++){const m=W.m[k%W.m.length];const o=ctx.createOscillator(),e=ctx.createGain();o.type='square';o.frequency.value=440*Math.pow(2,(m-69)/12);e.gain.setValueAtTime(.4,t);e.gain.exponentialRampToValueAtTime(.001,t+st*.9);o.connect(e);e.connect(g);o.start(t);o.stop(t+st);
+    if(k%2===0){const b=ctx.createOscillator(),eb=ctx.createGain();b.type='triangle';b.frequency.value=440*Math.pow(2,(W.m[(k>>2<<2)%W.m.length]-12-69)/12);eb.gain.setValueAtTime(.8,t);eb.gain.exponentialRampToValueAtTime(.001,t+st*1.8);b.connect(eb);eb.connect(g);b.start(t);b.stop(t+st*2)}t+=st}
+  setTimeout(()=>{try{ctx.close()}catch(e){}},dur*1000+500)}catch(e){}}
+function walkOn(p,opp){if(!p)return;const el=document.createElement('div');el.id='walkon';const nick=(p.name.split('„')[1]||'').split('“')[0];
+  el.innerHTML=`<div class="wl"></div><div class="wr"></div><div class="wc"><div class="tiny" style="letter-spacing:3px;color:var(--gold)">MEINE DAMEN UND HERREN …</div><img src="${portraitURL(p.look)}"><div class="px wn">${esc(p.name)}</div>${opp?`<div class="tiny mut" style="margin-top:6px">gegen ${esc(opp)}</div>`:''}<div class="tiny mut" style="margin-top:10px">🎵 ${WALK[(p.walk||0)%WALK.length].n} · tippen zum Überspringen</div></div>`;
+  document.body.appendChild(el);playWalk(p.walk||0,3.6);const close=()=>{el.classList.add('out');setTimeout(()=>el.remove(),400)};el.onclick=close;setTimeout(close,3800)}
+
+/* ================= Saison-Events ================= */
+function seasonNow(){const d=new Date(),m=d.getMonth()+1,day=d.getDate();if((m===10&&day>=20)||(m===11&&day<=10))return'halloween';if((m===12&&day>=5)||(m===1&&day<=6))return'xmas';if(m>=6&&m<=8)return'summer';return null}
+const SEASON={halloween:{n:'Grusel-Cup',i:'🎃',d:'Nur bis 10. November!'},xmas:{n:'Weihnachts-WM',i:'🎄',d:'Nur bis 6. Januar!'},summer:{n:'Sommer-Open',i:'🏖',d:'Nur im Sommer!'}};
+Object.assign(CARDS,{
+ kuerbis:{n:'Kürbis-Wurf',c:1,t:'wurf',r:'r',ev:1,th:(C,u)=>[{pts:60,alt:20,ch:u?.66:.58,k:'triple',num:20}],fx:(C,u)=>{C.opp.st.nerv+=1},d:u=>`Triple 20 (${u?66:58}%). Der Gegner erschrickt: 1 Zug nervös. 🎃 Event-Karte`},
+ geist:{n:'Geisterdart',c:0,t:'skill',r:'r',ev:1,ex:true,fx:(C,u)=>{C.me.sureAll=true;C.me.block+=u?4:2},d:u=>`Dein nächster Wurf trifft sicher, +${u?4:2} Fokus. Einmal pro Leg. 🎃 Event-Karte`},
+ gluehwein:{n:'Glühwein',c:0,t:'skill',r:'r',ev:1,ex:true,fx:(C,u)=>{heal(u?10:7);C.me.block+=4},d:u=>`+${u?10:7} Nerven, +4 Fokus. Einmal pro Leg. 🎄 Event-Karte`},
+ geschenk:{n:'Geschenk',c:0,t:'skill',r:'r',ev:1,ex:true,fx:(C,u)=>{draw(u?3:2)},d:u=>`Ziehe ${u?3:2} Karten. Einmal pro Leg. 🎄 Event-Karte`},
+ cocktail:{n:'Cocktail',c:0,t:'skill',r:'r',ev:1,fx:(C,u)=>{heal(u?5:3);if(C.me.rhythm)C.me.rhythm.n++},d:u=>`+${u?5:3} Nerven, Rhythmus +1. 🏖 Event-Karte`},
+ sonnenbrille:{n:'Sonnenbrille',c:0,t:'skill',r:'r',ev:1,ex:true,fx:(C,u)=>{C.me.block+=u?14:10},d:u=>`+${u?14:10} Fokus. Cool bleiben! Einmal pro Leg. 🏖 Event-Karte`},
+});
+Object.assign(CICON,{kuerbis:'🎃',geist:'👻',gluehwein:'🍷',geschenk:'🎁',cocktail:'🍹',sonnenbrille:'🕶'});
+const EV_CARDS={halloween:['kuerbis','geist'],xmas:['gluehwein','geschenk'],summer:['cocktail','sonnenbrille']};
+const T_SEASON0=TIERS.length;
+TIERS.push(
+ {n:'Grusel-Cup',bei:'beim',i:'🎃',rep:10,fee:60,steps:6,prize:80,repWin:20,fans:60,st:501,ln:3,bn:3,lv:2,season:'halloween',tag:'Halloween-Event: Gewinner bekommen exklusive Gruselkarten.'},
+ {n:'Weihnachts-WM',bei:'bei der',i:'🎄',rep:10,fee:80,steps:7,prize:110,repWin:30,fans:90,st:501,ln:3,bn:4,lv:2,season:'xmas',tag:'Das Fest im Palast: exklusive Weihnachtskarten für den Sieger.'},
+ {n:'Sommer-Open',bei:'bei den',i:'🏖',rep:10,fee:60,steps:6,prize:80,repWin:20,fans:60,st:501,ln:3,bn:3,lv:2,season:'summer',tag:'Turnier am Strand: exklusive Sommerkarten für den Sieger.'},
+ {n:'Q-School',bei:'bei der',i:'🎓',rep:60,fee:400,steps:6,prize:60,repWin:25,fans:40,st:501,ln:3,bn:4,lv:3,qschool:1,tag:'Spiel um die Tour-Karte! Nur für Spieler ab Level 4 ohne Tour-Karte.'},
+ {n:'Players Championship',bei:'bei der',i:'🎫',rep:60,fee:250,steps:6,prize:260,repWin:40,fans:80,st:501,ln:4,bn:4,lv:3,tourOnly:1,tag:'Nur mit Tour-Karte. Doppelte Ranglistenpunkte!'},
+);
+BOSSES.push({name:'Graf „Dracula“ Knochenhand',nick:'Der Graf',ab:['fieber','zittern']},{name:'Klaus „Der Weihnachtsmann“ Nordpol',nick:'Weihnachtsmann',ab:['cold','druck']},{name:'Sunny „Flip-Flop“ Strand',nick:'Flip-Flop',ab:['comeback','druck']},{name:'Prüfer Hartmut „Die Hürde“ Streng',nick:'Die Hürde',ab:['cold','druck','zittern']},{name:'Ricardo „Der Pro“ Tourmann',nick:'Der Pro',ab:['cold','comeback','druck']});
+const tierHidden=T=>T.season&&T.season!==seasonNow();
+function seasonReward(r){const T=TIERS[r.tier];if(!T.season)return;const p=player(r.pid);const ids=EV_CARDS[T.season];ids.forEach(id=>p.deck.push({id,up:false,u:uid()}));S.money+=300;setTimeout(()=>modal(`<div style="text-align:center"><div style="font-size:48px">${T.i}</div><h3>${T.n} gewonnen!</h3><div class="small mut">Exklusive Event-Karten für ${esc(p.name)}:</div><div class="row" style="justify-content:center;gap:8px;margin:8px 0">${ids.map(id=>cardHTML({id,up:false})).join('')}</div><div class="small">+300 € Bonus</div></div><button class="btn gold block" onclick="closeModal()">Gruselig gut!</button>`),1500)}
+
+/* ================= Profi-Karriere: Tour-Karte ================= */
+function tourCheck(){S.players.forEach(p=>{if(p.tour&&S.week>=p.tour.until){if(rankOf(p)<=64){p.tour.until=S.week+40;log(`🎫 ${p.name} bleibt in den Top 64 und behält die Tour-Karte!`)}else{p.tour=null;log(`🎫 ${p.name} verliert die Tour-Karte (nicht in den Top 64). Zurück zur Q-School!`);mgQ({t:'🎫 Tour-Karte verloren',x:`${esc(p.name)} ist nicht in den Top 64 der Weltrangliste und verliert die Tour-Karte. Über die Q-School kann er sie zurückholen.`,o:[['Schade',()=>{}]]})}}})}
+function tourOk(T,p){if(T.tourOnly)return !!p.tour;if(T.qschool)return !p.tour&&p.lvl>=4;return true}
+
+Object.assign(COACH,{scorer:'📟 <b>Scorer</b>: Tippe die Punkte deiner Aufnahme ein und drück OK, oder nimm die Schnellknöpfe. Oben steht der Checkout-Weg. Bei einem Checkout fragt das Spiel nach der Anzahl Darts. Echte 180er und High-Finishes geben Belohnungen für deinen Spieler.'});
+Object.assign(COACH2,{r_scheiben:'🆕 Am Oche gibt es jetzt den <b>📟 Scorer für echte Spiele</b> und <b>📝 Echtes Training eintragen</b>. Was du am echten Board leistest, bringt dir im Spiel XP und Geld!'});
+
 /* ================= Match ================= */
 function makeOpp(tier,kind,step){
   let o;
@@ -3669,6 +3780,7 @@ function startCombat(kind){
     me:{rest:f.start,legs:0,block:0,darts:3,hand:[],draw:[],discard:[],exhaust:[],pw:{heat:0,ice:0,walk:0,mental:0,armor:0,acc:0},accBuff:0,played:0,turnStart:301,sure:false},
     leg:1,starter:'me',turn:0,used:[],phase:'player',busy:false,firstTurn:true,stats:{s180:0,hi:0},start:f.start,need:f.need,sets:f.sets||0,din:!!f.din,aim:(r.mode!=='liga'&&kind==='b')?'all':null};
   if(UI.auto){UI.auto=false;if(UI.autoT){clearTimeout(UI.autoT);UI.autoT=null}}
+  if((kind==='b'&&!r.mode)||r.mode==='pl'){const pp=player(r.pid);setTimeout(()=>walkOn(pp,r.combat&&r.combat.opp.name),150)}
   bossSetup(r.combat);applyFlagsCombat(r.combat);scaleOpp(r.combat);ascApplyCombat(r.combat);
   UI.sel=-1;
   if(r.combat.aim)setTimeout(()=>toast('🎯 Finale: Zielmodus! Jeden Wurf wirfst du selbst.'),400);
@@ -3908,7 +4020,7 @@ function matchWon(){
   const r=S.run,C=r.combat,T=TIERS[r.tier];
   r.won++;r.matches++;
   const g=Math.round(T.prize*(C.kind==='e'?1.6:C.kind==='b'?3:1)*(1+S.b.sponsor*.1)*(has('scarf')?1.25:1)*(1+decoSum('prize')/100)*(1+perk('preis')*.1)*(r.flags&&r.flags.gross?1.4:1)*(1+.15*(r.asc||0)));
-  r.gold+=g;S.stats.mwins=(S.stats.mwins||0)+1;rpGain(player(),(lvOf(r.tier)+1)*8*(C.kind==='e'?1.5:C.kind==='b'?2.5:1)*(1+.2*(r.asc||0)));
+  r.gold+=g;S.stats.mwins=(S.stats.mwins||0)+1;rpGain(player(),(lvOf(r.tier)+1)*8*(C.kind==='e'?1.5:C.kind==='b'?2.5:1)*(1+.2*(r.asc||0))*(T.tourOnly?2:1));
   const hl=(r.asc||0)>=7?0:heal(3+(has('stammtisch')?6:0));
   r.combat=null;save();
   if(C.kind==='b')return runEnd(true);
@@ -3934,6 +4046,7 @@ function matchLost(){
 function runEnd(champ){
   const r=S.run,T=TIERS[r.tier],p=player();
   if(r.daily){dailyEnd(r)}
+  if(champ&&!r.daily){seasonReward(r);if(T.qschool){p.tour={until:S.week+40};log(`🎫 ${p.name} holt sich die Tour-Karte!`);setTimeout(()=>caller('TOUR-KARTE!','#3aff8c'),1600)}}
   if(champ){rpGain(p,T.repWin*(1+.2*(r.asc||0)));if(!r.daily){const A=ascInfo();if((r.asc||0)>=A.max&&A.max<10){A.max++;setTimeout(()=>toast(`🔥 Druckstufe ${A.max} freigeschaltet!`),1800)}}}
   if(champ&&r.flags&&r.flags.wette){r.gold+=200;setTimeout(()=>toast('🍺 Wette gewonnen: +200 €'),1200)}
   setTimeout(evoCheck,1600);

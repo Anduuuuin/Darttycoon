@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Dart Tycoon</title>
-<meta name="dt-version" content="2.3.2">
+<meta name="dt-version" content="2.3.3">
 <meta name="theme-color" content="#0e1511">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2996,7 +2996,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='2.3.2';
+const GAME_VERSION='2.3.3';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
@@ -3765,11 +3765,11 @@ const GAMES={daily:{n:'📅 Tages-Turnier',u:'Siege',today:1},c121:{n:'🎯 121-
 async function boardDialog(g){const first=!g&&!UI.og;g=g||UI.og||'daily';UI.og=g;
   modal(`<h3>🌐 Online-Bestenliste</h3><div class="seg" id="oseg">${Object.entries(GAMES).map(([k,x])=>`<button class="btn sm ${k===g?'':'gray'}" data-og="${k}">${x.n}</button>`).join('')}</div><div id="obody" class="small mut">Lade …</div><button class="btn gray block" onclick="closeModal()">Schließen</button>`);
   document.querySelectorAll('[data-og]').forEach(b=>b.onclick=()=>boardDialog(b.dataset.og));
-  try{const load=async k=>{const G=GAMES[k];const rows=await sb(`scores?select=name,club,value,day&game=eq.${k}${G.today?`&day=eq.${isoDay()}`:''}&club=neq.Verbindungstest&order=value.desc,created_at.asc&limit=300`);const best={};rows.forEach(r=>{const key=r.name+'|'+r.club;if(!best[key]||r.value>best[key].value)best[key]=r});return Object.values(best).sort((a,b)=>b.value-a.value).slice(0,30)};
+  try{let raw={};const load=async k=>{const G=GAMES[k];const rows=await sb(`scores?select=name,club,value,day&game=eq.${k}${G.today?`&day=eq.${isoDay()}`:''}&club=neq.Verbindungstest&order=value.desc,created_at.asc&limit=300`);raw[k]=rows.length;const best={};rows.forEach(r=>{const key=r.name+'|'+r.club;if(!best[key]||r.value>best[key].value)best[key]=r});return Object.values(best).sort((a,b)=>b.value-a.value).slice(0,30)};
     const all={};await Promise.all(Object.keys(GAMES).map(async k=>{all[k]=await load(k)}));
     if(first&&!all[g].length){const k=Object.keys(GAMES).find(x=>all[x].length);if(k){g=k;UI.og=k}}
     const seg=$('#oseg');if(seg){seg.innerHTML=Object.entries(GAMES).map(([k,x])=>`<button class="btn sm ${k===g?'':'gray'}" data-og="${k}">${x.n} (${all[k].length})</button>`).join('');seg.querySelectorAll('[data-og]').forEach(b=>b.onclick=()=>boardDialog(b.dataset.og))}
-    const L=all[g],G=GAMES[g],el=$('#obody');if(!el)return;el.className='small';el.innerHTML=`<div class="tiny mut" style="margin:6px 0">${G.today?'Heute':'Alle Zeiten'} · ${G.u}</div>`+(L.length?L.map((r,i)=>`<div class="row between" style="padding:5px 0;border-bottom:1px solid var(--line);${r.name===onName()&&r.club===S.club?'color:var(--gold)':''}"><span>${i<3?['🥇','🥈','🥉'][i]:(i+1)+'.'} <b>${esc(r.name)}</b> <span class="tiny mut">${esc(r.club||'')}</span></span><b>${r.value}</b></div>`).join(''):'<div class="mut">Noch keine Einträge. Sei der Erste!</div>')}
+    const L=all[g],G=GAMES[g],el=$('#obody');if(!el)return;el.className='small';el.innerHTML=`<div class="tiny mut" style="margin:6px 0">${G.today?'Heute':'Alle Zeiten'} · ${G.u}</div>`+(L.length?L.map((r,i)=>`<div class="row between" style="padding:5px 0;border-bottom:1px solid var(--line);${r.name===onName()&&r.club===S.club?'color:var(--gold)':''}"><span>${i<3?['🥇','🥈','🥉'][i]:(i+1)+'.'} <b>${esc(r.name)}</b> <span class="tiny mut">${esc(r.club||'')}</span></span><b>${r.value}</b></div>`).join(''):'<div class="mut">Noch keine Einträge. Sei der Erste!</div>')+`<div class="tiny mut" style="margin-top:6px;opacity:.6">${raw[g]} Einträge geladen · ${isoDay()} · v${GAME_VERSION}</div>`}
   catch(e){const el=$('#obody');if(el)el.innerHTML=`⚠️ Keine Verbindung zur Online-Datenbank (${esc(e.message)}).`}}
 // Duelle
 const CODE_CH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';

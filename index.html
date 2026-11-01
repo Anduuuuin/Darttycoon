@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Bullseye Boss</title>
-<meta name="dt-version" content="3.8">
+<meta name="dt-version" content="3.9">
 <meta name="theme-color" content="#0e1511">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -652,6 +652,7 @@ const ACH=[
  ['cd1','🃏','Kartenhai','Gewinne ein Match im Modus Kartenspiel.',s=>(s.stats.cdW||0)>=1,{m:40}],
  ['bm15','🎯','Scheibenkünstler','Gewinne 15 Matches an der Dartscheibe.',s=>(s.stats.bmW||0)>=15,{m:300,r:8}],
  ['cd15','🃏','Kartenstratege','Gewinne 15 Matches im Kartenspiel.',s=>(s.stats.cdW||0)>=15,{m:300,r:8}],
+ ['live1','⚡','Live-Held','Gewinne ein Live-Duell gegen einen Freund.',s=>(s.stats.liveW||0)>=1,{m:100,r:3}],
  ['both5','☯️','Allrounder','Gewinne je 5 Matches in beiden Modi.',s=>(s.stats.bmW||0)>=5&&(s.stats.cdW||0)>=5,{m:250,r:6}],
  ['bm180','💪','Echte 180','Wirf selbst eine 180 an der Dartscheibe.',s=>(s.stats.bm180||0)>=1,{m:200,r:6}],
  ['bmco','🧊','Ruhige Hand','Checke an der Dartscheibe 80+ selbst aus.',s=>(s.stats.bmHico||0)>=80,{m:200,r:6}],
@@ -3087,7 +3088,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='3.8';
+const GAME_VERSION='3.9';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
@@ -3898,13 +3899,14 @@ function hubOnline(){setTimeout(myDuels,50);
   return `<div class="navrow"><button class="btn gray sm" data-go="turnier">◀ Turniere</button><b class="small">🌐 Online</b></div>
   <div class="panel"><div class="row between"><div><h3>👤 Online-Name</h3><div class="tiny mut">So erscheinst du in Bestenlisten und Duellen.</div></div><button class="btn gray sm" id="oname">${esc(onName())} ✏️</button></div><div class="row between" style="margin-top:8px"><span class="tiny mut">Ergebnisse automatisch hochladen</span><button class="btn sm ${S.onOff?'gray':''}" id="otog">${S.onOff?'Aus':'An'}</button></div></div>
   <button class="btn gray block" id="otest">🔧 Verbindung testen</button>
+  <button class="btn gold block" id="lvgo" style="margin-bottom:8px">⚡ Live-Duell mit Freund (Echtzeit)</button>
   <div class="grid2"><button class="btn gold" id="oboard">🏆 Bestenlisten</button><button class="btn gold" data-go="vliga">🏟 Vereinsliga${S.vl?' ✔':''}</button></div>
   <div class="panel"><h2>⚔️ Freundes-Duelle</h2><div class="tiny mut" style="margin-top:4px">Erstelle einen Code für deinen Spieler und schick ihn Freunden. Oder gib den Code eines Freundes ein und spiel gegen seine KI-Kopie (501 · Best of 5). Siege bringen 100 € und Fans.</div>
    <div class="row" style="gap:6px;margin-top:8px"><input type="text" id="dcode" placeholder="CODE" maxlength="6" style="flex:1;text-transform:uppercase;letter-spacing:3px;margin:0"><button class="btn" id="djoin">Antreten</button></div>
    <div class="small" style="margin-top:10px"><b>Code für meinen Spieler erstellen:</b></div><div class="row" style="gap:6px;flex-wrap:wrap;margin-top:6px">${S.players.map(p=>`<button class="btn gray sm" data-dc="${p.id}">${esc(p.name)} Lv${p.lvl}</button>`).join('')}</div></div>
   <div class="panel"><h2>📬 Meine Duelle</h2></div><div id="mydu"><div class="small mut">Lade …</div></div>`}
 function bindOnline(app){const q=(id,f)=>{const e=app.querySelector(id);if(e)e.onclick=f};
-  q('#oboard',()=>boardDialog());
+  q('#oboard',()=>boardDialog());q('#lvgo',()=>lvMenu());
   q('#otest',async()=>{modal('<h3>🔧 Verbindungstest</h3><div id="otr" class="small">Teste …</div><button class="btn gray block" onclick="closeModal()">Schließen</button>');const out=[];const t=async(n,f)=>{try{out.push('✅ '+n+': '+(await f()))}catch(e){out.push('❌ '+n+': '+esc(e.message))}const el=$('#otr');if(el)el.innerHTML=out.join('<br>')};
     await t('Lesen',async()=>{const r=await sb('scores?select=game,name,value,day&order=created_at.desc&limit=5');return r.length?r.length+' neueste: '+r.map(x=>`${esc(x.name)} ${x.game} ${x.value} (${x.day})`).join(', '):'Tabelle leer'});
     await t('Schreiben',async()=>{await sb('scores',{method:'POST',prefer:'return=minimal',body:{game:'click',name:'Test',club:'Verbindungstest',value:0,day:'2000-01-01'}});return 'ok'});
@@ -4096,10 +4098,10 @@ function confetti(){const cols=[[1,.3,.35],[1,.8,.2],[.3,.8,1],[.4,.95,.5],[1,1,
 function pop(text,css,at,big){const p=q('b3pop');p.className='';void p.offsetWidth;p.textContent=text;p.style.color=css;if(big){p.style.left='50%';p.style.top='42%';p.className='big'}else{p.style.left=cl(at[0],90,W-90)+'px';p.style.top=cl(at[1],120,H-120)+'px';p.className='show'}}
 function assistPt(x,y){const k=opt.assist??P.assist,r=Math.hypot(x,y);if(k>0&&r<.172){let a=Math.atan2(x,y);const st=Math.PI/10,c=Math.round(a/st)*st;a+=(c-a)*k*.5;let r2=r*1000;const pull=(t,w)=>{if(Math.abs(r2-t)<w)r2+=(t-r2)*k};pull(103,10);pull(166,10);if(r2<24)r2*=1-k*.8;x=Math.sin(a)*r2/1000;y=Math.cos(a)*r2/1000}return[x,y]}
 function aimPoint(now){const p=screenToBoard(aim.sx,aim.sy-P.reticleOffset);if(opt.mirror)p[0]=2*cam.x-p[0];const _=0,t=now/1000,s=opt.sway??P.sway;return[p[0]+Math.sin(t*1.3*(opt.swaySpd||1))*s+Math.sin(t*3.1)*s*.35,p[1]+Math.sin(t*1.7*(opt.swaySpd||1)+1)*s+Math.cos(t*2.6)*s*.35]}
-function launch(rel,color,from,now){if(opt.drift&&!opt.isAuto)rel=[rel[0]+opt.drift[0],rel[1]+opt.drift[1]];const q0=assistPt(rel[0],rel[1]),S=from||handPos(now),T=[q0[0]+gauss()*P.scatter,BOARD_Y+q0[1]+gauss()*P.scatter,-.016];
+function launch(rel,color,from,now){if(opt.drift&&!opt.isAuto)rel=[rel[0]+opt.drift[0],rel[1]+opt.drift[1]];const q0=opt.exact?rel:assistPt(rel[0],rel[1]),S=from||handPos(now),sx=opt.exact?0:P.scatter,T=[q0[0]+gauss()*sx,BOARD_Y+q0[1]+gauss()*sx,-.016];
   flying={S,T,t:0,dur:P.flightTime,arc:(.05+.03*Math.random())/Math.max(1,cam.f*.7),roll:Math.random()*6,color,yaw:rr(0,6)};state='flying';whoosh()}
 function land(){const f=flying;flying=null;const tang=add(sub(f.T,f.S),[0,-f.arc*4,0]),dir=norm(add(norm(tang),[gauss()*.06,gauss()*.05+.05,0]));
-  stuck.push({pos:f.T,dir,roll:f.roll,color:f.color,t:0,axis:norm([gauss(),gauss(),0]),amp:rr(.07,.12)});const sc=score(f.T[0],f.T[1]-BOARD_Y);glowFor(sc);burst(f.T,sc);
+  stuck.push({pos:f.T,dir,roll:f.roll,color:f.color,t:0,axis:norm([gauss(),gauss(),0]),amp:rr(.07,.12)});const sc=score(f.T[0],f.T[1]-BOARD_Y);sc.pos=[f.T[0],f.T[1]-BOARD_Y];glowFor(sc);burst(f.T,sc);
   shake={t:.006,d:.008,bull:.011,obull:.007,s:.004,miss:.003}[sc.kind]/cam.f;pop(sc.kind==='miss'?'Daneben':(sc.label+(sc.label!==String(sc.v)?'  ·  '+sc.v:'')),KCSS[sc.kind],toScreen(f.T));
   thunk(sc.kind);try{navigator.vibrate&&navigator.vibrate(sc.kind==='t'||sc.kind==='bull'?[12,40,18]:12)}catch(e){}
   state='idle';const r=resolver;resolver=null;setTimeout(()=>r&&r(sc),380)}
@@ -4443,6 +4445,85 @@ const _sCup=startCup;startCup=function(p){return enGate(2,()=>_sCup(p))};
 const _sQua=startQuali;startQuali=function(p){return enGate(1,()=>_sQua(p))};
 const _sLg=startLeague;startLeague=function(l){return enGate(1,()=>_sLg(l))};
 const _pkb=pokalBegin;pokalBegin=function(l){return enGate(1,()=>_pkb(l))};
+
+/* ================= Live-Duell (Echtzeit mit Freund per Code) ================= */
+const LV={ws:null,code:'',ref:0,hb:null,pg:null,q:[],wait:null,hand:{},joined:false,id:Math.random().toString(36).slice(2,8),busy:false};
+const LV_CH=c=>'realtime:bbduel-'+c;
+function lvSend(ev,data){if(!LV.ws||LV.ws.readyState!==1)return;try{LV.ws.send(JSON.stringify({topic:LV_CH(LV.code),event:'broadcast',payload:{type:'broadcast',event:ev,payload:Object.assign({id:LV.id},data||{})},ref:String(++LV.ref)}))}catch(e){}}
+function lvClose(){clearInterval(LV.hb);clearInterval(LV.pg);clearInterval(LV.hi);try{LV.ws&&LV.ws.close()}catch(e){}LV.ws=null;LV.joined=false;LV.q=[];LV.hand={};if(LV.wait){const w=LV.wait;LV.wait=null;w(null)}}
+function lvWake(m){if(LV.wait){const w=LV.wait;LV.wait=null;w(m)}}
+function lvNext(ms){return new Promise(res=>{if(LV.q.length)return res(LV.q.shift());const t=setTimeout(()=>{LV.wait=null;res(null)},ms);LV.wait=m=>{clearTimeout(t);res(m)}})}
+function lvOpen(code,cb){lvClose();LV.code=code;let told=false;const tell=ok=>{if(!told){told=true;cb(ok)}};
+  let ws;try{ws=new WebSocket(`wss://${SB_URL.replace('https://','')}/realtime/v1/websocket?apikey=${SB_KEY}&vsn=1.0.0`)}catch(e){return tell(false)}
+  LV.ws=ws;
+  ws.onopen=()=>{ws.send(JSON.stringify({topic:LV_CH(code),event:'phx_join',payload:{config:{broadcast:{self:false,ack:false},presence:{key:''},postgres_changes:[],private:false},access_token:SB_KEY},ref:'1',join_ref:'1'}));
+    LV.hb=setInterval(()=>{try{ws.send(JSON.stringify({topic:'phoenix',event:'heartbeat',payload:{},ref:String(++LV.ref)}))}catch(e){}},20000)};
+  ws.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(_){return}
+    if(m.event==='phx_reply'&&m.ref==='1'){if(m.payload&&m.payload.status==='ok'){LV.joined=true;tell(true)}else tell(false)}
+    else if(m.event==='broadcast'&&m.topic===LV_CH(code)){const p=m.payload||{},d=p.payload||{};if(d.id===LV.id)return;const ev=p.event;
+      if(ev==='dart'||ev==='leave'){LV.q.push({ev,d});if(LV.wait){const w=LV.wait;LV.wait=null;w(LV.q.shift())}}else if(LV.hand[ev])LV.hand[ev](d)}};
+  ws.onclose=()=>{LV.joined=false;tell(false);lvWake(null)};ws.onerror=()=>tell(false)}
+const lvCode=()=>{const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let c='';for(let i=0;i<4;i++)c+=a[Math.floor(Math.random()*a.length)];return c};
+const lvMe=()=>({name:onName(),club:S.club});
+function lvMenu(){modal(`<h3>⚡ Live-Duell</h3><div class="small mut">Spiele in Echtzeit gegen einen Freund. Jeder wirft selbst an der 3D-Scheibe, ohne Karten und mit gleichen Bedingungen für beide. Du brauchst Internet, und ihr müsst beide gleichzeitig online sein.</div>
+  <div class="row" style="gap:6px;margin:10px 0"><select id="lvs" style="flex:1"><option value="501">501</option><option value="301">301</option></select><select id="lvn" style="flex:1"><option value="1">1 Leg</option><option value="2" selected>Best of 3</option><option value="3">Best of 5</option></select></div>
+  <button class="btn gold block" id="lvh">Raum erstellen</button>
+  <div class="row" style="gap:6px;margin-top:8px"><input id="lvc" maxlength="4" placeholder="CODE" style="flex:1;text-transform:uppercase;letter-spacing:4px;margin:0"><button class="btn block" id="lvj" style="flex:1">Beitreten</button></div>
+  <button class="btn gray block" style="margin-top:8px" onclick="closeModal()">Zurück</button>`);
+  $('#lvh').onclick=()=>lvHost({start:+$('#lvs').value,need:+$('#lvn').value});
+  $('#lvj').onclick=()=>{const c=($('#lvc').value||'').trim().toUpperCase();if(c.length!==4)return toast('Der Code hat 4 Zeichen');lvJoin(c)}}
+function lvHost(o){const code=lvCode();LV.started=false;
+  modal(`<h3>⚡ Live-Duell</h3><div class="small mut">Verbinde …</div>`);
+  lvOpen(code,ok=>{if(!ok&&!LV.started){modal(`<h3>⚡ Live-Duell</h3><div class="small">Die Verbindung hat nicht geklappt. Prüfe dein Internet und versuch es nochmal.</div><button class="btn gray block" style="margin-top:8px" onclick="closeModal()">Schließen</button>`);return}
+    if(!ok)return;
+    modal(`<h3>⚡ Raum ist offen</h3><div class="small mut">Schick deinem Freund diesen Code. Das Duell startet, sobald er beitritt.</div><div class="px" style="font-size:38px;letter-spacing:8px;text-align:center;margin:14px 0;color:var(--gold)">${code}</div>
+     <button class="btn block" id="lvsh">📤 Code teilen</button><button class="btn gray block" style="margin-top:8px" id="lvx">Abbrechen</button>`);
+    $('#lvsh').onclick=()=>{const t=`Live-Duell in Bullseye Boss! Code: ${code} (Online > Live-Duell > Beitreten) https://anduuuuin.github.io/darttycoon/`;if(navigator.share)navigator.share({text:t}).catch(()=>{});else{try{navigator.clipboard.writeText(t);toast('Text kopiert')}catch(e){toast(code)}}};
+    $('#lvx').onclick=()=>{lvClose();closeModal()};
+    LV.hand.hello=d=>{const first=LV.first==null?(Math.random()<.5?0:1):LV.first;LV.first=first;LV.started=true;
+      const cfg={first,start:o.start,need:o.need};lvSend('start',Object.assign({host:lvMe()},cfg));
+      if(!LV.busy){LV.busy=true;closeModal();lvMatch({seat:0,me:lvMe(),op:{name:d.name,club:d.club},first,start:o.start,need:o.need})}}})}
+function lvJoin(code){LV.started=false;modal(`<h3>⚡ Live-Duell</h3><div class="small mut">Suche Raum ${code} …</div><button class="btn gray block" style="margin-top:8px" id="lvx">Abbrechen</button>`);$('#lvx').onclick=()=>{lvClose();closeModal()};
+  lvOpen(code,ok=>{if(!ok&&!LV.started){modal(`<h3>⚡ Live-Duell</h3><div class="small">Die Verbindung hat nicht geklappt. Prüfe dein Internet und versuch es nochmal.</div><button class="btn gray block" style="margin-top:8px" onclick="closeModal()">Schließen</button>`);return}
+    if(!ok)return;let tries=0;
+    LV.hand.start=d=>{if(LV.started)return;LV.started=true;clearInterval(LV.hi);LV.busy=true;closeModal();lvMatch({seat:1,me:lvMe(),op:d.host,first:d.first,start:d.start,need:d.need})};
+    const hi=()=>{lvSend('hello',lvMe());if(++tries>14&&!LV.started){clearInterval(LV.hi);lvClose();modal(`<h3>⚡ Live-Duell</h3><div class="small">Kein Freund im Raum ${code} gefunden. Stimmt der Code, und hat dein Freund den Raum erstellt?</div><button class="btn gray block" style="margin-top:8px" onclick="closeModal()">Schließen</button>`)}};
+    hi();LV.hi=setInterval(hi,1500)})}
+async function lvMatch(cfg){const seat=cfg.seat,oo=1-seat,me=cfg.me,opn=cfg.op||{name:'Gegner'};LV.q=[];
+  const st={rest:[cfg.start,cfg.start],legs:[0,0],pts:[0,0]};let leg=1,forfeit=null;
+  B3.open();LV.pg=setInterval(()=>lvSend('ping'),5000);
+  const qb=document.createElement('button');qb.id='lvq';qb.textContent='✕';qb.style.cssText='position:fixed;right:10px;bottom:90px;z-index:99999;background:#3a1416;color:#fff;border:1px solid #d9333f;border-radius:10px;padding:8px 12px;font:700 14px system-ui';
+  qb.onclick=()=>{if(confirm('Duell aufgeben? Dein Freund gewinnt.')){lvSend('leave');setTimeout(()=>location.reload(),250)}};document.body.appendChild(qb);
+  const hud=()=>{B3.title(`<b>⚡ Live-Duell</b> · Leg ${leg} · ${st.legs[seat]}:${st.legs[oo]}`);B3.info(`<span style="color:#7fdc9f">${esc(me.name)} <b>${st.rest[seat]}</b></span><br><span style="color:#ff8a8a">${esc(opn.name)} <b>${st.rest[oo]}</b></span>`)};
+  while(st.legs[0]<cfg.need&&st.legs[1]<cfg.need&&!forfeit){
+    st.rest=[cfg.start,cfg.start];let turn=(cfg.first+leg-1)%2,done=null;hud();B3.banner(`Leg ${leg} · ${turn===seat?'Du beginnst':esc(opn.name)+' beginnt'}`,'#fff');await sleepB(1000);B3.banner('');
+    while(done===null&&!forfeit){hud();
+      if(LV.q.some(m=>m.ev==='leave')){forfeit='op';break}
+      const sl=[null,null,null],start=st.rest[turn];let vis=0,bust=false,co=false;B3.slots(sl);
+      if(turn!==seat){B3.banner(`${esc(opn.name)} ist dran …`,'#bbb')}
+      for(let d=0;d<3;d++){let sc;
+        if(turn===seat){const r=st.rest[seat]-vis;let zone=null,zoom=0,mul=1;
+          if((r<=40&&r%2===0&&r>=2)||r===50){zone=r===50?{k:'bull',n:25}:{k:'d',n:r/2};zoom=2.5;B3.banner(`🎯 Checkout: ${r===50?'BULL':'D'+r/2}`,'#ffcf3f');mul=1.5}
+          sc=await B3.throw({zone,zoom,sway:.0038*mul,assist:.3,swaySpd:1,hint:zone?'Schnippen! · „🔍“ = ganze Scheibe':undefined});B3.banner('');
+          lvSend('dart',{pos:sc.pos,d})}
+        else{const m=await lvNext(50000);if(!m||m.ev==='leave'){forfeit='op';break}B3.banner('');sc=await B3.auto(m.d.pos,{exact:true,delay:350,color:[.3,.7,1]})}
+        const nr=st.rest[turn]-vis-sc.v;sl[d]=sc.label;B3.slots(sl);
+        if(nr===0&&(sc.kind==='d'||sc.kind==='bull')){vis+=sc.v;co=true;break}
+        if(nr<2){bust=true;B3.banner(turn===seat?'BUST!':`${esc(opn.name)}: BUST`,'#ff5a5a');snd('bust');break}
+        vis+=sc.v;if(nr>=2){const t=st.rest.slice();t[turn]=nr;B3.info(`<span style="color:#7fdc9f">${esc(me.name)} <b>${t[seat]}</b></span><br><span style="color:#ff8a8a">${esc(opn.name)} <b>${t[oo]}</b></span>`)}}
+      if(forfeit)break;
+      if(!bust){st.rest[turn]-=vis;st.pts[turn]+=vis}
+      if(vis===180&&!bust){B3.celebrate('180!');if(turn===seat){S.stats.s180++;S.stats.tons++}await sleepB(1500)}else if(vis>=100&&!bust&&turn===seat)S.stats.tons++;
+      if(co){if(turn===seat)S.stats.hico=Math.max(S.stats.hico||0,start);if(start>=100)B3.celebrate(`${start} CHECKOUT!`,'#7dffb0');else{B3.banner('CHECKOUT!','#7dffb0');snd('checkout')}done=turn}
+      await sleepB(900);B3.banner('');await B3.clear();if(done===null)turn=1-turn}
+    if(forfeit)break;
+    st.legs[done]++;B3.banner(done===seat?'Leg gewonnen!':`Leg für ${esc(opn.name)}`,done===seat?'#7dffb0':'#ff8a8a');await sleepB(1300);B3.banner('');leg++}
+  const win=forfeit==='op'||st.legs[seat]>=cfg.need;
+  qb.remove();clearInterval(LV.pg);B3.banner('');B3.close();lvClose();LV.busy=false;
+  S.stats[win?'liveW':'liveL']=(S.stats[win?'liveW':'liveL']||0)+1;save();
+  modal(`<div style="text-align:center"><div style="font-size:48px">${win?'🏆':'😤'}</div><h3>${win?'Du hast gewonnen!':'Knapp verloren'}</h3>
+   <div class="small mut" style="margin:6px 0">${forfeit==='op'?'Dein Freund hat die Verbindung verloren oder aufgegeben.':`Legs ${st.legs[seat]} : ${st.legs[oo]} gegen ${esc(opn.name)}`}</div>
+   <div class="small">Live-Siege: <b>${S.stats.liveW||0}</b> · Niederlagen: <b>${S.stats.liveL||0}</b></div></div><button class="btn gold block" style="margin-top:10px" onclick="closeModal();render()">Fertig</button>`);}
 
 /* ================= Match ================= */
 function makeOpp(tier,kind,step){

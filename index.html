@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Dart Tycoon</title>
-<meta name="dt-version" content="2.4">
+<meta name="dt-version" content="2.4.1">
 <meta name="theme-color" content="#0e1511">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -771,7 +771,7 @@ function makePlayer(name,cls,lvl=1){
 }
 function newGame(club,pname,cls){
   const me=makePlayer(pname||'Du',cls);me.salary=0;me.look.t='#1f9d55';me.look.w='#d9333f';me.isMe=true;
-  S={v:1,sv:2,club:club||(UI.home?'Dartsport '+UI.home.city:'Mein Dartverein'),week:1,money:250,rep:0,fans:0,members:6,b:{boards:1,bar:0,training:0,sponsor:0,fanshop:0},
+  S={v:1,sv:2,club:club||'Mein Dartverein',week:1,money:250,rep:0,fans:0,members:6,b:{boards:1,bar:0,training:0,sponsor:0,fanshop:0},
      players:[me],deco:[],market:[],trophies:[],played:false,inv:[],packs:{basis:1,profi:0,elite:0},ach:{},log:['Willkommen im Verein! Starte mit dem Kneipenturnier.'],run:null,stats:{runs:0,wins:0,legs:0,best:0,tons:0,s180:0,hico:0,wash:0,comeback:0,clutch:0,nightWins:0,promo:0,packs:0,legend:0},ts:Date.now()};
   S.home=UI.home||null;applyHome(S);
   fixRival(S);rollMarket();initLeague(0,1);initPokal();fixTycoon(S);fixPrestige(S);fixTraits(S);
@@ -911,13 +911,14 @@ function newGameDialog0(){
   if(!UI.home)return homeDialog(newGameDialog0);
   modal(`<h3>Neuer Verein</h3>
    <div class="row between small" style="margin-bottom:6px"><span>📍 <b>${esc(UI.home.city)}</b>, ${esc(LAENDER[UI.home.st].n)}</span><button class="btn gray sm" id="hchg">ändern</button></div>
-   <label class="small mut">Vereinsname</label><input type="text" id="club" value="${esc('Dartsport '+UI.home.city)}" maxlength="28">
-   <label class="small mut">Dein Spielername</label><input type="text" id="pname" value="Andreas" maxlength="18">
+   <label class="small mut">Vereinsname</label><input type="text" id="club" value="${esc(UI.ngClub||'')}" placeholder="Name deines Vereins" maxlength="28">
+   <label class="small mut">Dein Spielername</label><input type="text" id="pname" value="${esc(UI.ngName||'')}" placeholder="Dein Name" maxlength="18">
    <div class="small mut">Dein Spielstil</div>
    <div class="cls">${Object.entries(CLASSES).filter(([k])=>clsOpen(k)).map(([k,c])=>`<div data-c="${k}" class="${UI.newCls===k?'on':''}"><span style="font-size:24px">${c.i}</span><b>${c.n}</b><span class="tiny mut">${c.d}</span></div>`).join('')}</div>
    <button class="btn block" id="go">Verein gründen</button>`);
   document.querySelectorAll('.cls div').forEach(el=>el.onclick=()=>{UI.newCls=el.dataset.c;document.querySelectorAll('.cls div').forEach(e=>e.classList.toggle('on',e===el))});
-  $('#go').onclick=()=>{const c=$('#club').value.trim(),p=$('#pname').value.trim();closeModal();newGame(c,p,UI.newCls)};
+  $('#go').onclick=()=>{const c=$('#club').value.trim(),p=$('#pname').value.trim();if(!c){toast('Bitte gib deinem Verein einen Namen');return $('#club').focus()}if(!p){toast('Bitte gib deinen Spielernamen ein');return $('#pname').focus()}if(!UI.newCls){toast('Bitte wähle deinen Spielstil');return}UI.ngClub=UI.ngName=null;closeModal();newGame(c,p,UI.newCls)};
+  ['club','pname'].forEach(id=>{const e=$('#'+id);if(e)e.oninput=()=>{UI[id==='club'?'ngClub':'ngName']=e.value}});
   $('#hchg').onclick=()=>homeDialog(newGameDialog0);
 }
 function importDialog(){
@@ -2996,7 +2997,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='2.4';
+const GAME_VERSION='2.4.1';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};

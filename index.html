@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Dart Tycoon</title>
-<meta name="dt-version" content="2.3.3">
+<meta name="dt-version" content="2.3.4">
 <meta name="theme-color" content="#0e1511">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2996,7 +2996,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='2.3.3';
+const GAME_VERSION='2.3.4';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
@@ -3756,7 +3756,7 @@ Object.assign(COACH2,{r_scheiben:'🆕 Am Oche gibt es jetzt den <b>📟 Scorer 
 
 /* ================= Online (Supabase) ================= */
 const SB_URL='https://nsrgsrbmmxvftkevwgdq.supabase.co',SB_KEY='sb_publishable_u-0FDsQzTWDNMUnDRaThgw_LRdZXpCC';
-async function sb(path,opt={}){const r=await fetch(SB_URL+'/rest/v1/'+path,{method:opt.method||'GET',headers:Object.assign({apikey:SB_KEY,'Content-Type':'application/json'},opt.prefer?{Prefer:opt.prefer}:{}),body:opt.body?JSON.stringify(opt.body):undefined});
+async function sb(path,opt={}){const r=await fetch(SB_URL+'/rest/v1/'+path,{cache:'no-store',method:opt.method||'GET',headers:Object.assign({apikey:SB_KEY,'Content-Type':'application/json'},opt.prefer?{Prefer:opt.prefer}:{}),body:opt.body?JSON.stringify(opt.body):undefined});
   if(!r.ok){let t='';try{t=(await r.json()).message}catch(e){}throw new Error(t||('HTTP '+r.status))}return r.status===201||r.status===204?null:r.json()}
 const onName=()=>(S.onName||meP().name||'Spieler').slice(0,24);
 const isoDay=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};

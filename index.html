@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Bullseye Boss</title>
-<meta name="dt-version" content="3.3">
+<meta name="dt-version" content="3.4">
 <meta name="theme-color" content="#0e1511">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -302,6 +302,16 @@ textarea{font-size:12px;height:90px}
 #b3d.fx-spiegel #b3fx::after{content:'🪞 ⇄';position:absolute;right:14px;top:45%;font-size:30px;opacity:.8}
 #b3d.fx-wind #b3fx::after{content:'🌬💨';position:absolute;left:14px;top:45%;font-size:30px;opacity:.85;animation:windy 1s ease-in-out infinite alternate}@keyframes windy{to{transform:translateX(16px)}}
 #b3d.fx-fieber #b3fx{background:#40306a33}
+
+.rppl{position:absolute;inset:0;pointer-events:none;overflow:hidden}.rdart{z-index:3}.rp{position:absolute}.rp img{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated;image-rendering:crisp-edges}
+.rp.idl{animation:pwander var(--d) ease-in-out infinite}.rp.idl img{transform-origin:50% 95%;animation:pbreath 1.6s ease-in-out infinite}.rp.idl.occ{animation:none}
+@keyframes pwander{0%,22%{transform:translateX(0)}42%,64%{transform:translateX(var(--wx))}84%,100%{transform:translateX(0)}}
+@keyframes pbreath{50%{transform:scaleY(1.025)}}
+.rp.thr .f0{animation:pf0 var(--d) steps(1) infinite}.rp.thr .f1{animation:pf1 var(--d) steps(1) infinite}
+@keyframes pf0{0%,64%{opacity:0}65%,82%{opacity:1}83%,100%{opacity:0}}@keyframes pf1{0%,64%{opacity:1}65%,82%{opacity:0}83%,100%{opacity:1}}
+.rp.thr{animation:plean var(--d) ease-in-out infinite;transform-origin:50% 95%}@keyframes plean{0%,50%{transform:none}60%{transform:translateY(-1%) rotate(-2deg)}66%{transform:rotate(3deg)}80%,100%{transform:none}}
+.rdart{position:absolute;left:70%;top:24%;width:5%;height:6%;background:#d9333f;box-shadow:0 2px 0 #c0c4c8;opacity:0;animation:pdart var(--d) linear infinite}
+@keyframes pdart{0%,64%{opacity:0;transform:none}65%{opacity:1;transform:none}79%{opacity:1;transform:translate(2600%,-1900%) scale(.5)}80%,100%{opacity:0;transform:translate(2600%,-1900%) scale(.5)}}
 </style>
 </head>
 <body>
@@ -2164,7 +2174,8 @@ function drawChar(P,L,fx,fy,o={}){
     else{for(let x=-5;x<=5;x++)put(x,-30,x%2?hr:hrS);for(let y=-24;y<=-21;y++){put(-6,y,hr);put(6,y,hrS)}}
   }else{for(let y=-29;y<=-25;y++){put(-6,y,hr);put(6,y,hrS)}put(-2,-31,mixc(sk,'#fff',.35));put(-1,-31,mixc(sk,'#fff',.35))}
   if(L.g==='f'){for(let y=-31;y<=-17;y++){put(-7,y,hr);put(-6,y,y>-25?hr:M.get('-6,'+y)||hr);put(7,y,hrS);put(6,y,y>-25?hrS:M.get('6,'+y)||hrS)}put(-8,-20,hr);put(8,-20,hrS);put(-3,-28,'#1a1410');put(3,-28,'#1a1410');put(0,-23,'#c0404a');put(-1,-23,'#a03038');put(1,-23,'#a03038')}
-  if(L.beard&&L.g!=='f'){for(let y=-24;y<=-21;y++)for(let x=-5;x<=5;x++){if(y===-23&&x>=-1&&x<=1)continue;if(y===-24&&Math.abs(x)<3)continue;put(x,y,x>=4?hrS:hr)}}
+  if(o.back){const bk=L.bald?shd(sk,.9):hr,bkS=L.bald?shd(sk,.78):hrS;M.forEach((c,k)=>{const[x,y]=k.split(',').map(Number);if(y>=-36&&y<=-21&&Math.abs(x)<=6&&!(throwing&&x>=6))M.set(k,x>=4?bkS:bk)});for(let x=-2;x<=2;x++)put(x,-20,skS);put(2,-17,sh);put(3,-17,sh);put(2,-16,sh);put(3,-16,shS);if(L.g==='f')for(let y=-21;y<=-17;y++)for(let x=-3;x<=3;x++)put(x,y,hr)}
+  if(L.beard&&L.g!=='f'&&!o.back){for(let y=-24;y<=-21;y++)for(let x=-5;x<=5;x++){if(y===-23&&x>=-1&&x<=1)continue;if(y===-24&&Math.abs(x)<3)continue;put(x,y,x>=4?hrS:hr)}}
   // Kontur + Schatten
   for(let i=-8;i<=8;i++)for(let j=-1;j<=1;j++){const t=1-Math.hypot(i/8,j/1.6);if(t>0)P.blend(fx+i,fy+j,'#000',.45*t)}
   const OL='#141016',out=[];
@@ -2172,7 +2183,25 @@ function drawChar(P,L,fx,fy,o={}){
   out.forEach(([x,y])=>P.set(fx+x,fy+y,OL));M.forEach((c,k)=>{const [x,y]=k.split(',').map(Number);P.set(fx+x,fy+y,c)});
   return{x:fx-9,y:fy-37,w:18,h:38};
 }
-function charAt(P,L,x,y,o){const [sx,sy]=onFloor(P,x,y);return drawChar(P,L,sx,sy,o)}
+let _RPPL=null,_LASTP=null;
+function charAt(P,L,x,y,o){const [sx,sy]=onFloor(P,x,y);if(_RPPL&&P===_LASTP){for(let i=-8;i<=8;i++)for(let j=-1;j<=1;j++){const t=1-Math.hypot(i/8,j/1.6);if(t>0)P.blend(sx+i,sy+j,'#000',.45*t)}_RPPL.push({L,sx,sy,pose:(o&&o.pose)||'',back:!!(o&&o.back)});return{x:sx-9,y:sy-37,w:18,h:38}}return drawChar(P,L,sx,sy,o)}
+// Lebende Figuren: Hintergrund ohne Figuren + animierte Sprites mit Verdeckungsmaske
+function SPC(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;const g=c.getContext('2d'),im=g.createImageData(w,h),d=new Uint32Array(im.data.buffer);
+  const pack=col=>(0xff000000|(clamp(Math.round(col[2]),0,255)<<16)|(clamp(Math.round(col[1]),0,255)<<8)|clamp(Math.round(col[0]),0,255))>>>0;
+  return{w,h,d,set(x,y,col){x=Math.floor(x);y=Math.floor(y);if(x<0||y<0||x>=w||y>=h||!col)return;d[y*w+x]=pack(cc(col))},get(x,y){const v=d[y*w+x];return[v&255,(v>>>8)&255,(v>>>16)&255]},blend(){},hit(){},url(){g.putImageData(im,0,0);return c.toDataURL()}}}
+const SPW=26,SPH=44,SAX=13,SAY=42;
+function roomLive(id){return cached('rmL'+roomKey(id),()=>{
+  const A=renderRoom(id),PA=_LASTP;_RPPL=[];let B;try{B=renderRoom(id)}finally{}const ppl=_RPPL;_RPPL=null;
+  const out=ppl.map((p,i)=>{const fr=[p.pose==='throw'?'':'', 'throw'].map(()=>null);
+    const mk=pose=>{const Q=SPC(SPW,SPH);drawChar(Q,p.L,SAX,SAY,{pose,back:p.back});return Q};
+    const q0=mk(''),q1=mk('throw');let occ=0;const hide=[];
+    for(let y=0;y<SPH;y++)for(let x=0;x<SPW;x++){if(!q0.d[y*SPW+x])continue;const a=PA.get(p.sx-SAX+x,p.sy-SAY+y),b=q0.get(x,y);if(a[0]!==b[0]||a[1]!==b[1]||a[2]!==b[2]){hide.push(y*SPW+x);occ++}}
+    hide.forEach(k=>{q0.d[k]=0;q1.d[k]=0});
+    return{sx:p.sx,sy:p.sy,throw:p.pose==='throw',occ:occ>6,f0:q0.url(),f1:q1.url()}});
+  return{url:B.url,hits:B.hits,ppl:out}})}
+function roomPeople(R0){return `<div class="rppl">${R0.ppl.map((p,i)=>{const st=`left:${((p.sx-SAX)/RW*100).toFixed(2)}%;top:${((p.sy-SAY)/RHT*100).toFixed(2)}%;width:${(SPW/RW*100).toFixed(2)}%;height:${(SPH/RHT*100).toFixed(2)}%`;
+  if(p.throw){const d=(2.2+((i*37)%10)/10).toFixed(2);return `<div class="rp thr" style="${st};--d:${d}s"><img class="f1" src="${p.f1}"><img class="f0" src="${p.f0}"><i class="rdart"></i></div>`}
+  const d=(5+((i*53)%40)/10).toFixed(1),wx=p.occ?0:((i%2?-1:1)*(12+(i*7)%10));return `<div class="rp idl ${p.occ?'occ':''}" style="${st};--d:${d}s;--wx:${wx}%;animation-delay:-${(i*1.3).toFixed(1)}s"><img class="f0" src="${p.f0}"></div>`}).join('')}</div>`}
 const NPC=k=>({h:['#2b1d14','#6b3e1f','#1a1a1a','#c9a15a','#8a8a8a'][k%5],s:SKINS[(k*3)%5],t:['#111','#2d6cdf','#7d3cc8','#e07b24'][k%4],w:'#fff',p:'#2b2f3a',bald:k%7===3,beard:k%3===1});
 
 function roomShell(P,floorFn,wallFnR,wallFnL){
@@ -2219,7 +2248,7 @@ function wallBoard(P,cx,cz,r,ring){const bsx=P.ox+cx,bsy=Math.floor(P.oy+cx/2)-c
   P.set(bsx-Math.round(r*.4),bsy-Math.round(r*.5),'#fff')}
 
 function renderRoom(id){
-  const P=PX(RW,RHT);P.ox=88;P.oy=70;const b=S.b,act=a=>`data-act="${a}" class="hot hitr obj"`;
+  const P=PX(RW,RHT);P.ox=88;P.oy=70;_LASTP=P;const b=S.b,act=a=>`data-act="${a}" class="hot hitr obj"`;
   const decoHit=(bx,did)=>P.hit(bx.x,bx.y,bx.w,bx.h,`data-deco="${did}" class="hot hitr obj"`);
   if(id==='theke'){
     const brick=b.bar>=3;
@@ -2300,8 +2329,7 @@ function renderRoom(id){
     if(hasD('wappen')){wallR(P,(x,z)=>{const dx=Math.abs(x-40),t=z-55;if(t<0||t>8)return null;const wmax=t>3?5:5-(3-t)*1.5;if(dx>wmax)return null;return dx>wmax-1?'#c9a227':x<40?'#1f9d55':'#d9333f'},34,47,55,64);decoHit(wallRBox(P,34,47,55,64),'wappen')}else if(!two)plusWall(P,'R',34,47,52,62,'wappen');
     drawDoor(P,'L',4,'THEKE','theke',{glass:true});drawDoor(P,'R',63,'TRAINING','training');
     // Spieler am Oche
-    const pp=S.players[0]?charAt(P,S.players[0].look,colx(Math.min(1,Math.max(0,n-1))),50,{pose:'throw'}):null;if(pp)P.hit(pp.x-4,pp.y,pp.w+8,pp.h,act('friendly'));
-    if(n>=3&&S.players[1])charAt(P,S.players[1].look,colx(3),52);
+    let pp=null;for(let c2=Math.min(4,n)-1;c2>=0;c2--){const pl=S.players[c2],L=pl?pl.look:NPC(20+c2);const r2=charAt(P,L,colx(c2)+1,52,{pose:'throw',back:true});if(c2===0)pp=r2}if(pp)P.hit(pp.x-4,pp.y,pp.w+8,pp.h,act('friendly'));
     if(hasD('bank')){let k=isoBox(P,56,38,0,22,6,6,'#5a3a22',{top:(x,y)=>(x+y)%4===0?'#6a4a2a':'#7a5232'});charAt(P,NPC(3),62,47);charAt(P,NPC(4),72,47);decoHit(k,'bank')}else plusFloor(P,56,38,22,6,'bank');
   }else if(id==='training'){
     const wr=(x,z)=>z>=24&&z<29?(z<26?'#1f9d55':z<27?'#d9333f':'#111'):z<24?'#2f4638':'#3d5a48',wl=wr;
@@ -2328,7 +2356,7 @@ function renderRoom(id){
     P.hit(eq.x,eq.y,eq.w,eq.h,act('build:training'));
     if(b.training>0&&hasD('poster')){wallR(P,(x,z)=>{const d=x-32;if(d===0||d===11||z===30||z===47)return'#e8e8e8';if(z>40)return'#d9333f';return hsh(x,z,2)<.4?'#f4c430':'#1a1a1a'},32,44,30,48);decoHit(wallRBox(P,32,44,30,48),'poster')}else if(b.training>0)plusWall(P,'R',32,44,30,48,'poster');
     if(hasD('wasser')){const w=isoBox(P,70,66,0,6,6,12,'#e8eef4');const [wx,wy]=onFloor(P,73,69,12);P.rect(wx-2,wy-9,5,9,'#7ac8ff');P.rect(wx-1,wy-9,1,9,'#c8ecff');P.rect(wx-2,wy-10,5,1,'#5a9ad0');decoHit({x:w.x,y:w.y-10,w:w.w,h:w.h+10},'wasser')}else plusFloor(P,70,66,6,6,'wasser');
-    if(b.training>0)S.players.slice(0,3).forEach((p,i)=>{const pos=[[20,46],[46,36],[36,62]][i];const r2=charAt(P,p.look,pos[0],pos[1],{pose:i===0?'throw':''});P.hit(r2.x,r2.y,r2.w,r2.h,act('train:'+p.id))});
+    if(b.training>0)S.players.slice(0,3).forEach((p,i)=>{const pos=[[20,46],[46,36],[36,62]][i];const r2=charAt(P,p.look,pos[0],pos[1],i===0?{pose:'throw',back:true}:{});P.hit(r2.x,r2.y,r2.w,r2.h,act('train:'+p.id))});
   }else if(id==='buero'){
     const wr=(x,z)=>z>=52?(z===52?'#3a2a1a':'#5a4a3a'):x%4===0?'#56667e':'#4a5a72',wl=(y,z)=>z>=52?(z===52?'#3a2a1a':'#5a4a3a'):y%4===0?'#56667e':'#4a5a72';
     roomShell(P,(x,y)=>{const a=Math.floor((x+y)/4),c2=Math.floor((x-y+80)/4);let c=(a+c2)%2?'#9a6a3a':'#8a5a30';if(hsh(Math.floor(x),Math.floor(y),3)<.08)c=shd(c,.92);return c},skirt(wr),skirt(wl));
@@ -2375,8 +2403,8 @@ function renderRoom(id){
 }
 function roomKey(id){return JSON.stringify([id,S.b,S.deco||[],S.players.slice(0,3).map(p=>[p.id,p.look,p.isMe]),S.trophies.length,id==='buero'?!!pokalDue():0])}
 function roomImg(id){return cached('rm2'+roomKey(id),()=>renderRoom(id))}
-function roomSVG(id){const R0=roomImg(id);
-  return `<div class="pxwrap"><img class="pximg" src="${R0.url}" alt="${ROOMS[id].n}"><svg class="hitsvg" viewBox="0 0 ${RW} ${RHT}" preserveAspectRatio="none">${R0.hits.map(h=>`<rect x="${h.x}" y="${h.y}" width="${h.w}" height="${h.h}" ${h.attr}/>`).join('')}</svg></div>`}
+function roomSVG(id){const R0=roomLive(id);
+  return `<div class="pxwrap"><img class="pximg" src="${R0.url}" alt="${ROOMS[id].n}">${roomPeople(R0)}<svg class="hitsvg" viewBox="0 0 ${RW} ${RHT}" preserveAspectRatio="none">${R0.hits.map(h=>`<rect x="${h.x}" y="${h.y}" width="${h.w}" height="${h.h}" ${h.attr}/>`).join('')}</svg></div>`}
 function heimSVG(){
   return `<div class="heimgrid">${Object.keys(ROOMS).map(id=>`<button class="heimroom" data-go="r_${id}"><img class="pximg" src="${roomImg(id).url}" alt=""><span>${ROOMS[id].i} ${ROOMS[id].n}</span></button>`).join('')}</div>`;
 }
@@ -3058,7 +3086,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='3.3';
+const GAME_VERSION='3.4';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
@@ -4344,7 +4372,7 @@ function titleBG(){const sl=titleSlides();return `<div class="tbg">${sl.map((u,i
 function titleCycle(){clearInterval(titleTimer);let i=0;titleTimer=setInterval(()=>{const im=document.querySelectorAll('.tslide');if(!im.length){clearInterval(titleTimer);return}im[i%im.length].classList.remove('on');i++;im[i%im.length].classList.add('on')},5200)}
 // Animierte Figuren in den Räumen
 const ROOM_WALK={theke:[[28,72,46,82],[60,70,70,62]],scheiben:[[30,78,48,70],[58,80,70,72]],training:[[34,76,50,84],[62,72,52,64]],buero:[[30,74,44,82],[56,78,68,70]]};
-function roomWalkers(id){const P0=ROOM_WALK[id]||[[30,75,50,82]];const n=Math.min(P0.length,1+Math.floor(((S&&S.members)||6)/12));
+function roomWalkers(id){return '';const P0=ROOM_WALK[id]||[[30,75,50,82]];const n=Math.min(P0.length,1+Math.floor(((S&&S.members)||6)/12));
   return `<div class="rwalk">${P0.slice(0,Math.max(1,n)).map((p,i)=>{const L=NPC(i+3+(id.length));if(i%2){L.g='f';L.bald=false;L.beard=false}const d=7+i*2.5;
     return `<div class="rw" style="--x1:${p[0]}%;--y1:${p[1]}%;--x2:${p[2]}%;--y2:${p[3]}%;animation-duration:${d}s;animation-delay:${-i*1.7}s"><img class="sp" src="${personSprite(L)}"></div>`}).join('')}</div>`}
 

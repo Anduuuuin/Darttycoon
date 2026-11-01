@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Bullseye Boss</title>
-<meta name="dt-version" content="4.0">
+<meta name="dt-version" content="4.1">
 <meta name="theme-color" content="#0e1511">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -3100,7 +3100,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='4.0';
+const GAME_VERSION='4.1';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
@@ -4187,7 +4187,7 @@ const api={
   slots(arr){for(let i=0;i<3;i++){const s=q('b3s'+i);if(!s)continue;const v=arr[i];s.textContent=v==null?'–':v;s.classList.toggle('empty',v==null)}},
   sb(d){const e=q('b3sb');if(!e)return;root.classList.add('sb');
     const pips=(n,need,col)=>Array.from({length:need},(_,i)=>`<i class="${i<n?'on':''}" style="--c:${col}"></i>`).join('');
-    const half=(p,i)=>`<div class="sbp ${p.on?'on':''} ${i?'r':'l'}"><div class="sbn">${p.on?'🎯 ':''}${p.n}</div><div class="sbr">${p.rest}</div><div class="sbl">${pips(p.legs,d.need,p.col)}</div><div class="sbs">Ø ${p.avg} · Letzte ${p.last}</div>${p.x?`<div class="sbx">${p.x}</div>`:''}</div>`;
+    const half=(p,i)=>`<div class="sbp ${p.on?'on':''} ${i?'r':'l'}"><div class="sbn">${p.on?'🎯 ':''}${p.n}</div><div class="sbr">${p.rest}</div><div class="sbl">${d.need?pips(p.legs,d.need,p.col):''}</div><div class="sbs">${p.sub!=null?p.sub:`Ø ${p.avg} · Letzte ${p.last}`}</div>${p.x?`<div class="sbx">${p.x}</div>`:''}</div>`;
     e.innerHTML=`<div class="sbm">${d.mid}</div>${half(d.p[0],0)}${half(d.p[1],1)}${d.co?`<div class="sbc">🎯 ${d.co}</div>`:''}`},
   info(h){const e=q('b3info');if(e)e.innerHTML=h},title(h){const e=q('b3title');if(e)e.innerHTML=h},bar(h){const e=q('b3bar');if(e)e.innerHTML=h;return e},
   stickers(list){pendSt=list;if(!root||!ok)return;stickTex=texFromCanvas(stickerCanvas(list),stickTex);stickOn=!!(list&&list.some(Boolean))},
@@ -4260,7 +4260,7 @@ function specZone(sp){if(sp.k==='bull')return{k:'bull',n:25};if(sp.k==='triple')
 function zoneHit(z,sc){if(z.k==='bull')return sc.kind==='bull';if(z.k==='t')return sc.kind==='t'&&sc.n===z.n;if(z.k==='d')return sc.kind==='d'&&sc.n===z.n;return sc.n===z.n&&sc.kind!=='miss'}
 async function aimThrow3D(sp,i,n,cardName){const z=specZone(sp),acc=accFor(sp),p=player();
   const sway=(.0016+(1-acc)*.009)*((z.k==='d'||z.k==='bull')?1.5:1)*(1-stk('sway'));B3.open();stkSync();
-  B3.title(`<b>${esc(cardName)}</b>${n>1?` · Pfeil ${i+1}/${n}`:''}`);B3.info(`Ziel <b style="color:#ffcf3f">${z.k==='bull'?'BULL':(z.k==='t'?'T':z.k==='d'?'D':'')+z.n}</b><br>Ruhige Hand ${Math.round(acc*100)}%`);
+  B3.title(`<b>${esc(cardName)}</b>${n>1?` · Pfeil ${i+1}/${n}`:''}`);B3.info(`Ziel <b style="color:#ffcf3f">${z.k==='bull'?'BULL':(z.k==='t'?'T':z.k==='d'?'D':'')+z.n}</b><br>Ruhige Hand ${Math.round(acc*100)}%`);B3.sb({mid:esc(cardName).toUpperCase(),need:0,p:[{n:esc(p.name),rest:`${Math.round(acc*100)}%`,sub:'Ruhige Hand',on:true,col:'#7fdc9f'},{n:'Ziel',rest:z.k==='bull'?'BULL':(z.k==='t'?'T':z.k==='d'?'D':'')+z.n,sub:n>1?`Pfeil ${i+1}/${n}`:'',on:false,col:'#ff8a8a'}]});
   if(i===0)B3.slots([null,null,null]);const sc=await B3.throw({zone:{k:z.k,n:z.n},zoom:z.k==='s'?1.5:z.k==='t'?2.1:2.6,sway,assist:.22+acc*.3,swaySpd:1+(1-acc)*.6});
   const hit=zoneHit(z,sc);UI._aimSl=(UI._aimSl||[]);UI._aimSl[i]=hit?'✓ '+sc.label:'✗ '+sc.label;B3.slots(UI._aimSl);await sleepB(450);return hit}
 async function aimClose3D(){UI._aimSl=[];await B3.clear();B3.close()}
@@ -4284,7 +4284,7 @@ function cardPick(n){return new Promise(res=>{const keys=shuffle(Object.keys(BCA
 function oppPoint(rest,O){let tl='T20';if(rest<=170){const p=coPath(rest);if(p)tl=p[0]}else if(rest<=180&&rest>170)tl='T20';const t=parseT(tl);const pt=t.k==='obull'?[0,.011]:B3.pointFor(t.k==='obull'?'bull':t.k,t.n);return{pt,t}}
 async function bmMatch(cfg){const me={rest:cfg.start,legs:0,pts:0,darts:0,inn:!cfg.din},op={rest:cfg.start,legs:0,pts:0,darts:0,inn:!cfg.din},O=cfg.opp,p=cfg.player;let starter=0,leg=1,turn=0,ev={sig:1,dbl:1,cancel:false},myDebuff=null;
   B3.open();stkSync();const nCards=3+stk('card')+(p&&p.cls==='stratege'?1:0);
-  const hud=(mr,orr)=>{mr=mr??me.rest;orr=orr??op.rest;B3.title(`<b>${esc(cfg.label)}</b> · Leg ${leg} · ${me.legs}:${op.legs}`);B3.info(`<span style="color:#7fdc9f">${esc(p.name)} <b>${mr}</b></span><br><span style="color:#ff8a8a">${esc(O.nick||O.name)} <b>${orr}</b></span>${cfg.nerves?`<br>❤️ ${S.run.nerves}/${S.run.maxN}`:''}`);const w=coPath(mr);const t=$('#b3title');if(t&&w&&turn===0)t.innerHTML+=` · 🎯 ${w.join(' · ')}`;const avg=o=>o.darts?(Math.round(o.pts/o.darts*30)/10).toFixed(1):'0.0';B3.sb({mid:`${esc(cfg.label).toUpperCase()} · LEG ${leg}`,need:cfg.need,co:(turn===0&&w)?w.join(' · '):'',p:[{n:esc(p.name),rest:mr,legs:me.legs,avg:avg(me),last:me.last??'–',on:turn===0,col:'#7fdc9f',x:cfg.nerves?`❤️ ${S.run.nerves}/${S.run.maxN}`:''},{n:esc(O.nick||O.name),rest:orr,legs:op.legs,avg:avg(op),last:op.last??'–',on:turn===1,col:'#ff8a8a'}]})};
+  const hud=(mr,orr)=>{mr=mr??me.rest;orr=orr??op.rest;B3.title(`<b>${esc(cfg.label)}</b> · Leg ${leg} · ${me.legs}:${op.legs}`);B3.info(`<span style="color:#7fdc9f">${esc(p.name)} <b>${mr}</b></span><br><span style="color:#ff8a8a">${esc(O.nick||O.name)} <b>${orr}</b></span>${cfg.nerves?`<br>❤️ ${S.run.nerves}/${S.run.maxN}`:''}`);const w=coPath(mr);const t=$('#b3title');if(t&&w&&turn===0)t.innerHTML+=` · 🎯 ${w.join(' · ')}`;const avg=o=>o.darts?(Math.round(o.pts/o.darts*30)/10).toFixed(1):'0.0';B3.sb({mid:`${esc(cfg.label).toUpperCase()} · LEG ${leg}`,need:cfg.need,co:w?w.join(' · '):'',p:[{n:esc(p.name),rest:mr,legs:me.legs,avg:avg(me),last:me.last??'–',on:turn===0,col:'#7fdc9f',x:cfg.nerves?`❤️ ${S.run.nerves}/${S.run.maxN}`:''},{n:esc(O.nick||O.name),rest:orr,legs:op.legs,avg:avg(op),last:op.last??'–',on:turn===1,col:'#ff8a8a'}]})};
   while(me.legs<cfg.need&&op.legs<cfg.need){me.rest=op.rest=cfg.start;me.inn=op.inn=!cfg.din;turn=starter;hud();B3.banner(`Leg ${leg} · ${turn===0?'Du beginnst':esc(O.nick)+' beginnt'}`,'#fff');if(leg===1&&O.ab&&O.ab.length){B3.fx('',`<div class="b3fxtag">${esc(O.nick)} kann: ${O.ab.map(a=>BOPP[a].i+' '+BOPP[a].n).join(' · ')}</div>`);setTimeout(()=>B3.fx(''),2600)}await sleepB(900);B3.banner('');
     let done=null;
     while(!done){hud();
@@ -4350,7 +4350,7 @@ async function bmFree(o){closeModal();if(o.kind==='drill')return bmDrill(o);cons
   const res=await bmMatch({label:o.label,start:o.start||501,need:o.need||2,din:false,player:p,nerves:false,opp:(()=>{const sg=o.opp.sig||22,str=1+clamp((27-sg)/10,0,1.2);return{name:o.opp.name,nick:o.opp.nick,look:o.opp.look,str,ab:oppFxPool([],str),sig:sg,dsig:sg*1.1}})()});
   stkUse();const F=Object.assign({},o,{legs:res.legs,st:res.st});snd(res.win?'win':'lose');save();FREE_END[o.kind](res.win,F)}
 async function bmDrill(o){const p=fpById(o.pid);if(!B3.open())return;const D=o.drill;D.pts=0;D.hits=0;let seq=0;
-  for(let d=0;d<9;d++){const z=D.type==='t20'?{k:'t',n:20}:{k:'d',n:DSEQ[seq%DSEQ.length]};B3.title(`<b>${esc(DRILLS[D.type].n)}</b> · Pfeil ${d+1}/9`);B3.info(D.type==='t20'?`Punkte <b>${D.pts}</b>`:`Treffer <b>${D.hits}</b>/9`);
+  for(let d=0;d<9;d++){const z=D.type==='t20'?{k:'t',n:20}:{k:'d',n:DSEQ[seq%DSEQ.length]};B3.title(`<b>${esc(DRILLS[D.type].n)}</b> · Pfeil ${d+1}/9`);B3.info(D.type==='t20'?`Punkte <b>${D.pts}</b>`:`Treffer <b>${D.hits}</b>/9`);B3.sb({mid:`TRAINING · ${esc(DRILLS[D.type].n).toUpperCase()}`,need:0,p:[{n:esc(p.name),rest:D.type==='t20'?D.pts:`${D.hits}/9`,sub:D.type==='t20'?'Punkte':'Treffer',on:true,col:'#7fdc9f'},{n:'Ziel',rest:z.k==='t'?'T'+z.n:'D'+z.n,sub:`Pfeil ${d+1}/9`,on:false,col:'#ff8a8a'}]});
     const sc=await B3.throw({zone:z,zoom:D.type==='t20'?2:2.4,sway:swayFor(p,z.k),assist:assistFor(p)});if(D.type==='t20')D.pts+=sc.v;else if(zoneHit(z,sc)){D.hits++;seq++}
     if(d%3===2)await B3.clear()}
   B3.close();save();FREE_END.drill(true,Object.assign({},o,{drill:D}))}
@@ -4359,7 +4359,7 @@ async function bmDrill(o){const p=fpById(o.pid);if(!B3.open())return;const D=o.d
 function avgInfo(){const M=miniInfo();if(M.avgWeek!==S.week){M.avgWeek=S.week;M.avgPlays=0}return M}
 async function avgChallenge(){const M=avgInfo();if(M.avgPlays>=3)return toast('Diese Woche schon 3× gespielt. Nächste Woche wieder!');const p=meP();if(!B3.open())return toast('3D-Scheibe wird nicht unterstützt');stkSync();closeModal();
   let pts=0,best=0;for(let v=0;v<10;v++){const sl=[null,null,null];let vis=0;B3.slots(sl);
-    for(let d=0;d<3;d++){B3.title(`<b>🎯 Average-Challenge</b> · Aufnahme ${v+1}/10`);B3.info(`Ø <b>${v?(pts/v).toFixed(1):'0.0'}</b><br>Beste <b>${best}</b>`);
+    for(let d=0;d<3;d++){B3.title(`<b>🎯 Average-Challenge</b> · Aufnahme ${v+1}/10`);B3.info(`Ø <b>${v?(pts/v).toFixed(1):'0.0'}</b><br>Beste <b>${best}</b>`);B3.sb({mid:'AVERAGE-CHALLENGE',need:0,p:[{n:esc(p.name),rest:v?(pts/v).toFixed(1):'0.0',sub:`Aufnahme ${v+1}/10 · Dart ${d+1}/3`,on:true,col:'#7fdc9f'},{n:'Beste Aufnahme',rest:best,sub:'Punkte',on:false,col:'#ff8a8a'}]});
       const sc=await B3.throw({sway:swayFor(p,'s'),assist:assistFor(p)});vis+=sc.v+(sc.kind==='t'?stk('tripts'):0);sl[d]=sc.label;B3.slots(sl)}
     pts+=vis;best=Math.max(best,vis);if(vis===180){B3.celebrate('180!');await sleepB(1500)}else if(vis>=100){B3.banner(vis>=140?`TON-${vis-100}!`:'TON!','#ffcf3f');await sleepB(700)}await sleepB(400);B3.banner('');await B3.clear()}
   B3.close();const avg=pts/10;M.avgPlays++;M.avgBest=Math.max(M.avgBest||0,avg);const g=Math.round(avg*4),f=Math.floor(avg/10),xp=trainXP(p,Math.round(avg*.6));S.money+=g;S.fans+=f;p.xp+=xp;checkLvl(p);stkUse();save();postScore('click',Math.round(avg));snd('win');render();
@@ -4511,7 +4511,7 @@ async function lvMatch(cfg){const seat=cfg.seat,oo=1-seat,me=cfg.me,opn=cfg.op||
   B3.open();LV.pg=setInterval(()=>lvSend('ping'),5000);
   const qb=document.createElement('button');qb.id='lvq';qb.textContent='✕';qb.style.cssText='position:fixed;right:10px;bottom:90px;z-index:99999;background:#3a1416;color:#fff;border:1px solid #d9333f;border-radius:10px;padding:8px 12px;font:700 14px system-ui';
   qb.onclick=()=>{if(confirm('Duell aufgeben? Dein Freund gewinnt.')){lvSend('leave');setTimeout(()=>location.reload(),250)}};document.body.appendChild(qb);
-  const hud=(rr)=>{rr=rr||st.rest;const avg=i=>st.dn[i]?(Math.round(st.pts[i]/st.dn[i]*30)/10).toFixed(1):'0.0',co=(turn0===seat&&coPath(rr[seat]))?coPath(rr[seat]).join(' · '):'';
+  const hud=(rr)=>{rr=rr||st.rest;const avg=i=>st.dn[i]?(Math.round(st.pts[i]/st.dn[i]*30)/10).toFixed(1):'0.0',co=coPath(rr[seat])?coPath(rr[seat]).join(' · '):'';
     B3.sb({mid:`⚡ LIVE-DUELL · LEG ${leg}`,need:cfg.need,co,p:[{n:esc(me.name),rest:rr[seat],legs:st.legs[seat],avg:avg(seat),last:st.last[seat]??'–',on:turn0===seat,col:'#7fdc9f',x:'Fokus '+'⚡'.repeat(LV.fok)+'○'.repeat(4-LV.fok)+(LV.shield?' 🛡':'')},{n:esc(opn.name),rest:rr[oo],legs:st.legs[oo],avg:avg(oo),last:st.last[oo]??'–',on:turn0===oo,col:'#ff8a8a'}]})};
   let turn0=0;
   LV.hand.fx=d=>{const a=LVAB[d.k];if(!a)return;if(LV.shield){LV.shield=false;lvSend('blocked',{k:d.k});B3.banner(`🛡 Geblockt: ${a.n}!`,'#7dffb0');snd('checkout');hud();return}LV.inc.push(d);B3.banner(`⚠ ${esc(opn.name)} setzt ${a.i} ${a.n} ein!`,'#ff8a8a');try{navigator.vibrate&&navigator.vibrate([40,30,40])}catch(e){}};

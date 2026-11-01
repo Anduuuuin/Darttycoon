@@ -1,0 +1,71 @@
+name: Android-App bauen (AAB für Google Play)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Abhängigkeiten installieren
+        run: npm install
+
+      - name: Spiel-Dateien in www kopieren
+        run: |
+          mkdir -p www
+          cp index.html manifest.json sw.js icon-192.png icon-512.png icon-maskable.png apple-touch-icon.png www/
+
+      - name: Android-Projekt erzeugen
+        run: npx cap add android
+
+      - name: Icons und Splash ersetzen
+        run: |
+          pip install pillow
+          python3 scripts/android_assets.py
+
+      - name: AdMob und Version eintragen
+        env:
+          ADMOB_APP_ID: ${{ secrets.ADMOB_APP_ID }}
+        run: |
+          APPID="${ADMOB_APP_ID:-ca-app-pub-3940256099942544~3347511713}"
+          MF=android/app/src/main/AndroidManifest.xml
+          sed -i "s#</application>#    <meta-data android:name=\"com.google.android.gms.ads.APPLICATION_ID\" android:value=\"$APPID\"/>\n    </application>#" $MF
+          sed -i 's#<uses-permission android:name="android.permission.INTERNET" />#<uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />#' $MF
+          sed -i "s/versionCode 1/versionCode ${{ github.run_number }}/; s/versionName \"1.0\"/versionName \"1.0.${{ github.run_number }}\"/" android/app/build.gradle
+          grep -n "versionCode\|versionName" android/app/build.gradle
+          cat $MF
+
+      - name: Capacitor synchronisieren
+        run: npx cap sync android
+
+      - name: AAB bauen
+        working-directory: android
+        run: ./gradlew bundleRelease --no-daemon
+
+      - name: AAB signieren (Upload-Schlüssel)
+        env:
+          KS_PASS: ${{ secrets.KEYSTORE_PASSPHRASE }}
+        run: |
+          if [ -z "$KS_PASS" ]; then echo "::error::Secret KEYSTORE_PASSPHRASE fehlt (siehe Anleitung)."; exit 1; fi
+          openssl enc -d -aes-256-cbc -pbkdf2 -md sha256 -in android-keys/upload.jks.enc -out upload.jks -pass env:KS_PASS
+          AAB=android/app/build/outputs/bundle/release/app-release.aab
+          jarsigner -sigalg SHA256withRSA -digestalg SHA-256 -keystore upload.jks -storepass "$KS_PASS" -keypass "$KS_PASS" "$AAB" upload
+          jarsigner -verify "$AAB" | head -3
+          cp "$AAB" BullseyeBoss.aab
+          rm -f upload.jks
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BullseyeBoss-AAB
+          path: BullseyeBoss.aab

@@ -1,0 +1,12 @@
+{
+  "name": "bullseye-boss",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Bullseye Boss: Dart-Tycoon als Android-App (Capacitor)",
+  "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/cli": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor-community/admob": "^7.0.0"
+  }
+}

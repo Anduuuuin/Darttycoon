@@ -1,0 +1,7 @@
+{
+  "appId": "com.anduuuuin.bullseyeboss",
+  "appName": "Bullseye Boss",
+  "webDir": "www",
+  "backgroundColor": "#0e1410",
+  "android": { "allowMixedContent": false }
+}

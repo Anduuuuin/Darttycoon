@@ -4410,7 +4410,7 @@ function adShow(){return new Promise(res=>{
   const A=window.AndroidAds;if(A&&A.showRewarded){window.__adDone=ok=>{window.__adDone=null;res(!!ok)};try{A.showRewarded()}catch(e){res(false)}return}
   const AM=window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.AdMob;
   if(AM){let got=false,h;const fin=ok=>{try{h&&h.remove&&h.remove()}catch(e){}res(ok)};
-    (async()=>{try{await AM.initialize({});h=await AM.addListener('onRewardedVideoAdReward',()=>{got=true});await AM.addListener('onRewardedVideoAdDismissed',()=>fin(got));
+    (async()=>{try{await AM.initialize({});try{const ci=await AM.requestConsentInfo();if(ci&&ci.isConsentFormAvailable&&ci.status==='REQUIRED')await AM.showConsentForm()}catch(e){}h=await AM.addListener('onRewardedVideoAdReward',()=>{got=true});await AM.addListener('onRewardedVideoAdDismissed',()=>fin(got));
       await AM.prepareRewardVideoAd({adId:EN.unit,isTesting:EN.unit.indexOf('3940256099942544')>0});await AM.showRewardVideoAd();setTimeout(()=>{if(got)fin(true)},800)}catch(e){fin(false)}})();return}
   // Browser-Test: simulierte Werbung
   const m=document.createElement('div');m.style.cssText='position:fixed;inset:0;z-index:99999;background:#000d;display:flex;align-items:center;justify-content:center;color:#fff;font:700 18px system-ui;text-align:center';let t=3;m.innerHTML='📺 Test-Werbung<br><span id="adt">3</span>';document.body.appendChild(m);

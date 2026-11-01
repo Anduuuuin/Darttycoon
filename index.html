@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Dart Tycoon</title>
-<meta name="dt-version" content="2.3">
+<meta name="dt-version" content="2.3.1">
 <meta name="theme-color" content="#0e1511">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2996,7 +2996,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='2.3';
+const GAME_VERSION='2.3.1';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
@@ -3760,7 +3760,7 @@ async function sb(path,opt={}){const r=await fetch(SB_URL+'/rest/v1/'+path,{meth
   if(!r.ok){let t='';try{t=(await r.json()).message}catch(e){}throw new Error(t||('HTTP '+r.status))}return r.status===201||r.status===204?null:r.json()}
 const onName=()=>(S.onName||meP().name||'Spieler').slice(0,24);
 const isoDay=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
-function postScore(game,value){if(!S||S.onOff)return;sb('scores',{method:'POST',prefer:'return=minimal',body:{game,name:onName(),club:(S.club||'').slice(0,30),value:Math.round(value),day:isoDay()}}).then(()=>toast('🌐 Ergebnis in der Online-Bestenliste!')).catch(e=>console.warn('online',e.message))}
+function postScore(game,value){if(!S||S.onOff)return;sb('scores',{method:'POST',prefer:'return=minimal',body:{game,name:onName(),club:(S.club||'').slice(0,30),value:Math.round(value),day:isoDay()}}).then(()=>toast('🌐 Ergebnis in der Online-Bestenliste!')).catch(e=>{console.warn('online',e.message);toast('⚠️ Online-Upload fehlgeschlagen: '+e.message)})}
 const GAMES={daily:{n:'📅 Tages-Turnier',u:'Siege',today:1},c121:{n:'🎯 121-Checkout',u:'höchster Checkout'},click:{n:'⚡ Schnellwurf',u:'Treffer',today:1}};
 async function boardDialog(g){g=g||UI.og||'daily';UI.og=g;const G=GAMES[g];
   modal(`<h3>🌐 Online-Bestenliste</h3><div class="seg">${Object.entries(GAMES).map(([k,x])=>`<button class="btn sm ${k===g?'':'gray'}" data-og="${k}">${x.n}</button>`).join('')}</div><div id="obody" class="small mut">Lade …</div><button class="btn gray block" onclick="closeModal()">Schließen</button>`);
@@ -3797,13 +3797,18 @@ async function myDuels(){const codes=(S.myCodes||[]).map(c=>c.code);const el=$('
 function hubOnline(){setTimeout(myDuels,50);
   return `<div class="navrow"><button class="btn gray sm" data-go="turnier">◀ Turniere</button><b class="small">🌐 Online</b></div>
   <div class="panel"><div class="row between"><div><h3>👤 Online-Name</h3><div class="tiny mut">So erscheinst du in Bestenlisten und Duellen.</div></div><button class="btn gray sm" id="oname">${esc(onName())} ✏️</button></div><div class="row between" style="margin-top:8px"><span class="tiny mut">Ergebnisse automatisch hochladen</span><button class="btn sm ${S.onOff?'gray':''}" id="otog">${S.onOff?'Aus':'An'}</button></div></div>
+  <button class="btn gray block" id="otest">🔧 Verbindung testen</button>
   <div class="grid2"><button class="btn gold" id="oboard">🏆 Bestenlisten</button><button class="btn gold" data-go="vliga">🏟 Vereinsliga${S.vl?' ✔':''}</button></div>
   <div class="panel"><h2>⚔️ Freundes-Duelle</h2><div class="tiny mut" style="margin-top:4px">Erstelle einen Code für deinen Spieler und schick ihn Freunden. Oder gib den Code eines Freundes ein und spiel gegen seine KI-Kopie (501 · Best of 5). Siege bringen 100 € und Fans.</div>
    <div class="row" style="gap:6px;margin-top:8px"><input type="text" id="dcode" placeholder="CODE" maxlength="6" style="flex:1;text-transform:uppercase;letter-spacing:3px;margin:0"><button class="btn" id="djoin">Antreten</button></div>
    <div class="small" style="margin-top:10px"><b>Code für meinen Spieler erstellen:</b></div><div class="row" style="gap:6px;flex-wrap:wrap;margin-top:6px">${S.players.map(p=>`<button class="btn gray sm" data-dc="${p.id}">${esc(p.name)} Lv${p.lvl}</button>`).join('')}</div></div>
   <div class="panel"><h2>📬 Meine Duelle</h2></div><div id="mydu"><div class="small mut">Lade …</div></div>`}
 function bindOnline(app){const q=(id,f)=>{const e=app.querySelector(id);if(e)e.onclick=f};
-  q('#oboard',()=>boardDialog());q('#otog',()=>{S.onOff=!S.onOff;save();render()});
+  q('#oboard',()=>boardDialog());
+  q('#otest',async()=>{modal('<h3>🔧 Verbindungstest</h3><div id="otr" class="small">Teste …</div><button class="btn gray block" onclick="closeModal()">Schließen</button>');const out=[];const t=async(n,f)=>{try{out.push('✅ '+n+': '+(await f()))}catch(e){out.push('❌ '+n+': '+esc(e.message))}const el=$('#otr');if(el)el.innerHTML=out.join('<br>')};
+    await t('Lesen',async()=>{const r=await sb('scores?select=game,name,value,day&order=created_at.desc&limit=5');return r.length?r.length+' neueste: '+r.map(x=>`${esc(x.name)} ${x.game} ${x.value} (${x.day})`).join(', '):'Tabelle leer'});
+    await t('Schreiben',async()=>{await sb('scores',{method:'POST',prefer:'return=minimal',body:{game:'click',name:'Test',club:'Verbindungstest',value:0,day:isoDay()}});return 'ok'});
+    await t('Ligen',async()=>{const r=await sb('leagues?select=code&limit=1');return 'ok ('+r.length+')'});out.push('<span class="tiny mut">Version '+GAME_VERSION+' · Datum '+isoDay()+'</span>');const el=$('#otr');if(el)el.innerHTML=out.join('<br>')});q('#otog',()=>{S.onOff=!S.onOff;save();render()});
   q('#oname',()=>{modal(`<h3>👤 Online-Name</h3><input type="text" id="onin" value="${esc(onName())}" maxlength="24"><div class="tiny mut">Bitte keinen vollen echten Namen, ein Spitzname reicht.</div><button class="btn block" id="onok">Speichern</button>`);$('#onok').onclick=()=>{const v=$('#onin').value.trim();if(v){S.onName=v.slice(0,24);save()}closeModal();render()}});
   q('#djoin',()=>duelJoin(($('#dcode')||{}).value));app.querySelectorAll('[data-dc]').forEach(b=>b.onclick=()=>duelCreate(b.dataset.dc))}
 

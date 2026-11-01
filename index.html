@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Dart Tycoon</title>
-<meta name="dt-version" content="2.4.1">
+<meta name="dt-version" content="2.5">
 <meta name="theme-color" content="#0e1511">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -782,7 +782,7 @@ function rollMarket(){
   const n=3;S.market=[];
   for(let i=0;i<n;i++){
     const lvl=clamp(1+Math.floor(R()*(1+S.rep/70)),1,6)+perk('talent');
-    const p=makePlayer(`${pick(FIRST)} ${pick(LAST)}`,pick(BASE_CLS),lvl);
+    const p=makePlayer(`${pick(FIRST)} ${pick(LAST)}`,R()<.3?pick(marketCls()):pick(BASE_CLS),lvl);
     for(let j=1;j<lvl;j++){const c=pick(p.deck);c.up=true}
     p.cost=90+lvl*85;S.market.push(p);
   }
@@ -1165,7 +1165,7 @@ function chooseRunPlayer(tier){
   <button class="btn gray" onclick="closeModal()">Abbrechen</button>`);
   document.querySelectorAll('[data-rp]').forEach(b=>b.onclick=()=>{closeModal();startRun(tier,b.dataset.rp)});
 }
-function startNerves(p){return bl('gym')*4+(p.cls==='champion'?10:0)+(hasT(p,'nerv')?8:0)-(hasT(p,'party')?3:0)+34+p.lvl*3+S.b.bar*4+(gearOf(p).nerv||0)+decoSum('nerv')+perk('nerven')*3+(p.legend==='macht'?10:0)}
+function startNerves(p){return bl('gym')*4+(p.cls==='champion'?10:0)+(p.cls==='veteran'?12:0)+(hasT(p,'nerv')?8:0)-(hasT(p,'party')?3:0)+34+p.lvl*3+S.b.bar*4+(gearOf(p).nerv||0)+decoSum('nerv')+perk('nerven')*3+(p.legend==='macht'?10:0)}
 function genMap(steps){
   const map=[];
   for(let s=0;s<steps;s++){
@@ -1190,7 +1190,7 @@ function startRun(tier,pid){
   const mx=startNerves(p);
   S.run={tier,pid,gear:gearOf(p),deck,relics:[],nerves:mx,maxN:mx,gold:0,step:0,steps:T.steps,map:genMap(T.steps),path:[],added:[],combat:null,won:0,matches:0};
   p.fat=Math.min(100,(p.fat||0)+25);if(S.mg&&S.mg.talQ>0){S.mg.talQ--;const t=randomTal();if(t)S.run.relics.push(t)}
-  S.run.asc=ascInfo().cur;ascApplyRun(S.run);if(p.cls==='champion'){const t=randomTal();if(t)S.run.relics.push(t)}if(S.storyBoost){S.run.maxN+=S.storyBoost;S.run.nerves+=S.storyBoost;S.storyBoost=0}
+  S.run.asc=ascInfo().cur;ascApplyRun(S.run);if(p.cls==='champion'||p.cls==='lebendelegende'){const t=randomTal();if(t)S.run.relics.push(t)}if(p.cls==='lebendelegende'){const t=randomTal();if(t)S.run.relics.push(t)}if(S.storyBoost){S.run.maxN+=S.storyBoost;S.run.nerves+=S.storyBoost;S.storyBoost=0}
   log(`${p.name} startet ${T.bei} ${T.n}.`);
   save();render();
 }
@@ -2793,7 +2793,7 @@ function hubRuhm(){
   <div class="panel" style="text-align:center;background:linear-gradient(#3a2a0a,#131b16)"><div style="font-size:40px">🌟</div><h3 class="px" style="font-size:12px;line-height:1.6">PRESTIGE ${P.lvl}</h3><div class="small mut">Prestigepunkte: <b style="color:var(--gold)">${P.pts}</b></div></div>
   <div class="panel"><h2>♻️ Neustart als Legende</h2><div class="small mut" style="margin-top:6px;line-height:1.5">Du fängst mit ${esc(S.club)} wieder in der Kreisliga an: Geld, Gebäude, Kader und Liga werden zurückgesetzt. Prestige, gekaufte Boni und Erfolge bleiben. ${ok?`Du bekommst jetzt <b style="color:var(--gold)">${g} Punkte</b>.`:'Freigeschaltet nach einem WM-Titel oder ab 300 Ruf.'}</div>
    <button class="btn ${ok?'gold':''} block" id="prest" style="margin-top:10px" ${ok?'':'disabled'}>${ok?`🌟 Prestige ${P.lvl+1} starten (+${g})`:'🔒 Noch nicht bereit'}</button></div>
-  <div class="panel"><h2>🎭 Charakter für den Neustart</h2><div class="tiny mut" style="margin-top:4px">Durch Erfolge schaltest du neue Charaktere frei. Nach 5 Prestiges wartet der Auserwählte.</div><div class="cls" style="margin-top:8px">${Object.entries(CLASSES).map(([k,c])=>{const open=clsOpen(k),on=(UI.prestCls||(S.players.find(p=>p.isMe)||S.players[0]).cls)===k;return `<div ${open?`data-pcls="${k}"`:''} class="${on?'on':''}" style="${open?'':'opacity:.45'}"><span style="font-size:22px">${open?c.i:'🔒'}</span><b>${c.n}</b><span class="tiny mut">${open?c.d:'Freischalten: '+c.how}</span></div>`}).join('')}</div></div>
+  <div class="panel"><h2>🎭 Charakter für den Neustart</h2><div class="tiny mut" style="margin-top:4px">Durch Erfolge schaltest du neue Charaktere frei. Freigeschaltete tauchen auch auf dem Transfermarkt auf. Nach 5 Prestiges wartet der Auserwählte.</div><div class="cls" style="margin-top:8px">${Object.entries(CLASSES).map(([k,c])=>{const open=clsOpen(k),on=(UI.prestCls||(S.players.find(p=>p.isMe)||S.players[0]).cls)===k;return `<div ${open?`data-pcls="${k}"`:''} class="${on?'on':''}" style="${open?'':'opacity:.45'}"><span style="font-size:22px">${open?c.i:'🔒'}</span><b>${c.n}</b><span class="tiny mut">${open?c.d:'Freischalten: '+c.how}</span></div>`}).join('')}</div></div>
   <div class="panel"><h2>🎁 Dauerhafte Boni</h2></div>
   ${Object.entries(PERKS).map(([k,X])=>{const l=perk(k),max=l>=X.max,c=perkCost(l);return `<div class="panel"><div class="row between"><div><h3>${X.i} ${X.n} <span class="lvl px">${l}/${X.max}</span></h3><div class="tiny mut" style="margin-top:4px">${X.d}</div></div>${max?'<span class="chip">MAX</span>':`<button class="btn sm" data-perk="${k}" ${P.pts<c?'disabled':''}>🌟 ${c}</button>`}</div></div>`}).join('')}
   ${P.hist.length?`<div class="panel"><h2>📜 Frühere Karrieren</h2><div class="small" style="margin-top:8px;display:flex;flex-direction:column;gap:8px">${P.hist.slice().reverse().map(h=>`<div><b>Prestige ${h.lvl} · ${esc(h.club)}</b> <span class="mut tiny">Woche ${h.week} · ⭐${h.rep} · +${h.gain} Punkte</span><div class="tiny mut">${h.titles.length?h.titles.map(esc).join(' · '):'Keine Titel'}</div></div>`).join('')}</div></div>`:''}`;
@@ -2844,7 +2844,7 @@ const LEG_TRAITS={atom:['tri','start'],gruen:['tri','rhythm'],macht:['nerv','dbl
 function rollTraits(){const k=Object.keys(TRAITS),a=[pick(k)];if(R()<.3){const b=pick(k.filter(x=>x!==a[0]&&!(a[0]==='faul'&&x==='fleiss')&&!(a[0]==='fleiss'&&x==='faul')));a.push(b)}return a}
 const hasT=(p,t)=>!!(p&&p.traits&&p.traits.includes(t));
 function fixTraits(st){(st.players||[]).forEach(p=>{if(!p.traits)p.traits=p.legend?LEG_TRAITS[p.legend]||[]:p.isMe?['rhythm']:rollTraits()});(st.market||[]).forEach(p=>{if(!p.traits)p.traits=rollTraits()})}
-const trainXP=(p,n)=>Math.round(n*(1+.2*stf('trainer'))*(hasT(p,'fleiss')?1.5:1)*(hasT(p,'faul')?.6:1));
+const trainXP=(p,n)=>Math.round(n*(1+.2*stf('trainer'))*(hasAusbilder()?1.5:1)*(hasT(p,'fleiss')?1.5:1)*(hasT(p,'faul')?.6:1));
 function traitChips(p){return(p.traits||[]).map(t=>`<span class="chip" title="${TRAITS[t].d}">${TRAITS[t].i} ${TRAITS[t].n}</span>`).join('')}
 function portraitURL(L){return cached('por'+JSON.stringify(L),()=>{const P=PX(30,44);P.fill((x,y)=>mixc('#22302a','#0e1410',y/44));drawChar(P,L,15,42);return P.url()})}
 function playerCard(p){
@@ -2997,7 +2997,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='2.4.1';
+const GAME_VERSION='2.5';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
@@ -3063,14 +3063,14 @@ function trackThrow(sp,hit){
     if(sp.k==='triple'&&me.board[key]>=3&&sp.ch<1){me.block+=3;setTimeout(()=>fx('🏹 Robin Hood! +3 Fokus','#f4c430'),350)}}
   // Shanghai
   if(hit&&typeof n==='number'&&['single','double','triple'].includes(sp.k)){me.shg=me.shg||{};const s=me.shg[n]=me.shg[n]||{};s[sp.k]=1;
-    if(s.single&&s.double&&s.triple&&!s.done){s.done=1;me.block+=6;heal(4);C.opp.st.nerv+=2;setTimeout(()=>caller('SHANGHAI!','#f4c430'),250);S.stats.shanghai=(S.stats.shanghai||0)+1}}
+    if(s.single&&s.double&&s.triple&&!s.done){s.done=1;const sm=pcls('shanghai')?2:1;me.block+=6*sm;heal(4*sm);C.opp.st.nerv+=2;setTimeout(()=>caller('SHANGHAI!','#f4c430'),250);S.stats.shanghai=(S.stats.shanghai||0)+1}}
   if(hit&&sp.k==='double'&&has('doppelherz')){draw(1);me.block+=4}
   // Bull-Serie
   if(hit&&sp.k==='bull'){C.bullCnt=(C.bullCnt||0)+(sp.bc||1)*(has('bullmagnet')||(player()&&player().cls==='bulljaeger')?2:1);if(C.bullCnt>=3){C.bullCnt=0;me.plusDart=(me.plusDart||0)+1;me.block+=5;setTimeout(()=>caller('BULLSEYE-SERIE!','#3aff8c'),250)}}
   // Triple-Serie (180-Jäger)
   if(sp.ch<1||sp.k==='triple'){if(hit&&sp.k==='triple'){C.triStreak=(C.triStreak||0)+1;if(C.triStreak%3===0){me.plusDart=(me.plusDart||0)+1;setTimeout(()=>fx('🔥 3 Triples in Serie: +1 Dart nächsten Zug','#ffb347'),500)}}else C.triStreak=0}
 }
-function blockPen(sp){const me=S.run.combat.me;if(!me.board)return 0;const n=numOf(sp);const key=sp.k==='bull'?'B':n;const c=me.board[key]||0;if(!c||sp.k==='double'||sp.k==='single')return 0;return .09*c}
+function blockPen(sp){const me=S.run.combat.me;if(pcls('lebendelegende'))return 0;if(!me.board)return 0;const n=numOf(sp);const key=sp.k==='bull'?'B':n;const c=me.board[key]||0;if(!c||sp.k==='double'||sp.k==='single')return 0;return .09*c}
 function endTurnSetup(){
   const C=S.run.combat,me=C.me;if(me.rest===me.turnStart||me.rest<2)return;
   const v=GOOD_REST[me.rest];
@@ -3337,7 +3337,7 @@ function jobCollect(aid){const J=MG().jobs,a=J.active.find(x=>x.id===aid);if(!a|
   const m=Math.round((j.m||0)*a.mul*(1+.1*stf('kassenwart'))*f);if(m){S.money+=m;out.push(`💶 +${m}`)}
   if(j.f){const v=Math.round(j.f*f);S.fans+=v;out.push(`📣 +${v}`)}
   if(j.nm&&ok){const cap=S.b.boards*capPer(),n=Math.min(j.nm,Math.max(0,cap-S.members));S.members+=n;if(n)out.push(`👥 +${n}`)}
-  if(j.xp)a.pids.forEach(id=>{const p=player(id);if(p){p.xp+=Math.round(j.xp*f);checkLvl(p)}}),out.push(`✨ +${Math.round(j.xp*f)} XP`);
+  if(j.xp)a.pids.forEach(id=>{const p=player(id);if(p){p.xp+=Math.round(j.xp*f*(hasAusbilder()?1.5:1));checkLvl(p)}}),out.push(`✨ +${Math.round(j.xp*f)} XP`);
   if(ok&&j.card){const p=player(a.pids[0]);if(p){const id=randomCard('u');p.deck.push({id,up:false,u:uid()});out.push(`🃏 ${CARDS[id].n}`)}}
   if(ok&&j.pack){S.packs[j.pack]=(S.packs[j.pack]||0)+1;out.push(`🎁 ${j.pack}-Pack`)}
   if(ok&&j.tal){addYouth();out.push('🧒 neues Talent')}
@@ -3874,6 +3874,23 @@ function bindVliga(app){const q=(id,f)=>{const e=app.querySelector(id);if(e)e.on
 
 Object.assign(COACH,{vliga:'🏟 <b>Vereinsliga</b>: Gründe eine Liga oder tritt mit einem Code bei. Jeder Verein spielt einmal zu Hause gegen jeden anderen, ein Ligaabend mit 3 Einzeln gegen die KI-Kopien des anderen Teams. Dein Team wird automatisch hochgeladen, wenn du die Liga öffnest.'});
 
+
+Object.assign(CLASSES,{
+ shanghai:{lock:1,n:'Shanghai-Meister',i:'🀄',d:'Shanghai-Bonus doppelt, +5% wenn du dieselbe Zahl schon getroffen hast',deck:['s20','s20','s20','shanghai','t20','d20','d16','breath','nachlegen','s20'],how:'3× Shanghai werfen'},
+ eisblock:{lock:1,n:'Der Eisblock',i:'🧊',d:'Druck halbiert, kein Zittern bei wenig Nerven',deck:['s20','s20','s20','s20','t20','d20','d16','breath','ruhe','set'],how:'5 Comeback-Siege'},
+ sprinter:{lock:1,n:'Der Sprinter',i:'⚡',d:'Erster Zug jedes Legs: +1 Dart und +5 Fokus',deck:['s20','s20','s20','t20','t20','t19','d20','d16','tempo','breath'],how:'10 Matches zu Null gewinnen'},
+ zocker:{lock:1,n:'Der Zocker',i:'🎲',d:'Risiko-Züge zählen ×2 und kosten keine Treffsicherheit',deck:['s20','s20','t20','t20','t20','maxjagd','d20','d16','breath','s20'],how:'50 Legs gewinnen'},
+ ausbilder:{lock:1,n:'Der Ausbilder',i:'📚',d:'Solange er im Kader ist: +50% XP für alle durch Training und Aufträge',deck:['s20','s20','s20','s20','t20','t19','d20','d16','breath','refocus'],how:'10 Aufträge erledigen'},
+ veteran:{lock:1,n:'Der Veteran',i:'🎖',d:'+12 Nerven, jedes verlorene Leg gibt +4 Nerven zurück',deck:['s20','s20','s20','s20','t20','d20','d20','d16','breath','set'],how:'25 Turniere spielen'},
+ lokalheld:{lock:1,n:'Lokalmatador',i:'🏠',d:'+10% in Liga, Pokal und Vereinsliga',deck:['s20','s20','s20','s20','t20','t19','d20','d16','breath','crowd'],how:'300 Fans haben'},
+ vereinsspieler:{lock:1,n:'Der Vereinsspieler',i:'🎯',d:'+6% auf alles: echtes Training zahlt sich aus',deck:['s20','s20','s20','t20','t19','reststellen','d20','d16','breath','coweg'],how:'5 echte Matches im Scorer spielen'},
+ lebendelegende:{lock:1,n:'Lebende Legende',i:'🌟',d:'+10% auf alles, ignoriert verdeckte Felder, startet jedes Turnier mit 2 Talismanen',deck:['s20','t20','t20','t19','d20','d16','reststellen','robin','zielgerade','breath'],how:'Ein Spieler in den Top 10 der Welt'},
+});
+Object.assign(CLS_COND,{shanghai:()=>(S.stats.shanghai||0)>=3,eisblock:()=>(S.stats.comeback||0)>=5,sprinter:()=>(S.stats.wash||0)>=10,zocker:()=>(S.stats.legs||0)>=50,ausbilder:()=>S.mg&&S.mg.stats.jobs>=10,veteran:()=>(S.stats.runs||0)>=25,lokalheld:()=>S.fans>=300,vereinsspieler:()=>S.real&&S.real.tot.m>=5,lebendelegende:()=>S.players.some(p=>(p.rbest||1000)<=10)});
+const pcls=k=>{const p=player();return !!(p&&p.cls===k)};
+const hasAusbilder=()=>S&&S.players&&S.players.some(p=>p.cls==='ausbilder');
+const marketCls=()=>BASE_CLS.concat(((S&&S.prestige&&S.prestige.cls)||[]).filter(k=>!['champion','lebendelegende'].includes(k)));
+
 /* ================= Match ================= */
 function makeOpp(tier,kind,step){
   let o;
@@ -3937,9 +3954,10 @@ function startPlayerTurn(){
   C.turn++;
   me.block=me.pw.walk+(C.firstTurn&&has('chalkboard')?6:0)+(has('fanclub')?3:0)+GE('focus');me.got180=false;me.gotTon=false;me.hitsTurn=0;
   const pp=player();me.block+=(me.carry||0)+(hasT(pp,'crowd')?2:0);me.carry=0;
-  me.darts=3+(C.firstTurn&&has('energy')?1:0)+(C.firstTurn&&pp.cls==='champion'?1:0)+(C.firstTurn&&hasT(pp,'start')?1:0)+(me.plusDart||0)-(me.minusDart||0);me.plusDart=0;me.minusDart=0;me.rhythm=null;me.missT20=false;
+  me.darts=3+(C.firstTurn&&has('energy')?1:0)+(C.firstTurn&&pp.cls==='champion'?1:0)+(C.firstTurn&&pp.cls==='sprinter'?1:0)+(C.firstTurn&&hasT(pp,'start')?1:0)+(me.plusDart||0)-(me.minusDart||0);me.plusDart=0;me.minusDart=0;me.rhythm=null;me.missT20=false;
   me.accBuff=0;me.played=0;me.sure=false;me.sureAll=false;me.dblNext=me.dblPlan||0;me.dblPlan=0;me.triTurn=0;me.turnStart=me.rest;me.board={};me.marks=[];me.shg={};me.risk=has('allin');if(has('sammler'))me.darts=Math.max(1,me.darts-1);
   if(C.rule==='lokalrunde'&&C.turn%3===0){me.darts=Math.max(1,me.darts-1);C.opp.st.nerv+=1;setTimeout(()=>toast('🍻 Lokalrunde! −1 Dart, der Boss ist angeheitert'),300)}
+  if(C.firstTurn&&pp.cls==='sprinter')me.block+=5;
   if(C.rule==='eisern')me.block=Math.min(me.block,10);
   draw((me.pw.routine||0)+5-(C.firstTurn&&(S.run.asc||0)>=6?1:0)+(has('talisman')?1:0)+(has('sammler')?2:0)+(C.firstTurn?(has('dartbag')?2:0)+GE('draw')+(hasT(pp,'faul')?1:0):0));
   if(me.psyche){me.psyche=false;const pl=me.hand.filter(c=>CARDS[c.id].t!=='curse');if(pl.length){const c=pick(pl);me.hand.splice(me.hand.indexOf(c),1);me.discard.push(c);setTimeout(()=>toast(`🧠 Psychotrick: ${CARDS[c.id].n} abgeworfen`),200)}}
@@ -3979,9 +3997,9 @@ function accFor(sp){
   if(hasT(p,'dbl')&&(sp.k==='double'))b+=.06;if(hasT(p,'tri')&&sp.k==='triple')b+=.06;if(hasT(p,'heim')&&(S.run.mode==='liga'||S.run.mode==='pokal'))b+=.08;if(hasT(p,'spaet')&&C.leg>=2)b+=.06;if(sp.k==='double'&&(sp.pts===32||sp.pts===40))b+=(me.pw.fav||0);
   if(sp.k==='triple'||sp.k==='bull'){if(p.cls==='scorer')b+=.10;if(has('tungsten'))b+=.08;b+=GE('tri')/100}
   if(sp.k==='double'||sp.k==='bull'){if(p.cls==='finisher')b+=.12;if(has('flights'))b+=.08;b+=me.pw.ice+GE('dbl')/100}
-  if(S.run.nerves<S.run.maxN*.3)b-=.10;
+  if(S.run.nerves<S.run.maxN*.3&&!(p&&p.cls==='eisblock'))b-=.10;
   b-=blockPen(sp);if(me.risk)b-=.06;b+=presBonus()+condAcc(p);
-  if(p){if(p.cls==='bulljaeger'&&sp.k==='bull')b+=.15;if(p.cls==='champion')b+=.08;if(p.cls==='rechner'&&sp.k==='double')b+=.06}
+  if(p){if(p.cls==='vereinsspieler')b+=.06;if(p.cls==='lebendelegende')b+=.10;if(p.cls==='lokalheld'&&S.run.mode&&['liga','pokal','vliga'].includes(S.run.mode))b+=.10;if(p.cls==='shanghai'){const n0=numOf(sp);if(typeof n0==='number'&&me.shg&&me.shg[n0])b+=.05}if(p.cls==='zocker'&&me.risk)b+=.06;if(p.cls==='bulljaeger'&&sp.k==='bull')b+=.15;if(p.cls==='champion')b+=.08;if(p.cls==='rechner'&&sp.k==='double')b+=.06}
   if(has('bullmagnet')){if(sp.k==='bull')b+=.25;if(sp.k==='triple')b-=.10}if(has('kaltblut')&&sp.k==='double')b+=.18;
   return clamp(sp.ch+b,.05,.98);
 }
@@ -3993,7 +4011,7 @@ function outcome(sp,rest,hit){
   if(hit&&sp.k==='triple')pts+=(me.pw.chain||0);
   if(!hit&&sp.k==='triple')pts+=GE('grip');
   if(hit&&has('vierfach')){if(sp.k==='triple')pts=Math.round(pts*4/3);else if(sp.k==='single')pts=Math.ceil(pts/2)}
-  if(hit&&me.risk&&(sp.k==='single'||sp.k==='triple'))pts=Math.round(pts*(has('allin')?2:1.5));
+  if(hit&&me.risk&&(sp.k==='single'||sp.k==='triple'))pts=Math.round(pts*(has('allin')||pcls('zocker')?2:1.5));
   if(pts>0&&rest-pts<2)return{bust:true,pts};
   return{rest:rest-pts,pts};
 }
@@ -4107,7 +4125,7 @@ function oppTurn(){
     if(o.rest-sc<2)sc=Math.max(0,o.rest-2);
     o.rest-=sc;
     let dr=it.druck+(C.rule==='eisern'&&it.druck>0?3:0),txt=`${o.nick}: ${sc}`;
-    if(dr>0){if(nerv)dr=Math.ceil(dr/2);if(o.st.sil>0)dr=0;if(has('earplugs'))dr=Math.max(0,dr-2);dr=Math.max(0,dr-(me.pw.armor||0)-GE('armor'));if(me.pw.ice2)dr=Math.ceil(dr/2);if(player().legend==='kuehl')dr=Math.ceil(dr/2);
+    if(dr>0){if(nerv)dr=Math.ceil(dr/2);if(o.st.sil>0)dr=0;if(has('earplugs'))dr=Math.max(0,dr-2);dr=Math.max(0,dr-(me.pw.armor||0)-GE('armor'));if(me.pw.ice2)dr=Math.ceil(dr/2);if(player().legend==='kuehl'||player().cls==='eisblock')dr=Math.ceil(dr/2);
       let bl;if(has('kaltblut')){const use=Math.min(me.block,dr*2);me.block-=use;bl=Math.floor(use/2)}else{bl=Math.min(me.block,dr);me.block-=bl}dr-=bl;
       if(dr>0){S.run.nerves-=dr;txt+=` · −${dr} ❤️`;setTimeout(()=>{snd('hurt');buzz(60)},120)}else if(bl>0)txt+=' · geblockt'}
     o.lastSc=sc;
@@ -4123,7 +4141,7 @@ function oppTurn(){
 function endLeg(w){
   const C=S.run.combat;C.busy=true;
   if(w==='me'){C.me.legs++;S.stats.legs++;if(S.run.nerves<=5)S.stats.clutch++;if(player().legend==='highlander')heal(5)}
-  else{C.opp.legs++;const pen=Math.max(2,Math.round((4+lvOf(S.run.tier))*2/(C.need||2)*(C.sets?.6:1)));S.run.nerves-=pen;if(has('coach'))heal(6);if(C.opp.legs===1&&C.me.legs===0)C.down=true;setTimeout(()=>toast(`Leg verloren: −${pen} Nerven`),300)}
+  else{C.opp.legs++;const pen=Math.max(2,Math.round((4+lvOf(S.run.tier))*2/(C.need||2)*(C.sets?.6:1)));S.run.nerves-=pen;if(has('coach'))heal(6);if(player().cls==='veteran')heal(4);if(C.opp.legs===1&&C.me.legs===0)C.down=true;setTimeout(()=>toast(`Leg verloren: −${pen} Nerven`),300)}
   save();render();
   setTimeout(()=>{
     const C2=S.run&&S.run.combat;if(!C2)return;

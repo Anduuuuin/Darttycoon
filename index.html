@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Dart Tycoon</title>
-<meta name="dt-version" content="2.2">
+<meta name="dt-version" content="2.3">
 <meta name="theme-color" content="#0e1511">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -886,7 +886,7 @@ function render0(){
   if(S.run&&S.run.combat)return renderCombat(app);
   if(S.run&&S.run.mode==='pokal')return renderPokal(app);
   if(S.run&&S.run.mode==='liga')return renderNight(app);
-  if(S.run&&S.run.mode==='pl')return renderHub(app);
+  if(S.run&&(S.run.mode==='pl'||S.run.mode==='vliga'))return renderHub(app);
   if(S.run)return renderRun(app);
   renderHub(app);
 }
@@ -988,9 +988,10 @@ function renderHub(app){
   else if(t==='verw')body=hubVerw();
   else if(t==='scorer')body=hubScorer();
   else if(t==='online')body=hubOnline();
+  else if(t==='vliga')body=hubVliga();
   else{UI.tab='welt';body=hubWelt()}
   const tabs=[['welt','🏙','Stadt'],['heim','🏠','Heim'],['r_buero','📋','Büro'],['shop','🛍','Shop'],['turnier','🏆','Turniere'],['woche','📅','Woche']];
-  const on=k=>UI.tab===k||(k==='welt'&&(UI.tab==='halle'||UI.tab==='pl'))||(k==='turnier'&&(UI.tab==='album'||UI.tab==='online'))||(k==='r_buero'&&['liga','kader','verein','ruhm','jobs','verw'].includes(UI.tab))||(k==='heim'&&((UI.tab.startsWith('r_')&&UI.tab!=='r_buero')||UI.tab==='scorer'));
+  const on=k=>UI.tab===k||(k==='welt'&&(UI.tab==='halle'||UI.tab==='pl'))||(k==='turnier'&&['album','online','vliga'].includes(UI.tab))||(k==='r_buero'&&['liga','kader','verein','ruhm','jobs','verw'].includes(UI.tab))||(k==='heim'&&((UI.tab.startsWith('r_')&&UI.tab!=='r_buero')||UI.tab==='scorer'));
   app.innerHTML=topBar()+`<div class="content">${body}</div><div class="nav">${tabs.map(t=>`<button class="${on(t[0])?'on':''}" data-tab="${t[0]}"><span>${t[1]}</span>${t[2]}</button>`).join('')}</div>`;
   app.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{snd('click');UI.tab=b.dataset.tab;render();window.scrollTo(0,0)});
   bindHub(app);bindWorld(app);
@@ -1054,7 +1055,7 @@ function hubWoche0(){
   <div class="panel small mut">Bilanz: ${S.stats.runs} Turniere · ${S.stats.wins} Titel · ${S.stats.legs} Legs gewonnen</div>`;
 }
 function bindHub(app){
-  bindOnline(app);
+  bindOnline(app);bindVliga(app);
   {const q=(id,f)=>{const e=app.querySelector(id);if(e)e.onclick=f};q('#scstart',()=>{if(S.realCur){UI.tab='scorer';render()}else scorerSetup()});q('#rtrain',()=>realTrainDialog());
    if(S.realCur){const M=S.realCur;app.querySelectorAll('[data-sk]').forEach(b=>b.onclick=()=>{const k=b.dataset.sk;if(k==='del')M.inp=M.inp.slice(0,-1);else if(k==='ok')return scSubmit(+(M.inp||0));else if(M.inp.length<3)M.inp+=k;snd('click');render()});
     app.querySelectorAll('[data-sq]').forEach(b=>b.onclick=()=>scSubmit(+b.dataset.sq));q('#scundo',scUndo);q('#scquit',()=>modal(`<h3>Match abbrechen?</h3><div class="small mut">Das laufende Match wird nicht gewertet.</div><button class="btn red" id="scq2">Abbrechen</button><button class="btn gray" onclick="closeModal()">Weiterspielen</button>`)||($('#scq2').onclick=()=>{S.realCur=null;closeModal();UI.tab='r_scheiben';save();render()}))}}
@@ -2995,7 +2996,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='2.2';
+const GAME_VERSION='2.3';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
@@ -3796,7 +3797,7 @@ async function myDuels(){const codes=(S.myCodes||[]).map(c=>c.code);const el=$('
 function hubOnline(){setTimeout(myDuels,50);
   return `<div class="navrow"><button class="btn gray sm" data-go="turnier">◀ Turniere</button><b class="small">🌐 Online</b></div>
   <div class="panel"><div class="row between"><div><h3>👤 Online-Name</h3><div class="tiny mut">So erscheinst du in Bestenlisten und Duellen.</div></div><button class="btn gray sm" id="oname">${esc(onName())} ✏️</button></div><div class="row between" style="margin-top:8px"><span class="tiny mut">Ergebnisse automatisch hochladen</span><button class="btn sm ${S.onOff?'gray':''}" id="otog">${S.onOff?'Aus':'An'}</button></div></div>
-  <button class="btn gold block" id="oboard">🏆 Online-Bestenlisten</button>
+  <div class="grid2"><button class="btn gold" id="oboard">🏆 Bestenlisten</button><button class="btn gold" data-go="vliga">🏟 Vereinsliga${S.vl?' ✔':''}</button></div>
   <div class="panel"><h2>⚔️ Freundes-Duelle</h2><div class="tiny mut" style="margin-top:4px">Erstelle einen Code für deinen Spieler und schick ihn Freunden. Oder gib den Code eines Freundes ein und spiel gegen seine KI-Kopie (501 · Best of 5). Siege bringen 100 € und Fans.</div>
    <div class="row" style="gap:6px;margin-top:8px"><input type="text" id="dcode" placeholder="CODE" maxlength="6" style="flex:1;text-transform:uppercase;letter-spacing:3px;margin:0"><button class="btn" id="djoin">Antreten</button></div>
    <div class="small" style="margin-top:10px"><b>Code für meinen Spieler erstellen:</b></div><div class="row" style="gap:6px;flex-wrap:wrap;margin-top:6px">${S.players.map(p=>`<button class="btn gray sm" data-dc="${p.id}">${esc(p.name)} Lv${p.lvl}</button>`).join('')}</div></div>
@@ -3807,6 +3808,62 @@ function bindOnline(app){const q=(id,f)=>{const e=app.querySelector(id);if(e)e.o
   q('#djoin',()=>duelJoin(($('#dcode')||{}).value));app.querySelectorAll('[data-dc]').forEach(b=>b.onclick=()=>duelCreate(b.dataset.dc))}
 
 Object.assign(COACH,{online:'🌐 <b>Online</b>: Deine Ergebnisse vom Tages-Turnier, 121-Checkout und Schnellwurf landen automatisch in der Bestenliste. Bei den <b>Freundes-Duellen</b> erstellst du einen Code für deinen Spieler. Freunde spielen dann gegen seine KI-Kopie, und du siehst, wer gewonnen hat.'});
+
+
+/* ================= Online-Vereinsliga ================= */
+function myKey(){if(!S.mk){S.mk=[...Array(16)].map(()=>CODE_CH[Math.floor(Math.random()*CODE_CH.length)]).join('');save()}return S.mk}
+const teamSnap=()=>S.players.slice().sort((a,b)=>b.lvl-a.lvl).slice(0,4).map(ghostOf);
+const VL={};
+async function vlLoad(force){const c=S.vl&&S.vl.code;if(!c)return null;if(!force&&VL.t&&Date.now()-VL.t<15000&&VL.code===c)return VL;
+  const [lg,mem,res]=await Promise.all([sb(`leagues?select=*&code=eq.${c}`),sb(`league_members?select=mk,club,manager,team,created_at&league=eq.${c}&order=created_at.asc&limit=500`),sb(`league_results?select=*&league=eq.${c}&order=created_at.asc&limit=1000`)]);
+  if(!lg.length)throw new Error('Liga nicht gefunden');const M={};mem.forEach(m=>{if(!M[m.mk])M[m.mk]={...m,first:m.created_at};else Object.assign(M[m.mk],{club:m.club,manager:m.manager,team:m.team})});
+  Object.assign(VL,{t:Date.now(),code:c,lg:lg[0],mem:Object.values(M),res:res.filter(r=>r.season===lg[0].season)});return VL}
+async function vlSync(){if(!S.vl)return;const snap=JSON.stringify(teamSnap())+S.club;let h=0;for(const ch of snap)h=(h*31+ch.charCodeAt(0))>>>0;if(S.vl.h===h)return;
+  await sb('league_members',{method:'POST',prefer:'return=minimal',body:{league:S.vl.code,mk:myKey(),club:S.club.slice(0,30),manager:onName(),team:teamSnap()}});S.vl.h=h;save()}
+function vlTable(L){const T={};L.mem.forEach(m=>T[m.mk]={mk:m.mk,club:m.club,sp:0,w:0,l:0,lf:0,la:0,pts:0});const seen={};
+  L.res.forEach(r=>{const k=r.home+'>'+r.away;if(seen[k]||!T[r.home]||!T[r.away])return;seen[k]=r;const H=T[r.home],A=T[r.away];H.sp++;A.sp++;H.lf+=r.hw;H.la+=r.aw;A.lf+=r.aw;A.la+=r.hw;if(r.hw>r.aw){H.w++;A.l++;H.pts+=2}else{A.w++;H.l++;A.pts+=2}});
+  return{rows:Object.values(T).sort((a,b)=>b.pts-a.pts||(b.lf-b.la)-(a.lf-a.la)),seen}}
+async function vlCreate(name){name=(name||'').trim().slice(0,30);if(!name)return toast('Bitte einen Liga-Namen eingeben');const code=[...Array(6)].map(()=>CODE_CH[Math.floor(Math.random()*CODE_CH.length)]).join('');
+  try{await sb('leagues',{method:'POST',prefer:'return=minimal',body:{code,name,owner:myKey()}});S.vl={code};await vlSync();toast(`🏟 Liga „${name}“ gegründet!`);render()}catch(e){toast('⚠️ '+e.message)}}
+async function vlJoin(code){code=(code||'').toUpperCase().replace(/[^A-Z0-9]/g,'');if(code.length!==6)return toast('Der Code hat 6 Zeichen');
+  try{const lg=await sb(`leagues?select=code,name&code=eq.${code}`);if(!lg.length)return toast('Liga nicht gefunden');S.vl={code};await vlSync();VL.t=0;toast(`🏟 Willkommen in „${lg[0].name}“!`);render()}catch(e){toast('⚠️ '+e.message)}}
+function vlShare(){const L=VL;const txt=`🏟 Tritt meiner Dart-Tycoon-Vereinsliga „${L.lg.name}“ bei! Liga-Code: ${L.code}\nhttps://anduuuuin.github.io/darttycoon/`;(async()=>{try{if(navigator.share)await navigator.share({text:txt});else{await navigator.clipboard.writeText(txt);toast('Kopiert!')}}catch(e){}})()}
+function hubVliga(){if(!S.vl)return `<div class="navrow"><button class="btn gray sm" data-go="online">◀ Online</button><b class="small">🏟 Vereinsliga</b></div>
+  <div class="panel"><h2>🏟 Eigene Liga mit Freunden</h2><div class="tiny mut" style="margin-top:4px">Gründe eine Liga und lade Freunde per Code ein. Jeder Verein spielt einmal zu Hause gegen jeden anderen: ein Ligaabend mit 3 Einzeln gegen die KI-Kopien des gegnerischen Teams. Sieg = 2 Punkte.</div></div>
+  <div class="panel"><h3>➕ Liga gründen</h3><input type="text" id="vlname" placeholder="z. B. Thüringer Feierabendliga" maxlength="30"><button class="btn gold block" id="vlnew">Gründen</button></div>
+  <div class="panel"><h3>🔑 Liga beitreten</h3><div class="row" style="gap:6px"><input type="text" id="vlcode" placeholder="CODE" maxlength="6" style="flex:1;text-transform:uppercase;letter-spacing:3px;margin:0"><button class="btn" id="vljoin">Beitreten</button></div></div>`;
+  setTimeout(vlRender,30);return `<div class="navrow"><button class="btn gray sm" data-go="online">◀ Online</button><b class="small">🏟 Vereinsliga</b></div><div id="vlbody"><div class="panel small mut">Lade Liga …</div></div>`}
+async function vlRender(force){const el=$('#vlbody');if(!el)return;try{await vlSync();const L=await vlLoad(force);const el2=$('#vlbody');if(!el2)return;const me=myKey(),{rows,seen}=vlTable(L);
+  const others=L.mem.filter(m=>m.mk!==me),open=others.filter(m=>!seen[me+'>'+m.mk]),done=L.mem.length>1&&rows.every(r=>r.sp>=2*(L.mem.length-1));
+  const feed=L.res.slice(-8).reverse().map(r=>{const H=L.mem.find(m=>m.mk===r.home),A=L.mem.find(m=>m.mk===r.away);return H&&A?`<div class="tiny" style="margin-top:4px">${esc(H.club)} <b>${r.hw}:${r.aw}</b> ${esc(A.club)}</div>`:''}).join('');
+  el2.innerHTML=`<div class="panel"><div class="row between"><div><h2>🏟 ${esc(L.lg.name)}</h2><div class="tiny mut">Saison ${L.lg.season} · ${L.mem.length} Vereine · Code <b class="px" style="color:var(--gold)">${L.code}</b></div></div><button class="btn sm gold" id="vlsh">📤 Einladen</button></div></div>
+  ${done&&rows[0]?`<div class="panel" style="text-align:center;border-color:var(--gold)"><div style="font-size:36px">🏆</div><b>Meister: ${esc(rows[0].club)}</b>${L.lg.owner===me?'<button class="btn gold block" id="vlseason" style="margin-top:8px">Neue Saison starten</button>':'<div class="tiny mut">Der Gründer kann eine neue Saison starten.</div>'}</div>`:''}
+  <div class="panel" style="padding:8px"><table class="tbl"><tr><th>#</th><th style="text-align:left">Verein</th><th>Sp</th><th>Legs</th><th>Pkt</th></tr>${rows.map((t,i)=>`<tr class="${t.mk===me?'mine':''}"><td>${i+1}</td><td class="n">${esc(t.club)}</td><td>${t.sp}</td><td>${t.lf}:${t.la}</td><td>${t.pts}</td></tr>`).join('')}</table></div>
+  <div class="panel"><h2>🏠 Deine Heimspiele</h2>${others.length?others.map(m=>{const r=seen[me+'>'+m.mk];return `<div class="row between" style="margin-top:8px"><div><b class="small">${esc(m.club)}</b><div class="tiny mut">${(m.team||[]).slice(0,3).map(g=>`${esc(g.name)} Lv${g.lvl}`).join(' · ')}</div></div>${r?`<span class="chip">${r.hw}:${r.aw}</span>`:`<button class="btn sm gold" data-vlplay="${m.mk}" ${S.run?'disabled':''}>Spielen</button>`}</div>`}).join(''):'<div class="small mut" style="margin-top:6px">Noch allein hier. Lade Freunde mit dem Code ein!</div>'}${open.length?`<div class="tiny mut" style="margin-top:8px">Noch ${open.length} offen. Auswärtsspiele bestreiten die anderen bei sich.</div>`:''}</div>
+  ${feed?`<div class="panel"><h2>📜 Letzte Ergebnisse</h2>${feed}</div>`:''}
+  <div class="row" style="gap:6px"><button class="btn gray" style="flex:1" id="vlref">🔄 Aktualisieren</button><button class="btn gray" style="flex:1" id="vlleave">🚪 Liga verlassen</button></div>`;
+  const q=(id,f)=>{const e=$(id);if(e)e.onclick=f};q('#vlsh',vlShare);q('#vlref',()=>vlRender(true));
+  q('#vlleave',()=>{modal(`<h3>Liga verlassen?</h3><div class="small mut">Deine Ergebnisse bleiben in der Tabelle der anderen. Mit dem Code kannst du wieder beitreten.</div><button class="btn red" id="vll2">Verlassen</button><button class="btn gray" onclick="closeModal()">Abbrechen</button>`);$('#vll2').onclick=()=>{S.vl=null;save();closeModal();render()}});
+  q('#vlseason',async()=>{try{await sb(`leagues?code=eq.${L.code}`,{method:'PATCH',prefer:'return=minimal',body:{season:L.lg.season+1}});VL.t=0;toast('🏟 Neue Saison!');vlRender(true)}catch(e){toast('⚠️ '+e.message)}});
+  document.querySelectorAll('[data-vlplay]').forEach(b=>b.onclick=()=>vlStart(L.mem.find(m=>m.mk===b.dataset.vlplay)))}
+ catch(e){const e2=$('#vlbody');if(e2)e2.innerHTML=`<div class="panel small">⚠️ Keine Verbindung zur Liga (${esc(e.message)}). Sind die Liga-Tabellen in Supabase angelegt?</div><button class="btn gray block" id="vlleave2">Liga-Verknüpfung entfernen</button>`;const b=$('#vlleave2');if(b)b.onclick=()=>{S.vl=null;save();render()}}}
+function vlStart(opp){if(!opp)return;const mine=S.players.filter(p=>!p.away).sort((a,b)=>b.lvl-a.lvl).slice(0,3).map(p=>p.id);const theirs=(opp.team||[]).slice(0,3);
+  while(theirs.length<3)theirs.push({name:'Ersatzspieler',lvl:1,cls:'scorer',traits:[],look:randLook(),deck:[],gear:{}});
+  S.run={mode:'vliga',tier:1,pid:null,deck:[],relics:[],nerves:1,maxN:1,gold:0,step:3,steps:99,map:[],path:[],added:[],combat:null,won:0,matches:0,vl:{code:S.vl.code,season:VL.lg.season,opp:opp.mk,club:opp.club,mine,theirs,idx:0,w:0,l:0,res:[]}};
+  if(mine.length<3){S.run.sub=makePlayer(`${pick(FIRST)} (Ersatz)`,pick(BASE_CLS));S.run.sub.id='sub'}save();vlNext()}
+function vlNext(){const r=S.run,V=r.vl,i=V.idx;const pid=V.mine[i]||'sub',p=player(pid),D=V.theirs[i],mx=startNerves(p);
+  Object.assign(r,{pid,deck:p.deck.map(c=>({id:c.id,up:c.up,u:uid()})),gear:gearOf(p),nerves:mx,maxN:mx});startCombat('n');const C=r.combat,o=C.opp;
+  o.name=`${D.name} (${V.club})`;o.nick=D.name.split(' ')[0];o.look=Object.assign({},D.look||randLook());o.ab=[...new Set((D.traits||[]).map(t=>TRAIT_AB[t]).filter(Boolean))].slice(0,2);
+  o.min=22+D.lvl*9;o.max=Math.min(180,46+D.lvl*13+((D.gear&&D.gear.heat)||0)*3);o.co=Math.min(.85,.24+D.lvl*.045+((D.gear&&D.gear.dbl)||0)/100);o.finish=Math.min(40+D.lvl*10,130);C.label=`Vereinsliga · Einzel ${i+1}/3`;save();render()}
+function vlSingleEnd(win){const r=S.run,V=r.vl,C=r.combat,x=win?C.need:C.me.legs,y=win?C.opp.legs:C.need;V.res.push(`${x}:${y}`);if(win)V.w++;else V.l++;V.idx++;r.combat=null;save();snd(win?'win':'lose');
+  const over=V.w>=2||V.l>=2;
+  if(!over){render();return modal(`<div style="text-align:center"><h3>${win?'✅ Einzel gewonnen':'❌ Einzel verloren'} (${x}:${y})</h3><div class="px" style="font-size:22px;margin:8px 0">${V.w} : ${V.l}</div><div class="small mut">gegen ${esc(V.club)}</div></div><button class="btn gold block" id="vlnx">Einzel ${V.idx+1} starten</button>`),$('#vlnx').onclick=()=>{closeModal();vlNext()}}
+  const myWin=V.w>V.l;S.run=null;if(myWin){S.money+=150;S.rep+=3;S.fans+=15}UI.tab='vliga';save();render();
+  sb('league_results',{method:'POST',prefer:'return=minimal',body:{league:V.code,season:V.season,home:myKey(),away:V.opp,hw:V.w,aw:V.l,detail:V.res.join(' ').slice(0,60)}}).then(()=>{VL.t=0;vlRender(true)}).catch(e=>toast('⚠️ Ergebnis nicht gespeichert: '+e.message));
+  modal(`<div style="text-align:center"><div style="font-size:44px">${myWin?'🏆':'😤'}</div><h3>${myWin?'Ligaabend gewonnen!':'Ligaabend verloren'}</h3><div class="px" style="font-size:22px;margin:8px 0">${V.w} : ${V.l}</div><div class="small mut">gegen ${esc(V.club)} · ${V.res.join(' · ')}${myWin?'<br>+150 € · +3 Ruf · +15 Fans':''}</div></div><button class="btn block" onclick="closeModal()">OK</button>`)}
+function bindVliga(app){const q=(id,f)=>{const e=app.querySelector(id);if(e)e.onclick=f};q('#vlnew',()=>vlCreate(($('#vlname')||{}).value));q('#vljoin',()=>vlJoin(($('#vlcode')||{}).value))}
+
+Object.assign(COACH,{vliga:'🏟 <b>Vereinsliga</b>: Gründe eine Liga oder tritt mit einem Code bei. Jeder Verein spielt einmal zu Hause gegen jeden anderen, ein Ligaabend mit 3 Einzeln gegen die KI-Kopien des anderen Teams. Dein Team wird automatisch hochgeladen, wenn du die Liga öffnest.'});
 
 /* ================= Match ================= */
 function makeOpp(tier,kind,step){
@@ -3830,6 +3887,7 @@ function fmtFor(r,kind){
   if(r.mode==='liga')return{start:301,need:2};
   if(r.mode==='pl')return{start:501,need:4};
   if(r.mode==='duel')return{start:501,need:3};
+  if(r.mode==='vliga')return{start:501,need:2};
   if(r.mode==='pokal')return r.pk&&r.pk.sd==='pending'?{start:501,need:1}:{start:501,need:3};
   const T=TIERS[r.tier];if(T.sets)return{start:501,need:3,sets:kind==='b'?3:2,din:false};return{start:T.st||301,need:kind==='b'?(T.bn||2):(T.ln||2),din:!!T.din};
 }
@@ -4076,6 +4134,7 @@ function matchWon(){
   if(S.run.mode==='pokal')return pokalGameEnd(true);
   if(S.run.mode==='pl')return plGameEnd(true);
   if(S.run.mode==='duel')return duelEnd(true);
+  if(S.run.mode==='vliga')return vlSingleEnd(true);
   snd('win');
   const r=S.run,C=r.combat,T=TIERS[r.tier];
   r.won++;r.matches++;
@@ -4102,6 +4161,7 @@ function matchLost(){
   if(r.mode==='pokal')return pokalGameEnd(false);
   if(r.mode==='pl')return plGameEnd(false);
   if(r.mode==='duel')return duelEnd(false);
+  if(r.mode==='vliga')return vlSingleEnd(false);
   snd('lose');r.combat=null;save();runEnd(false);
 }
 function runEnd(champ){

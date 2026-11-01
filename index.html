@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Bullseye Boss</title>
-<meta name="dt-version" content="3.5">
+<meta name="dt-version" content="3.6">
 <meta name="theme-color" content="#0e1511">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1103,12 +1103,12 @@ function hubTurnier0(){
   <div class="panel" style="border-color:${S.cupQ?'var(--gold)':'var(--line)'};${qLock?'opacity:.55':''}"><div class="row between"><div><h3>⚙️ Steeldart-Cup${S.cupQ?' <span class="chip">🎟️ qualifiziert</span>':''}</h3>
    <div class="tiny mut" style="margin-top:4px">Freies Werfen: Du zielst selbst. ${S.cupQ?`4 Runden · 501 · Best of 5 · Sieger +${CUPF.champ} € & Pokal`:`Erst die Quali: 3 Matches · 501 · Best of 3 · Startgeld ${QUALI.fee} €`}${cupWon?` · 🏆×${cupWon}`:''}</div></div>
    ${qLock?`<span class="chip">🔒 ⭐${QUALI.rep}</span>`:`<button class="btn sm ${S.cupQ?'gold':''}" id="${S.cupQ?'cupgo':'qgo'}" ${!S.cupQ&&S.money<QUALI.fee?'disabled':''}>${S.cupQ?'Cup spielen':'Zur Quali'}</button>`}</div></div>
-  ${TIERS.map((T,i)=>{if(tierHidden(T))return '';const lock=S.rep<T.rep||(T.pres||0)>pLvl(),won=S.trophies.filter(t=>t.tier===i).length;
+  ${TIERS.map((T,i)=>{if(tierHidden(T))return '';const lk=tierLock(T,i),lock=!!lk,won=S.trophies.filter(t=>t.tier===i).length;
    return `<div class="panel" style="${lock?'opacity:.55':''}"><div class="row between"><div><h3>${T.i} ${T.n}</h3>
    <div class="tiny mut" style="margin-top:4px">${T.steps} Stationen · ~${T.prize} € pro Sieg · Startgeld ${T.fee} €${won?` · 🏆×${won}`:''}</div>
    <div class="tiny" style="color:#7fbf95">${T.sets?'Satzmodus: Best of 3 Sätze, Finale Best of 5 (Satz = Best of 5 Legs)':`${T.st} · Best of ${T.ln*2-1}${T.bn!==T.ln?` · Finale Best of ${T.bn*2-1}`:''}`}${T.din?' · <b>Double-In</b>':''}${T.allElite?' · nur Favoriten':''}</div>${T.tag?`<div class="tiny mut" style="font-style:italic">${T.tag}</div>`:''}
    <div class="tiny mut">Boss: ${BOSSES[i].nick} ${BOSSES[i].ab.map(a=>AB_ICON[a]).join('')}</div></div>
-   ${lock?`<span class="chip">🔒 ${(T.pres||0)>pLvl()?'🌟 Prestige '+T.pres:'⭐'+T.rep}</span>`:`<button class="btn sm" data-tour="${i}" ${S.money<T.fee?'disabled':''}>Antreten</button>`}</div></div>`}).join('')}`;
+   ${lock?`<span class="chip">🔒 ${lk}</span>`:`<button class="btn sm" data-tour="${i}" ${S.money<T.fee?'disabled':''}>Antreten</button>`}</div></div>`}).join('')}`;
 }
 function hubWoche0(){
   const w=weekly();
@@ -1877,9 +1877,9 @@ function venueDialog(v){
   if(v==='arena'){const ok=S.rep>=PL_REP;h+=`<div class="panel" style="${ok?'border-color:var(--gold)':'opacity:.55'}"><div class="row between"><div><h3>🌟 Premier-Nächte</h3><div class="tiny mut" style="margin-top:4px">Die besten 8 · jede Woche ein Abend · 501 Best of 7 · Top 4 in die Playoffs</div></div>${!ok?`<span class="chip">🔒 ⭐${PL_REP}</span>`:(!S.pl||S.pl.champ!=null)?'<button class="btn sm gold" id="vpl">Einladung annehmen</button>':'<button class="btn sm gold" data-go="pl" id="vplo">Öffnen</button>'}</div></div>`}
   if(S.played)h+=`<div class="panel small">😴 Diese Woche wurde schon ein Turnier gespielt. Beende die Woche, um wieder anzutreten.</div>`;
   else{
-    h+=V.tiers.map(i=>{const T=TIERS[i],lock=S.rep<T.rep||(T.pres||0)>pLvl(),won=S.trophies.filter(t=>t.tier===i).length;
+    h+=V.tiers.map(i=>{const T=TIERS[i],lk=tierLock(T,i),lock=!!lk,won=S.trophies.filter(t=>t.tier===i).length;
       return `<div class="panel" style="${lock?'opacity:.55':''}"><div class="row between"><div><h3>${T.i} ${T.n}</h3><div class="tiny mut" style="margin-top:4px">${T.steps} Stationen · ~${T.prize} € pro Sieg · Startgeld ${T.fee} €${won?` · 🏆×${won}`:''}</div><div class="tiny" style="color:#7fbf95">${T.sets?'Satzmodus: Best of 3 Sätze, Finale Best of 5 (Satz = Best of 5 Legs)':`${T.st} · Best of ${T.ln*2-1}${T.bn!==T.ln?` · Finale Best of ${T.bn*2-1}`:''}`}${T.din?' · <b>Double-In</b>':''}${T.allElite?' · nur Favoriten':''}</div>${T.tag?`<div class="tiny mut" style="font-style:italic">${T.tag}</div>`:''}</div>
-      ${lock?`<span class="chip">🔒 ${(T.pres||0)>pLvl()?'🌟 Prestige '+T.pres:'⭐'+T.rep}</span>`:`<button class="btn sm" data-vt="${i}" ${S.money<T.fee?'disabled':''}>Antreten</button>`}</div></div>`}).join('');
+      ${lock?`<span class="chip">🔒 ${lk}</span>`:`<button class="btn sm" data-vt="${i}" ${S.money<T.fee?'disabled':''}>Antreten</button>`}</div></div>`}).join('');
     if(V.q&&!S.cupQ)h+=`<div class="panel" style="${S.rep<QUALI.rep?'opacity:.55':''}"><div class="row between"><div><h3>⚙️ Cup-Quali</h3><div class="tiny mut" style="margin-top:4px">Freies Werfen · 3 Matches · 501 · Best of 3 · ${QUALI.fee} €</div></div>${S.rep<QUALI.rep?`<span class="chip">🔒 ⭐${QUALI.rep}</span>`:`<button class="btn sm" id="vq" ${S.money<QUALI.fee?'disabled':''}>Zur Quali</button>`}</div></div>`;
     if(V.cup)h+=`<div class="panel" style="${S.cupQ?'border-color:var(--gold)':'opacity:.55'}"><div class="row between"><div><h3>⚙️ Steeldart-Cup</h3><div class="tiny mut" style="margin-top:4px">Freies Werfen · 4 Runden · 501 · Best of 5</div></div>${S.cupQ?'<button class="btn sm gold" id="vc">Cup spielen</button>':'<span class="chip">Quali in der Kneipe</span>'}</div></div>`;
   }
@@ -2664,13 +2664,14 @@ function plotDialog(k){
     btn=lock?`<button class="btn block" disabled>🔒 Ab ${rep} Ruf</button>`:`<button class="btn block" id="pbu" ${S.money<price?'disabled':''}>🏗 ${k==='A'?(S.hq===0?'Großes Vereinsheim':'Dartcenter'):'Halle'} bauen · ${fmt(price)} €</button>`;
     if(p.st===3)body=`<div class="panel small">Aktuell: <b>${HQ[S.hq].n}</b></div>`+body}
   else if(p.st===2){body=`<div class="small mut">Hier wird gerade gebaut: <b>${k==='A'?HQ[p.target].n:'Eigene Halle'}</b>.</div><div class="panel small"><div class="row between"><span>Fortschritt</span><b>${p.tot-p.wk}/${p.tot} Wochen</b></div><div class="bar" style="margin-top:6px"><i style="width:${(p.tot-p.wk)/p.tot*100}%"></i></div></div>`;
-    btn=`<button class="btn block gold" id="pfast" ${S.money<1000||p.wk<=1?'disabled':''}>⚡ Bau beschleunigen · 1.000 € (−1 Woche)</button>`}
+    btn=`<button class="btn block gold" id="pfast" ${S.money<1000||p.wk<=1?'disabled':''}>⚡ Bau beschleunigen · 1.000 € (−1 Woche)</button>${UI.appMode?`<button class="btn block" id="pad" style="margin-top:6px" ${p.wk<=1||(!S.vip&&adLeft('k')<=0)?'disabled':''}>${S.vip?'👑 VIP: −1 Woche gratis':`📺 Video: −1 Woche (${adLeft('k')}/${EN.cap.k})`}</button>`:''}`}
   else if(k==='A'){body=`<div class="small mut">Dein ${HQ[S.hq].n} ist voll ausgebaut.</div>`;btn=`<button class="btn block" id="pgo">🏠 Reingehen</button>`}
   else{body='';btn=`<button class="btn block" id="pgo">🏟 Zur Halle</button>`}
   modal(`<h3>${k==='A'?'🏗':'🏟'} ${p.st===3&&k==='B'?'Eigene Halle':Pl.n}</h3>${body}${btn}<button class="btn gray" onclick="closeModal()">Schließen</button>`);
   const q=s=>document.querySelector('#modal '+s);
   if(q('#pb'))q('#pb').onclick=()=>{if(S.money<Pl.price)return;S.money-=Pl.price;p.st=1;snd('coin');log(`📜 ${Pl.n} gekauft.`);toast('Grundstück gekauft!');save();closeModal();render();setTimeout(()=>plotDialog(k),250)};
   if(q('#pbu'))q('#pbu').onclick=()=>{const tgt=k==='A'?S.hq+1:null,price=k==='A'?HQ[tgt].price:HALL_BUILD.price,weeks=k==='A'?HQ[tgt].weeks:HALL_BUILD.weeks;if(S.money<price)return;S.money-=price;Object.assign(p,{st:2,wk:weeks,tot:weeks,target:tgt});snd('coin');log(`🏗 Baubeginn: ${k==='A'?HQ[tgt].n:'Eigene Halle'}.`);toast('Die Bagger rollen an!');save();closeModal();render()};
+  if(q('#pad'))q('#pad').onclick=()=>plotAd(k);
   if(q('#pfast'))q('#pfast').onclick=()=>{if(S.money<1000||p.wk<=1)return;S.money-=1000;p.wk--;snd('coin');toast('Mehr Bauarbeiter: −1 Woche');save();closeModal();render();setTimeout(()=>plotDialog(k),200)};
   if(q('#pgo'))q('#pgo').onclick=()=>{closeModal();UI.tab=k==='A'?'heim':'halle';render();window.scrollTo(0,0)};
 }
@@ -3086,7 +3087,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='3.5';
+const GAME_VERSION='3.6';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
@@ -4377,7 +4378,7 @@ function roomWalkers(id){return '';const P0=ROOM_WALK[id]||[[30,75,50,82]];const
     return `<div class="rw" style="--x1:${p[0]}%;--y1:${p[1]}%;--x2:${p[2]}%;--y2:${p[3]}%;animation-duration:${d}s;animation-delay:${-i*1.7}s"><img class="sp" src="${personSprite(L)}"></div>`}).join('')}</div>`}
 
 /* ================= Energie, Werbung, VIP (nur App-Modus) ================= */
-const EN={max:6,regen:20*60000,adMax:6,vip:'3c8a7e92f6c8ffe4cdc9102c47313886d6bd5b548a19c74e2f63bb0802e3589f',salt:'bullseye-boss-v1|',
+const EN={max:26,regen:12*60000,add:10,cap:{e:3,b:3,k:2},vip:'3c8a7e92f6c8ffe4cdc9102c47313886d6bd5b548a19c74e2f63bb0802e3589f',salt:'bullseye-boss-v1|',
   appId:'ca-app-pub-3940256099942544~3347511713',unit:'ca-app-pub-3940256099942544/5224354917'};
 let ENBYP=false;
 try{const q=new URLSearchParams(location.search);if(q.get('app')==='1'||q.get('energy')==='1')localStorage.setItem('bb_app','1');if(q.get('energy')==='0')localStorage.removeItem('bb_app');UI.appMode=!!(localStorage.getItem('bb_app')==='1'||window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform())}catch(e){UI.appMode=false}
@@ -4387,7 +4388,8 @@ function enTick(){const E=enInit(),now=Date.now();if(E.v>=EN.max){E.v=EN.max;E.t
   const g=Math.floor((now-E.t)/EN.regen);if(g>0){E.v=Math.min(EN.max,E.v+g);E.t=E.v>=EN.max?now:E.t+g*EN.regen}return E.v}
 function enLeft(){const E=enInit();return E.v>=EN.max?0:Math.max(0,EN.regen-(Date.now()-E.t))}
 const mmss=ms=>{const t=Math.ceil(ms/1000);return Math.floor(t/60)+':'+String(t%60).padStart(2,'0')};
-function adsToday(){const E=enInit(),d=today();if(E.ads.d!==d)E.ads={d,n:0};return E.ads.n}
+function adsDay(){const E=enInit(),d=today();if(!E.ads||E.ads.d!==d)E.ads={d,e:0,b:0,k:0};return E.ads}
+const adLeft=c=>EN.cap[c]-adsDay()[c];
 function enGate(cost,cb){if(!enOn()||ENBYP)return cb();const v=enTick();
   if(v>=cost){S.en.v-=cost;save();enMount();return cb()}enNeed(cost)}
 function enHTML(){const v=enTick(),E=S.en,l=enLeft();
@@ -4396,16 +4398,31 @@ function enMount(){const o=document.getElementById('enbar');if(o)o.remove();if(!
   top.insertAdjacentHTML('afterend',`<div id="enbar" class="row" style="gap:6px;align-items:center;padding:6px 10px;margin:4px 0">${enHTML()}</div>`)}
 setInterval(()=>{const b=document.getElementById('enbar');if(b&&enOn())b.innerHTML=enHTML()},1000);
 document.addEventListener('click',e=>{const t=e.target;if(t.closest&&t.closest('#enmore'))enNeed(0);if(t.closest&&t.closest('#vipb'))vipDialog()});
-function enNeed(cost){const v=enTick(),n=adsToday(),left=EN.adMax-n,l=enLeft();
-  const btn=(id,tx)=>`<button class="btn block" id="${id}" ${left<=0?'disabled':''} style="margin-top:6px">📺 ${tx}</button>`;
-  modal(`<h3>${cost?'⚡ Zu wenig Energie':'⚡ Energie &amp; Boni'}</h3><div class="small">${cost?`Das braucht <b>${cost} ⚡</b>, du hast <b>${v}</b>. `:`Du hast <b>${v}/${EN.max} ⚡</b>. `}${l?`Nächste ⚡ in <b>${mmss(l)}</b>.`:'Energie ist voll.'} Verein bauen, Kader, Shop und Training kosten nie Energie.</div>
-  ${btn('en_e','Video ansehen: +3 ⚡')}${btn('en_b',`Video: nächste 5 Spiele +30% Preisgeld &amp; XP${S.en.boost?' (jetzt '+S.en.boost+')':''}`)}${btn('en_d','Video: 1 Dart-Pack')}${btn('en_s','Video: 1 Sticker-Tüte')}
-  <div class="tiny mut" style="margin-top:6px;text-align:center">Videos heute: ${n}/${EN.adMax}</div><button class="btn gray block" style="margin-top:6px" onclick="closeModal()">Später</button>`);
-  const go=(id,fn)=>{const b=$('#'+id);if(b)b.onclick=async()=>{b.disabled=true;const ok=await adShow();if(!ok){toast('Werbung nicht verfügbar. Versuch es gleich nochmal.');b.disabled=false;return}const E=enInit();adsToday();E.ads.n++;fn();save();snd('coin');closeModal();render()}};
-  go('en_e',()=>{enTick();S.en.v=Math.min(EN.max,S.en.v+3);toast('⚡ +3 Energie')});
-  go('en_b',()=>{S.en.boost=Math.min(10,(S.en.boost||0)+5);toast(`🔥 Bonus für ${S.en.boost} Spiele`)});
-  go('en_d',()=>{S.packs.basis=(S.packs.basis||0)+1;toast('🎁 Dart-Pack im Shop')});
-  go('en_s',()=>{const Pk=STK_PACKS.tuete,got=[stkRoll(Pk.odds),stkRoll(Pk.odds)].map(id=>stkGive(id,true));setTimeout(()=>toast('🏷 '+got.map(x=>STK[x.id].n).join(' + ')),300)})}
+function enCost(t){const l=lvOf(t);return l<=1?1:l<=3?2:3}
+function enNeed(cost){const v=enTick(),l=enLeft(),A=adsDay(),tot=EN.cap.e+EN.cap.b+EN.cap.k;
+  const btn=(id,c,tx)=>`<button class="btn block" id="${id}" ${adLeft(c)<=0?'disabled':''} style="margin-top:6px">📺 ${tx}</button>`;
+  modal(`<h3>${cost?'⚡ Zu wenig Energie':'⚡ Energie &amp; Boni'}</h3><div class="small">${cost?`Das braucht <b>${cost} ⚡</b>, du hast <b>${v}</b>. `:`Du hast <b>${v}/${EN.max} ⚡</b>. `}${l?`Nächste ⚡ in <b>${mmss(l)}</b>.`:'Energie ist voll.'} Kleine Turniere kosten 1 ⚡, mittlere 2 ⚡, große 3 ⚡. Verein, Kader, Shop, Training und Tages-Turnier kosten nie Energie.</div>
+  ${btn('en_e','e',`+${EN.add} ⚡ Energie <span class="tiny">(${adLeft('e')}/${EN.cap.e})</span>`)}
+  ${btn('en_b','b',`5 Spiele +30% Preisgeld &amp; XP${S.en.boost?' (jetzt '+S.en.boost+')':''} <span class="tiny">(${adLeft('b')}/${EN.cap.b} gemeinsam)</span>`)}${btn('en_d','b','1 Dart-Pack')}${btn('en_s','b','1 Sticker-Tüte')}
+  <div class="tiny mut" style="margin-top:6px;text-align:center">Bauzeit verkürzen (${adLeft('k')}/${EN.cap.k}) gibt es bei großen Baustellen im Verein.</div><button class="btn gray block" style="margin-top:6px" onclick="closeModal()">Später</button>`);
+  const go=(id,c,fn)=>{const b=$('#'+id);if(b)b.onclick=async()=>{b.disabled=true;const ok=await adShow();if(!ok){toast('Werbung nicht verfügbar. Versuch es gleich nochmal.');b.disabled=false;return}adsDay()[c]++;fn();save();snd('coin');closeModal();render()}};
+  go('en_e','e',()=>{enTick();S.en.v=Math.min(EN.max,S.en.v+EN.add);toast(`⚡ +${EN.add} Energie`)});
+  go('en_b','b',()=>{S.en.boost=Math.min(10,(S.en.boost||0)+5);toast(`🔥 Bonus für ${S.en.boost} Spiele`)});
+  go('en_d','b',()=>{S.packs.basis=(S.packs.basis||0)+1;toast('🎁 Dart-Pack im Shop')});
+  go('en_s','b',()=>{const Pk=STK_PACKS.tuete,got=[stkRoll(Pk.odds),stkRoll(Pk.odds)].map(id=>stkGive(id,true));setTimeout(()=>toast('🏷 '+got.map(x=>STK[x.id].n).join(' + ')),300)})}
+// Bauzeit per Video verkürzen (App) bzw. gratis für VIP
+async function plotAd(k){const p=S.plots[k];if(!p||p.st!==2||p.wk<=1)return;
+  if(!S.vip){if(adLeft('k')<=0)return toast('Heute keine Bau-Videos mehr');const ok=await adShow();if(!ok)return toast('Werbung nicht verfügbar.');adsDay().k++}
+  p.wk--;snd('coin');toast('🏗 Bauzeit −1 Woche');save();closeModal();render();setTimeout(()=>plotDialog(k),200)}
+// Turnier-Freischaltungen
+function tierLock(T,i){if((T.pres||0)>pLvl())return '🌟 Prestige '+T.pres;
+  if(T.need){const c=T.need.t.reduce((a,k)=>a+((S.tplay||{})[k]||0),0);if(c<T.need.n)return `🏁 ${c}/${T.need.n} ${T.need.l}`}
+  if(S.rep<T.rep)return '⭐'+T.rep;return ''}
+TIERS[1].need={t:[0],n:2,l:'Kneipenturniere'};TIERS[2].need={t:[0],n:2,l:'Kneipenturniere'};
+TIERS[3].need={t:[1,2],n:3,l:'Kreis-/Landesturniere'};
+TIERS[5].need={t:[1,2,3],n:4,l:'Kreis-/Landes-/DM-Turniere'};TIERS[6].need={t:[2,3,5],n:3,l:'Landes-/DM-/Insel-Turniere'};
+TIERS[7].need={t:[3,5,6],n:3,l:'DM-/Insel-/Dublin-Turniere'};TIERS[8].need={t:[5,6,7],n:3,l:'Insel-/Dublin-/Blackpool-Turniere'};
+TIERS[4].pres=3;TIERS[9].pres=3;TIERS[10].pres=3;TIERS.forEach(T=>{if(T.qschool)T.pres=2});
 function adShow(){return new Promise(res=>{
   const A=window.AndroidAds;if(A&&A.showRewarded){window.__adDone=ok=>{window.__adDone=null;res(!!ok)};try{A.showRewarded()}catch(e){res(false)}return}
   const AM=window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.AdMob;
@@ -4419,7 +4436,7 @@ async function sha256(t){const b=await crypto.subtle.digest('SHA-256',new TextEn
 function vipDialog(){modal(`<h3>🔑 Familien-Code</h3><div class="small mut">Mit dem Code gibt es unbegrenzte Energie und keine Werbung.${S.vip?' <b style="color:var(--gold)">👑 VIP ist aktiv.</b>':''}</div><input id="vipc" placeholder="Code" autocapitalize="characters" style="width:100%;margin:8px 0;padding:10px;border-radius:8px"><button class="btn gold block" id="vipok">Einlösen</button><button class="btn gray block" style="margin-top:6px" onclick="closeModal()">Schließen</button>`);
   $('#vipok').onclick=async()=>{const c=($('#vipc').value||'').trim().toUpperCase();if(await sha256(EN.salt+c)===EN.vip){S.vip=true;save();closeModal();toast('👑 VIP freigeschaltet!');render()}else toast('Falscher Code')}}
 function enBoostMul(){return enOn()&&S.en&&S.en.boost>0?1.3:1}
-const _sRun=startRun;startRun=function(t,p){if(!enOn()||ENBYP)return _sRun(t,p);return enGate(2,()=>_sRun(t,p))};
+const _sRun=startRun;startRun=function(t,p){if(!enOn()||ENBYP)return _sRun(t,p);return enGate(enCost(t),()=>_sRun(t,p))};
 const _sDaily=startDaily;startDaily=function(){ENBYP=true;try{return _sDaily()}finally{ENBYP=false}};
 const _sCup=startCup;startCup=function(p){return enGate(2,()=>_sCup(p))};
 const _sQua=startQuali;startQuali=function(p){return enGate(1,()=>_sQua(p))};
@@ -4734,11 +4751,11 @@ function runEnd(champ){
   if(champ){rpGain(p,T.repWin*(1+.2*(r.asc||0)));if(!r.daily){const A=ascInfo();if((r.asc||0)>=A.max&&A.max<10){A.max++;setTimeout(()=>toast(`🔥 Druckstufe ${A.max} freigeschaltet!`),1800)}}}
   if(champ&&r.flags&&r.flags.wette){r.gold+=200;setTimeout(()=>toast('🍺 Wette gewonnen: +200 €'),1200)}
   setTimeout(evoCheck,1600);
-  const rep=Math.round((r.won*Math.ceil(T.repWin/4)+(champ?T.repWin:0))*.55);
-  const fans=Math.round(T.fans*(champ?1:r.won/(r.steps*1.5))*.5);
+  const rep=Math.round((r.won*Math.ceil(T.repWin/4)+(champ?T.repWin:0))*.38);
+  const fans=Math.round(T.fans*(champ?1:r.won/(r.steps*1.5))*.4);
   let xp=Math.round((r.won*12*(r.tier+1)+(champ?40*(r.tier+1):0))*(1+.1*pLvl()));
   {const bm=enBoostMul();if(bm>1){r.gold=Math.round(r.gold*bm);S.en.boost=Math.max(0,S.en.boost-Math.max(1,r.matches||1))}xp=Math.round(xp*bm)}
-  S.money+=r.gold;S.rep+=rep;S.fans+=fans;p.xp+=xp;S.stats.runs++;
+  S.money+=r.gold;S.rep+=rep;S.fans+=fans;p.xp+=xp;S.stats.runs++;if(!r.daily){S.tplay=S.tplay||{};S.tplay[r.tier]=(S.tplay[r.tier]||0)+1}
   const prizePack=champ?['basis','basis','profi','profi','elite'][Math.min(4,lvOf(r.tier))]:null;if(prizePack)S.packs[prizePack]=(S.packs[prizePack]||0)+1;
   if(champ){S.trophies.push({tier:r.tier,n:T.n,w:S.week,by:p.name});S.stats.wins++;{const k=r.lastMode==='board'?'bmChamp':'cdChamp';S.stats[k]=(S.stats[k]||0)+1}log(`🏆 ${p.name} gewinnt ${T.bei==='beim'?'das':'die'} ${T.n}!`)}
   else log(`${p.name} scheidet ${T.bei} ${T.n} aus (${r.won} ${r.won===1?'Sieg':'Siege'}).`);

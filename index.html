@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Dart Tycoon</title>
-<meta name="dt-version" content="2.3.1">
+<meta name="dt-version" content="2.3.2">
 <meta name="theme-color" content="#0e1511">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2996,7 +2996,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='2.3.1';
+const GAME_VERSION='2.3.2';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
@@ -3762,11 +3762,14 @@ const onName=()=>(S.onName||meP().name||'Spieler').slice(0,24);
 const isoDay=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 function postScore(game,value){if(!S||S.onOff)return;sb('scores',{method:'POST',prefer:'return=minimal',body:{game,name:onName(),club:(S.club||'').slice(0,30),value:Math.round(value),day:isoDay()}}).then(()=>toast('🌐 Ergebnis in der Online-Bestenliste!')).catch(e=>{console.warn('online',e.message);toast('⚠️ Online-Upload fehlgeschlagen: '+e.message)})}
 const GAMES={daily:{n:'📅 Tages-Turnier',u:'Siege',today:1},c121:{n:'🎯 121-Checkout',u:'höchster Checkout'},click:{n:'⚡ Schnellwurf',u:'Treffer',today:1}};
-async function boardDialog(g){g=g||UI.og||'daily';UI.og=g;const G=GAMES[g];
-  modal(`<h3>🌐 Online-Bestenliste</h3><div class="seg">${Object.entries(GAMES).map(([k,x])=>`<button class="btn sm ${k===g?'':'gray'}" data-og="${k}">${x.n}</button>`).join('')}</div><div id="obody" class="small mut">Lade …</div><button class="btn gray block" onclick="closeModal()">Schließen</button>`);
+async function boardDialog(g){const first=!g&&!UI.og;g=g||UI.og||'daily';UI.og=g;
+  modal(`<h3>🌐 Online-Bestenliste</h3><div class="seg" id="oseg">${Object.entries(GAMES).map(([k,x])=>`<button class="btn sm ${k===g?'':'gray'}" data-og="${k}">${x.n}</button>`).join('')}</div><div id="obody" class="small mut">Lade …</div><button class="btn gray block" onclick="closeModal()">Schließen</button>`);
   document.querySelectorAll('[data-og]').forEach(b=>b.onclick=()=>boardDialog(b.dataset.og));
-  try{const rows=await sb(`scores?select=name,club,value,day&game=eq.${g}${G.today?`&day=eq.${isoDay()}`:''}&order=value.desc,created_at.asc&limit=200`);const best={};rows.forEach(r=>{const k=r.name+'|'+r.club;if(!best[k]||r.value>best[k].value)best[k]=r});const L=Object.values(best).sort((a,b)=>b.value-a.value).slice(0,30);
-    const el=$('#obody');if(!el)return;el.className='small';el.innerHTML=`<div class="tiny mut" style="margin:6px 0">${G.today?'Heute':'Alle Zeiten'} · ${G.u}</div>`+(L.length?L.map((r,i)=>`<div class="row between" style="padding:5px 0;border-bottom:1px solid var(--line);${r.name===onName()&&r.club===S.club?'color:var(--gold)':''}"><span>${i<3?['🥇','🥈','🥉'][i]:(i+1)+'.'} <b>${esc(r.name)}</b> <span class="tiny mut">${esc(r.club||'')}</span></span><b>${g==='c121'?r.value:r.value}</b></div>`).join(''):'<div class="mut">Noch keine Einträge. Sei der Erste!</div>')}
+  try{const load=async k=>{const G=GAMES[k];const rows=await sb(`scores?select=name,club,value,day&game=eq.${k}${G.today?`&day=eq.${isoDay()}`:''}&club=neq.Verbindungstest&order=value.desc,created_at.asc&limit=300`);const best={};rows.forEach(r=>{const key=r.name+'|'+r.club;if(!best[key]||r.value>best[key].value)best[key]=r});return Object.values(best).sort((a,b)=>b.value-a.value).slice(0,30)};
+    const all={};await Promise.all(Object.keys(GAMES).map(async k=>{all[k]=await load(k)}));
+    if(first&&!all[g].length){const k=Object.keys(GAMES).find(x=>all[x].length);if(k){g=k;UI.og=k}}
+    const seg=$('#oseg');if(seg){seg.innerHTML=Object.entries(GAMES).map(([k,x])=>`<button class="btn sm ${k===g?'':'gray'}" data-og="${k}">${x.n} (${all[k].length})</button>`).join('');seg.querySelectorAll('[data-og]').forEach(b=>b.onclick=()=>boardDialog(b.dataset.og))}
+    const L=all[g],G=GAMES[g],el=$('#obody');if(!el)return;el.className='small';el.innerHTML=`<div class="tiny mut" style="margin:6px 0">${G.today?'Heute':'Alle Zeiten'} · ${G.u}</div>`+(L.length?L.map((r,i)=>`<div class="row between" style="padding:5px 0;border-bottom:1px solid var(--line);${r.name===onName()&&r.club===S.club?'color:var(--gold)':''}"><span>${i<3?['🥇','🥈','🥉'][i]:(i+1)+'.'} <b>${esc(r.name)}</b> <span class="tiny mut">${esc(r.club||'')}</span></span><b>${r.value}</b></div>`).join(''):'<div class="mut">Noch keine Einträge. Sei der Erste!</div>')}
   catch(e){const el=$('#obody');if(el)el.innerHTML=`⚠️ Keine Verbindung zur Online-Datenbank (${esc(e.message)}).`}}
 // Duelle
 const CODE_CH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -3807,7 +3810,7 @@ function bindOnline(app){const q=(id,f)=>{const e=app.querySelector(id);if(e)e.o
   q('#oboard',()=>boardDialog());
   q('#otest',async()=>{modal('<h3>🔧 Verbindungstest</h3><div id="otr" class="small">Teste …</div><button class="btn gray block" onclick="closeModal()">Schließen</button>');const out=[];const t=async(n,f)=>{try{out.push('✅ '+n+': '+(await f()))}catch(e){out.push('❌ '+n+': '+esc(e.message))}const el=$('#otr');if(el)el.innerHTML=out.join('<br>')};
     await t('Lesen',async()=>{const r=await sb('scores?select=game,name,value,day&order=created_at.desc&limit=5');return r.length?r.length+' neueste: '+r.map(x=>`${esc(x.name)} ${x.game} ${x.value} (${x.day})`).join(', '):'Tabelle leer'});
-    await t('Schreiben',async()=>{await sb('scores',{method:'POST',prefer:'return=minimal',body:{game:'click',name:'Test',club:'Verbindungstest',value:0,day:isoDay()}});return 'ok'});
+    await t('Schreiben',async()=>{await sb('scores',{method:'POST',prefer:'return=minimal',body:{game:'click',name:'Test',club:'Verbindungstest',value:0,day:'2000-01-01'}});return 'ok'});
     await t('Ligen',async()=>{const r=await sb('leagues?select=code&limit=1');return 'ok ('+r.length+')'});out.push('<span class="tiny mut">Version '+GAME_VERSION+' · Datum '+isoDay()+'</span>');const el=$('#otr');if(el)el.innerHTML=out.join('<br>')});q('#otog',()=>{S.onOff=!S.onOff;save();render()});
   q('#oname',()=>{modal(`<h3>👤 Online-Name</h3><input type="text" id="onin" value="${esc(onName())}" maxlength="24"><div class="tiny mut">Bitte keinen vollen echten Namen, ein Spitzname reicht.</div><button class="btn block" id="onok">Speichern</button>`);$('#onok').onclick=()=>{const v=$('#onin').value.trim();if(v){S.onName=v.slice(0,24);save()}closeModal();render()}});
   q('#djoin',()=>duelJoin(($('#dcode')||{}).value));app.querySelectorAll('[data-dc]').forEach(b=>b.onclick=()=>duelCreate(b.dataset.dc))}

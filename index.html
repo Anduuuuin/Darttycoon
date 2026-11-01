@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Bullseye Boss</title>
-<meta name="dt-version" content="3.6">
+<meta name="dt-version" content="3.7">
 <meta name="theme-color" content="#0e1511">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -2309,7 +2309,7 @@ function renderRoom(id){
   }else if(id==='scheiben'){
     const wr=(x,z)=>{if(z>=10&&z<58){const p=x%10;return p===0?'#141c18':p===1?'#3a4a42':(z%10===0?'#1e2a24':'#26342c')}return z<10?'#1a221e':'#22302a'};
     const wl=(y,z)=>z<10?'#1a221e':hsh(y,z,3)<.05?'#22302a':'#26342c';
-    const n=Math.min(8,b.boards),two=n>4,r=two?5:6,colx=c=>10+c*15;
+    const n=Math.min(8,b.boards),two=n>4,r=(two||n>=4)?5:6,colx=n>=4?(c=>10+c*11):(c=>10+c*15);
     roomShell(P,(x,y)=>{let c=hsh(Math.floor(x),Math.floor(y),2)<.15?'#1a3426':'#22402e';
       for(let c2=0;c2<Math.min(4,n);c2++){const cx=colx(c2);if(Math.abs(x-cx)<5&&y<50){c=Math.abs(x-cx)>4.2?'#0e1a14':(Math.floor(y)%8===0?'#1a2a22':'#2a3a32')}if(Math.abs(y-48)<.8&&Math.abs(x-cx)<5)c='#f4c430'}return c},skirt(wr,'#111'),skirt(wl,'#111'));
     ceilLight(P,34,26,'#e8f0ff',.18);
@@ -2327,7 +2327,7 @@ function renderRoom(id){
     else{wallL(P,(y,z)=>(y===62||y===77||z===20||z===38)?'#5a3a22':hsh(y,z,5)<.04?'#3a4a42':'#0e1410',62,78,20,39);wallText(P,'L',64,33,'501','#e8e8e8');plusWall(P,'L',62,78,40,50,'tv')}
     // Wappen
     if(hasD('wappen')){wallR(P,(x,z)=>{const dx=Math.abs(x-40),t=z-55;if(t<0||t>8)return null;const wmax=t>3?5:5-(3-t)*1.5;if(dx>wmax)return null;return dx>wmax-1?'#c9a227':x<40?'#1f9d55':'#d9333f'},34,47,55,64);decoHit(wallRBox(P,34,47,55,64),'wappen')}else if(!two)plusWall(P,'R',34,47,52,62,'wappen');
-    drawDoor(P,'L',4,'THEKE','theke',{glass:true});drawDoor(P,'R',63,'TRAINING','training');
+    drawDoor(P,'L',4,'THEKE','theke',{glass:true});drawDoor(P,'R',63,'TRAIN','training');
     // Spieler am Oche
     let pp=null;for(let c2=Math.min(4,n)-1;c2>=0;c2--){const pl=S.players[c2],L=pl?pl.look:NPC(20+c2);const r2=charAt(P,L,colx(c2)+1,52,{pose:'throw',back:true});if(c2===0)pp=r2}if(pp)P.hit(pp.x-4,pp.y,pp.w+8,pp.h,act('friendly'));
     if(hasD('bank')){let k=isoBox(P,56,38,0,22,6,6,'#5a3a22',{top:(x,y)=>(x+y)%4===0?'#6a4a2a':'#7a5232'});charAt(P,NPC(3),62,47);charAt(P,NPC(4),72,47);decoHit(k,'bank')}else plusFloor(P,56,38,22,6,'bank');
@@ -3087,7 +3087,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='3.6';
+const GAME_VERSION='3.7';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};

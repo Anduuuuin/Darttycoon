@@ -38,7 +38,7 @@ jobs:
         env:
           ADMOB_APP_ID: ${{ secrets.ADMOB_APP_ID }}
         run: |
-          APPID="${ADMOB_APP_ID:-ca-app-pub-3940256099942544~3347511713}"
+          APPID="${ADMOB_APP_ID:-ca-app-pub-2153543606081225~1842648321}"
           MF=android/app/src/main/AndroidManifest.xml
           sed -i "s#</application>#    <meta-data android:name=\"com.google.android.gms.ads.APPLICATION_ID\" android:value=\"$APPID\"/>\n    </application>#" $MF
           sed -i 's#<uses-permission android:name="android.permission.INTERNET" />#<uses-permission android:name="android.permission.INTERNET" />\n    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />#' $MF

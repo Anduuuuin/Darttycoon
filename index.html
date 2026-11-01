@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Dart Tycoon</title>
-<meta name="dt-version" content="2.5">
+<meta name="dt-version" content="2.5.1">
 <meta name="theme-color" content="#0e1511">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1062,7 +1062,7 @@ function bindHub(app){
     app.querySelectorAll('[data-sq]').forEach(b=>b.onclick=()=>scSubmit(+b.dataset.sq));q('#scundo',scUndo);q('#scquit',()=>modal(`<h3>Match abbrechen?</h3><div class="small mut">Das laufende Match wird nicht gewertet.</div><button class="btn red" id="scq2">Abbrechen</button><button class="btn gray" onclick="closeModal()">Weiterspielen</button>`)||($('#scq2').onclick=()=>{S.realCur=null;closeModal();UI.tab='r_scheiben';save();render()}))}}
   {const ba=app.querySelector('#bestall');if(ba)ba.onclick=bestGearAll}
   bindMg(app);bindMini(app);bindAuto(app);
-  {const dl=app.querySelector('#daily');if(dl)dl.onclick=()=>{snd('click');startDaily()};app.querySelectorAll('[data-asc]').forEach(b=>b.onclick=()=>{ascInfo().cur=+b.dataset.asc;save();render()});const pr=app.querySelector('#pres');if(pr)pr.onclick=()=>modal(`<h3>📈 Konkurrenzdruck ${Math.round((pressure()-1)*100)}%</h3><div class="small" style="line-height:1.5">Die Konkurrenz schläft nicht: Nach ein paar Saisons werden alle Gegner Woche für Woche stärker. Irgendwann kommst du nicht mehr weiter, dann ist es Zeit für einen <b>Prestige-Neustart</b>. Jede Prestige-Stufe macht deine Spieler dauerhaft genauer (jetzt +${Math.round(presBonus()*100)}%), und der Druck beginnt wieder bei 0.</div><button class="btn block" onclick="closeModal()">Verstanden</button>`);app.querySelectorAll('[data-pcls]').forEach(b=>b.onclick=()=>{UI.prestCls=b.dataset.pcls;snd('click');render()})}
+  {const dl=app.querySelector('#daily');if(dl)dl.onclick=()=>{snd('click');startDaily()};app.querySelectorAll('[data-asc]').forEach(b=>b.onclick=()=>{ascInfo().cur=+b.dataset.asc;save();render()});const pr=app.querySelector('#pres');if(pr)pr.onclick=()=>modal(`<h3>📈 Konkurrenzdruck ${Math.round((pressure()-1)*100)}%</h3><div class="small" style="line-height:1.5">Die Konkurrenz schläft nicht: Nach ein paar Saisons werden alle Gegner Woche für Woche stärker. Irgendwann kommst du nicht mehr weiter, dann ist es Zeit für einen <b>Prestige-Neustart</b>. Jede Prestige-Stufe macht deine Spieler dauerhaft genauer (+2,5%), bringt +8% Preisgeld und +10% XP (jetzt +${Math.round(presBonus()*100)}% Treffer), und der Druck beginnt wieder bei 0.</div><button class="btn block" onclick="closeModal()">Verstanden</button>`);app.querySelectorAll('[data-pcls]').forEach(b=>b.onclick=()=>{UI.prestCls=b.dataset.pcls;snd('click');render()})}
   app.querySelectorAll('[data-pcard]').forEach(b=>b.onclick=()=>playerCard(player(b.dataset.pcard)));
   {const g=app.querySelector('#plgo');if(g)g.onclick=()=>{snd('click');plPlay()};const n=app.querySelector('#plnew');if(n)n.onclick=()=>{plStart();render()}}
   app.querySelectorAll('[data-build]').forEach(b=>b.onclick=()=>doBuild(b.dataset.build));
@@ -1139,7 +1139,7 @@ function endWeek(){
   const before=S.members;
   if(S.members<target)S.members=Math.min(target,S.members+rnd(1,3));
   else if(S.members>S.b.boards*capPer())S.members=S.b.boards*capPer();
-  S.fans+=Math.floor(S.rep/10)+decoSum('fans')+2*S.players.filter(p=>hasT(p,'party')).length;S.rep+=decoSum('rep');
+  S.fans+=Math.floor(S.rep/25)+decoSum('fans')+2*S.players.filter(p=>hasT(p,'party')).length;S.rep+=decoSum('rep');
   log(`Wochenbilanz: ${w.net>=0?'+':''}${w.net} €${S.members>before?`, +${S.members-before} Mitglieder`:''}.`);
   mgEndWeek(w);
   if(S.pl&&plDue()){const oi=plOpp(),[x,y]=plSimMatch(0,oi);plNightResult(x>y,x,y);log(`🌟 Premier-Nacht simuliert: ${x}:${y}`)}S.plDone=false;if(S.rival&&R()<.3)log(`😈 ${S.rival.name}: ${pick(TAUNTS)}`);S.week++;S.played=false;S.players.forEach(p=>{p.trained=false;p.drilled=false});rollMarket();
@@ -2776,7 +2776,7 @@ const PERKS={
 const perkCost=l=>1+l;
 function perk(k){return(S&&S.prestige&&S.prestige.perks&&S.prestige.perks[k])||0}
 function fixPrestige(st){st.prestige=st.prestige||{lvl:0,pts:0,perks:{},hist:[]}}
-function prestigeGain(){const titles=S.trophies.filter(t=>t.tier>=0).length,wm=S.trophies.some(t=>t.tier===4||t.tier===10);return 2+Math.floor(S.rep/80)+titles+(wm?4:0)}
+function prestigeGain(){const titles=S.trophies.filter(t=>t.tier>=0).length,wm=S.trophies.some(t=>t.tier===4||t.tier===10);return 3+Math.floor(S.rep/50)+titles*2+(wm?6:0)}
 function canPrestige(){return S.trophies.some(t=>t.tier===4||t.tier===10)||S.rep>=300}
 function doPrestige(){
   fixPrestige(S);const old=S,me=S.players.find(p=>p.isMe)||S.players[0],g=prestigeGain();
@@ -2790,7 +2790,7 @@ function applyPrestigeStart(){S.money+=500*perk('kapital');S.rep+=12*perk('ruf')
 function hubRuhm(){
   fixPrestige(S);const P=S.prestige,g=prestigeGain(),ok=canPrestige();
   return `<div class="navrow"><button class="btn gray sm" data-go="r_buero">◀ Büro</button><b class="small">🌟 Ruhmeshalle</b></div>
-  <div class="panel" style="text-align:center;background:linear-gradient(#3a2a0a,#131b16)"><div style="font-size:40px">🌟</div><h3 class="px" style="font-size:12px;line-height:1.6">PRESTIGE ${P.lvl}</h3><div class="small mut">Prestigepunkte: <b style="color:var(--gold)">${P.pts}</b></div></div>
+  <div class="panel" style="text-align:center;background:linear-gradient(#3a2a0a,#131b16)"><div style="font-size:40px">🌟</div><h3 class="px" style="font-size:12px;line-height:1.6">PRESTIGE ${P.lvl}</h3><div class="small mut">Prestigepunkte: <b style="color:var(--gold)">${P.pts}</b></div><div class="tiny" style="margin-top:6px;color:#7fdc9f">Dauerhaft je Prestige-Stufe: +2,5% Treffer · +8% Preisgeld · +10% Turnier-XP${P.lvl?` (jetzt +${Math.round(presBonus()*100)}% · +${P.lvl*8}% · +${P.lvl*10}%)`:}</div></div>
   <div class="panel"><h2>♻️ Neustart als Legende</h2><div class="small mut" style="margin-top:6px;line-height:1.5">Du fängst mit ${esc(S.club)} wieder in der Kreisliga an: Geld, Gebäude, Kader und Liga werden zurückgesetzt. Prestige, gekaufte Boni und Erfolge bleiben. ${ok?`Du bekommst jetzt <b style="color:var(--gold)">${g} Punkte</b>.`:'Freigeschaltet nach einem WM-Titel oder ab 300 Ruf.'}</div>
    <button class="btn ${ok?'gold':''} block" id="prest" style="margin-top:10px" ${ok?'':'disabled'}>${ok?`🌟 Prestige ${P.lvl+1} starten (+${g})`:'🔒 Noch nicht bereit'}</button></div>
   <div class="panel"><h2>🎭 Charakter für den Neustart</h2><div class="tiny mut" style="margin-top:4px">Durch Erfolge schaltest du neue Charaktere frei. Freigeschaltete tauchen auch auf dem Transfermarkt auf. Nach 5 Prestiges wartet der Auserwählte.</div><div class="cls" style="margin-top:8px">${Object.entries(CLASSES).map(([k,c])=>{const open=clsOpen(k),on=(UI.prestCls||(S.players.find(p=>p.isMe)||S.players[0]).cls)===k;return `<div ${open?`data-pcls="${k}"`:''} class="${on?'on':''}" style="${open?'':'opacity:.45'}"><span style="font-size:22px">${open?c.i:'🔒'}</span><b>${c.n}</b><span class="tiny mut">${open?c.d:'Freischalten: '+c.how}</span></div>`}).join('')}</div></div>
@@ -2997,7 +2997,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='2.5';
+const GAME_VERSION='2.5.1';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
@@ -3195,7 +3195,7 @@ function clsCheck(){if(!S||S.run||S.free||document.querySelector('#modal.on'))re
 // Konkurrenzdruck (Idle-Wand) & Prestige-Stärke
 const pLvl=()=>(S&&S.prestige&&S.prestige.lvl)||0;
 function pressure(){return 1+Math.max(0,(S.week||1)-10)*.03}
-const presBonus=()=>Math.min(.15,pLvl()*.015);
+const presBonus=()=>Math.min(.25,pLvl()*.025);
 function scaleOpp(C){const a=(S.run&&!S.run.mode&&S.run.asc)||0;const pl=player();const f=1.08*pressure()*(1+.06*a)*(a>=10?1.2:1)*(1+Math.max(0,((pl&&pl.lvl)||1)-1)*.035);if(f>1){const o=C.opp;o.min=Math.round(o.min*f);o.max=Math.min(180,Math.round(o.max*f));o.co=Math.min(.92,o.co+(f-1)*.35);o.dr=Math.round(o.dr*Math.min(1.6,f))}}
 
 // Weltrangliste
@@ -3234,7 +3234,7 @@ function hubAlbum(){const A=albumData(),ids=ALBUM_IDS(),have=ids.filter(k=>A.c[k
 // Wochenaufgaben
 const QUESTS={s180:{n:'Wirf 180er',need:2,i:'💯'},tons:{n:'100+ Aufnahmen',need:10,i:'🔥'},legs:{n:'Gewinne Legs',need:12,i:'🎯'},mwins:{n:'Gewinne Turniermatches',need:3,i:'⚔️'},co100:{n:'Checkout über 100',need:1,i:'🐟'},shanghai:{n:'Wirf ein Shanghai',need:1,i:'🀄'},wins:{n:'Gewinne ein Turnier',need:1,i:'🏆'},runs:{n:'Spiele Turniere',need:2,i:'🎟'}};
 function questsInfo(){if(!S.quests||S.quests.week!==S.week){const ks=shuffle(Object.keys(QUESTS)).slice(0,3);S.quests={week:S.week,list:ks.map(k=>({k,base:S.stats[k]||0,done:false})),bonus:false}}return S.quests}
-function questTick(){if(!S||!S.stats)return;const Q=questsInfo();let n=0;Q.list.forEach(q=>{const X=QUESTS[q.k],prog=(S.stats[q.k]||0)-q.base;if(!q.done&&prog>=X.need){q.done=true;const g=120+S.week*5;S.money+=g;S.rep+=4;n++;setTimeout(()=>toast(`✅ Wochenaufgabe: ${X.n} · +${g} € +4 ⭐`),700)}});
+function questTick(){if(!S||!S.stats)return;const Q=questsInfo();let n=0;Q.list.forEach(q=>{const X=QUESTS[q.k],prog=(S.stats[q.k]||0)-q.base;if(!q.done&&prog>=X.need){q.done=true;const g=120+S.week*5;S.money+=g;S.rep+=2;n++;setTimeout(()=>toast(`✅ Wochenaufgabe: ${X.n} · +${g} € +2 ⭐`),700)}});
   if(!Q.bonus&&Q.list.every(q=>q.done)){Q.bonus=true;S.packs.profi=(S.packs.profi||0)+1;setTimeout(()=>toast('🎁 Alle Wochenaufgaben geschafft: Profi-Pack!'),1500)}}
 function questPanel(){const Q=questsInfo();return `<div class="panel"><h2>📋 Wochenaufgaben</h2>${Q.list.map(q=>{const X=QUESTS[q.k],prog=Math.min(X.need,(S.stats[q.k]||0)-q.base);return `<div class="row between" style="margin-top:8px"><span class="small">${q.done?'✅':X.i} ${X.n}</span><span class="tiny ${q.done?'':'mut'}">${prog}/${X.need}</span></div><div class="bar xp" style="margin-top:3px"><i style="width:${prog/X.need*100}%"></i></div>`}).join('')}<div class="tiny mut" style="margin-top:8px">Je Aufgabe Geld und Ruf, alle drei = Profi-Pack. Neue Aufgaben jede Woche.</div></div>`}
 
@@ -3342,7 +3342,7 @@ function jobCollect(aid){const J=MG().jobs,a=J.active.find(x=>x.id===aid);if(!a|
   if(ok&&j.pack){S.packs[j.pack]=(S.packs[j.pack]||0)+1;out.push(`🎁 ${j.pack}-Pack`)}
   if(ok&&j.tal){addYouth();out.push('🧒 neues Talent')}
   if(ok&&j.tal2&&R()<.5){MG().talQ=(MG().talQ||0)+1;out.push('🎰 Talisman fürs nächste Turnier')}
-  a.pids.forEach(id=>{const p=player(id);if(p){p.away=null;p.fat=Math.min(100,(p.fat||0)+15)}});J.active=J.active.filter(x=>x!==a);MG().stats.jobs++;S.rep+=ok?2:0;
+  a.pids.forEach(id=>{const p=player(id);if(p){p.away=null;p.fat=Math.min(100,(p.fat||0)+15)}});J.active=J.active.filter(x=>x!==a);MG().stats.jobs++;S.rep+=ok?1:0;
   snd(ok?'coin':'lose');modal(`<div style="text-align:center"><div style="font-size:44px">${j.i}</div><h3>${ok?'Auftrag erfolgreich!':'Lief nicht so gut …'}</h3><div class="small mut">${j.n}</div><div class="panel small" style="margin-top:8px">${out.join('<br>')||'Nichts verdient.'}</div></div><button class="btn block" onclick="closeModal()">Super</button>`);save();render()}
 function fmtLeft(ms){ms=Math.max(0,ms);const m=Math.floor(ms/60000),s=Math.floor(ms/1000)%60;return m>=60?`${Math.floor(m/60)}h ${m%60}m`:`${m}:${String(s).padStart(2,'0')}`}
 function hubJobs(){fixMg(S);const J=MG().jobs;if(J.week!==S.week)rollJobs();
@@ -3427,7 +3427,7 @@ function mgWeeklyAdd(w){fixMg(S);const inc=w.inc,out=w.out;
 function mgEndWeek(w){fixMg(S);const M=MG();
   M.happy=Math.round(clamp(M.happy*.6+happyTarget()*.4,0,100));
   if(M.happy<40&&S.members>4){const n=rnd(1,3);S.members-=n;log(`😠 ${n} unzufriedene Mitglieder sind ausgetreten.`)}
-  S.fans+=8*stf('social')+15*bl('studio');
+  S.fans+=5*stf('social')+8*bl('studio');
   M.jobs.active.forEach(a=>{if(a.wk)a.wk--});
   youthWeek();contractWeek();tourCheck();fatigueWeek();sponsorWeek();eventWeek();branchWeek();
   if(S.week%6===5)versammlung();
@@ -3531,7 +3531,7 @@ const offCapH=()=>2+2*bl('tresor')+(stf('kassenwart')>=3?1:0);
 function markSeen(){try{if(S)localStorage.setItem(SEEN_KEY,String(Date.now()))}catch(e){}}
 setInterval(markSeen,20000);document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')markSeen();else offlineCheck()});window.addEventListener('pagehide',markSeen);
 function offlineCheck(){if(!S||!S.players||S.run||S.free)return;let last=0;try{last=+localStorage.getItem(SEEN_KEY)||0}catch(e){}markSeen();if(!last)return;const ms=Date.now()-last;if(ms<5*60000)return;
-  const capH=offCapH(),h=Math.min(ms/3.6e6,capH),w=weekly();const rate=Math.max(30,w.ti*.2);const money=Math.round(rate*h),fans=Math.round((2+S.rep/40)*h);if(money<=0&&fans<=0)return;
+  const capH=offCapH(),h=Math.min(ms/3.6e6,capH),w=weekly();const rate=Math.max(30,w.ti*.2);const money=Math.round(rate*h),fans=Math.round((1+S.rep/100)*h);if(money<=0&&fans<=0)return;
   S.money+=money;S.fans+=fans;save();const full=ms/3.6e6>capH;
   setTimeout(()=>modal(`<div style="text-align:center"><div style="font-size:44px">💤</div><h3>Willkommen zurück!</h3><div class="small mut">Du warst ${ms>=3.6e6?Math.floor(ms/3.6e6)+' Std. '+Math.floor(ms/60000)%60+' Min.':Math.floor(ms/60000)+' Min.'} weg. Der Verein lief weiter:</div><div class="panel small" style="margin-top:8px"><div class="row between"><span>Einnahmen</span><b style="color:#7fdc9f">+${fmt(money)} €</b></div><div class="row between"><span>Neue Fans</span><b>+${fans}</b></div></div>${full?`<div class="tiny" style="color:var(--gold)">Dein Speicher war nach ${capH} Std. voll! Mit dem 🔐 Vereinstresor (Verwaltung → Ausbau) sammelst du länger.</div>`:`<div class="tiny mut">Offline-Speicher: bis ${capH} Std.</div>`}</div><button class="btn gold block" onclick="closeModal()">Einsammeln</button>`),400)}
 BLD.tresor={n:'Vereinstresor',i:'🔐',cost:[1000,3000,8000],d:l=>`Offline-Einnahmen bis ${2+2*l} Std. statt 2 Std.`};
@@ -3547,7 +3547,7 @@ function clickerStart(){const M=miniInfo();const paid=M.clicks<3;let score=0,com
     e.onpointerdown=ev=>{ev.stopPropagation();if(end)return;score++;combo++;snd('hit');$('#cscore').textContent=score;$('#ccombo').textContent=combo>=5?`🔥 Combo ×${combo}`:'';if(combo>0&&combo%10===0){score+=3;fx&&toast('Combo-Bonus +3!')}spawn()};ar.appendChild(e)};
   ar.onpointerdown=()=>{if(!end){combo=0;$('#ccombo').textContent='';snd('miss')}};spawn();
   tmr=setInterval(()=>{const left=Math.max(0,dur-(Date.now()-t0));const el=$('#ctime');if(el)el.textContent=Math.ceil(left/1000);if(!el){clearInterval(tmr);return}if(left<=0){clearInterval(tmr);end=true;
-    let g=0,f=0;if(paid){M.clicks++;g=score*4;f=Math.floor(score/3);S.money+=g;S.fans+=f}M.cbest=Math.max(M.cbest||0,score);save();snd('win');if(score>0)postScore('click',score);
+    let g=0,f=0;if(paid){M.clicks++;g=score*4;f=Math.floor(score/6);S.money+=g;S.fans+=f}M.cbest=Math.max(M.cbest||0,score);save();snd('win');if(score>0)postScore('click',score);
     modal(`<div style="text-align:center"><div style="font-size:44px">⚡</div><h3>${score} Treffer!</h3><div class="small mut">Rekord: ${M.cbest}</div>${paid?`<div class="panel small" style="margin-top:8px">💶 +${g} € · 📣 +${f} Fans</div>`:''}</div><button class="btn block" id="cagain" ${M.clicks>=3?'':''}>Nochmal</button><button class="btn gray" onclick="closeModal();render()">Fertig</button>`);$('#cagain').onclick=clickerStart}},100)}
 // 121-Checkout-Training
 function start121(){const pl=S.players.slice().sort((a,b)=>b.lvl-a.lvl)[0];UI.c121={lvl:1,rest:121,darts:[],vals:[],marks:[],mult:1,pid:(UI.c121&&UI.c121.pid)||pl.id};draw121()}
@@ -4165,7 +4165,7 @@ function matchWon(){
   snd('win');
   const r=S.run,C=r.combat,T=TIERS[r.tier];
   r.won++;r.matches++;
-  const g=Math.round(T.prize*(C.kind==='e'?1.6:C.kind==='b'?3:1)*(1+S.b.sponsor*.1)*(has('scarf')?1.25:1)*(1+decoSum('prize')/100)*(1+perk('preis')*.1)*(r.flags&&r.flags.gross?1.4:1)*(1+.15*(r.asc||0)));
+  const g=Math.round(T.prize*(C.kind==='e'?1.6:C.kind==='b'?3:1)*(1+S.b.sponsor*.1)*(has('scarf')?1.25:1)*(1+decoSum('prize')/100)*(1+perk('preis')*.1)*(r.flags&&r.flags.gross?1.4:1)*(1+.15*(r.asc||0))*(1+.08*pLvl()));
   r.gold+=g;S.stats.mwins=(S.stats.mwins||0)+1;rpGain(player(),(lvOf(r.tier)+1)*8*(C.kind==='e'?1.5:C.kind==='b'?2.5:1)*(1+.2*(r.asc||0))*(T.tourOnly?2:1));
   const hl=(r.asc||0)>=7?0:heal(3+(has('stammtisch')?6:0));
   r.combat=null;save();
@@ -4198,9 +4198,9 @@ function runEnd(champ){
   if(champ){rpGain(p,T.repWin*(1+.2*(r.asc||0)));if(!r.daily){const A=ascInfo();if((r.asc||0)>=A.max&&A.max<10){A.max++;setTimeout(()=>toast(`🔥 Druckstufe ${A.max} freigeschaltet!`),1800)}}}
   if(champ&&r.flags&&r.flags.wette){r.gold+=200;setTimeout(()=>toast('🍺 Wette gewonnen: +200 €'),1200)}
   setTimeout(evoCheck,1600);
-  const rep=r.won*Math.ceil(T.repWin/4)+(champ?T.repWin:0);
-  const fans=Math.round(T.fans*(champ?1:r.won/(r.steps*1.5)));
-  const xp=r.won*12*(r.tier+1)+(champ?40*(r.tier+1):0);
+  const rep=Math.round((r.won*Math.ceil(T.repWin/4)+(champ?T.repWin:0))*.55);
+  const fans=Math.round(T.fans*(champ?1:r.won/(r.steps*1.5))*.5);
+  const xp=Math.round((r.won*12*(r.tier+1)+(champ?40*(r.tier+1):0))*(1+.1*pLvl()));
   S.money+=r.gold;S.rep+=rep;S.fans+=fans;p.xp+=xp;S.stats.runs++;
   const prizePack=champ?['basis','basis','profi','profi','elite'][Math.min(4,lvOf(r.tier))]:null;if(prizePack)S.packs[prizePack]=(S.packs[prizePack]||0)+1;
   if(champ){S.trophies.push({tier:r.tier,n:T.n,w:S.week,by:p.name});S.stats.wins++;log(`🏆 ${p.name} gewinnt ${T.bei==='beim'?'das':'die'} ${T.n}!`)}

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Bullseye Boss</title>
-<meta name="dt-version" content="3.9">
+<meta name="dt-version" content="4.0">
 <meta name="theme-color" content="#0e1511">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -312,7 +312,19 @@ textarea{font-size:12px;height:90px}
 .rp.thr{animation:plean var(--d) ease-in-out infinite;transform-origin:50% 95%}@keyframes plean{0%,50%{transform:none}60%{transform:translateY(-1%) rotate(-2deg)}66%{transform:rotate(3deg)}80%,100%{transform:none}}
 .rdart{position:absolute;left:70%;top:24%;width:5%;height:6%;background:#d9333f;box-shadow:0 2px 0 #c0c4c8;opacity:0;animation:pdart var(--d) linear infinite}
 @keyframes pdart{0%,64%{opacity:0;transform:none}65%{opacity:1;transform:none}79%{opacity:1;transform:translate(2600%,-1900%) scale(.5)}80%,100%{opacity:0;transform:translate(2600%,-1900%) scale(.5)}}
-.enb{font-size:14px;font-weight:800;white-space:nowrap}.enbr{flex:1;height:9px;border-radius:5px;background:#0b1410;border:1px solid #2c3f36;overflow:hidden}.enbr i{display:block;height:100%;background:linear-gradient(90deg,#f4c430,#ffe27a)}#enbar{background:var(--panel,#1d2a24);border:1px solid var(--line,#33463d);border-radius:10px}</style>
+.enb{font-size:14px;font-weight:800;white-space:nowrap}.enbr{flex:1;height:9px;border-radius:5px;background:#0b1410;border:1px solid #2c3f36;overflow:hidden}.enbr i{display:block;height:100%;background:linear-gradient(90deg,#f4c430,#ffe27a)}#enbar{background:var(--panel,#1d2a24);border:1px solid var(--line,#33463d);border-radius:10px}#b3sb{position:absolute;top:0;left:0;right:0;padding-top:env(safe-area-inset-top);display:flex;background:linear-gradient(#070a08f5,#0a100cd9);border-bottom:2px solid #f4c43099;pointer-events:none;box-shadow:0 6px 18px #000a}
+#b3d:not(.sb) #b3sb{display:none}#b3d.sb #b3info,#b3d.sb #b3title{display:none}
+#b3d.sb #b3hud{top:calc(152px + env(safe-area-inset-top));background:none;justify-content:center;padding-top:0}
+#b3d.sb #b3banner{top:calc(208px + env(safe-area-inset-top))}#b3d.sb .b3fxtag{top:calc(244px + env(safe-area-inset-top))}
+.sbm{position:absolute;top:calc(2px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);font-size:9px;letter-spacing:1.5px;color:#ffffffa0;white-space:nowrap;font-weight:800}
+.sbp{flex:1;min-width:0;padding:16px 10px 8px;transition:opacity .2s}.sbp:not(.on){opacity:.55}.sbp.on.l{background:linear-gradient(90deg,#f4c43030,#0000)}.sbp.on.r{background:linear-gradient(270deg,#f4c43030,#0000)}.sbp.r{text-align:right;border-left:1px solid #ffffff26}
+.sbn{font-size:12px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff}
+.sbr{font-size:42px;line-height:1.05;font-weight:900;color:#ffc340;text-shadow:0 0 12px #ff9a00b0;font-variant-numeric:tabular-nums;letter-spacing:1px}
+.sbl{display:flex;gap:4px;margin:2px 0;min-height:11px}.sbp.r .sbl{justify-content:flex-end}.sbl i{width:11px;height:11px;border-radius:50%;border:2px solid var(--c);box-sizing:border-box}.sbl i.on{background:var(--c);box-shadow:0 0 6px var(--c)}
+.sbs{font-size:10px;color:#ffffffb0}.sbx{font-size:11px;margin-top:2px;color:#ffe27a}
+.sbc{position:absolute;left:50%;transform:translateX(-50%);bottom:-15px;background:#000d;border:1px solid #f4c430aa;border-radius:999px;padding:3px 12px;font-size:12px;font-weight:800;color:#ffe27a;white-space:nowrap}
+.lvab{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.lvab button{background:#1a2a20f2;border:2px solid #2fd673;border-radius:12px;color:#fff;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:1px;font-family:inherit;font-size:11px}.lvab button span{font-size:20px}.lvab button small{color:#ffe27a}.lvab button:disabled{opacity:.35;border-color:#444}.lvab button[data-lvab=""]{border-color:#f4c430;background:#3a2c08f2}
+</style>
 </head>
 <body>
 <div id="app"></div>
@@ -3088,7 +3100,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='3.9';
+const GAME_VERSION='4.0';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
@@ -4050,7 +4062,7 @@ function stickerCanvas(list){const S=1024,c=document.createElement('canvas');c.w
     x.font=`${Math.round(R*1.05)}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;x.textAlign='center';x.textBaseline='middle';x.fillText(st.i,0,R*.06);x.restore()});return c}
 let pendSt,scene=[],BM,DART_PARTS,reticleMesh,quadMesh,boardTex,blobTex,stickTex,stickMesh,stickOn=false;
 function init(){
-  root=document.createElement('div');root.id='b3d';root.innerHTML=`<canvas id="b3c"></canvas><div id="b3hud"><div class="b3slots"><div class="b3slot" id="b3s0">–</div><div class="b3slot" id="b3s1">–</div><div class="b3slot" id="b3s2">–</div></div><div class="b3info" id="b3info"></div></div><div id="b3title"></div><div id="b3banner"></div><div id="b3pop"></div><div id="b3hint"></div><div id="b3fx"></div><div id="b3bar"></div><button id="b3zoom" title="Ganze Scheibe">🔍</button>`;
+  root=document.createElement('div');root.id='b3d';root.innerHTML=`<canvas id="b3c"></canvas><div id="b3sb"></div><div id="b3hud"><div class="b3slots"><div class="b3slot" id="b3s0">–</div><div class="b3slot" id="b3s1">–</div><div class="b3slot" id="b3s2">–</div></div><div class="b3info" id="b3info"></div></div><div id="b3title"></div><div id="b3banner"></div><div id="b3pop"></div><div id="b3hint"></div><div id="b3fx"></div><div id="b3bar"></div><button id="b3zoom" title="Ganze Scheibe">🔍</button>`;
   document.body.appendChild(root);cv=q('b3c');gl=cv.getContext('webgl',{antialias:true});if(!gl)return false;
   const sh=(t,s)=>{const o=gl.createShader(t);gl.shaderSource(o,s);gl.compileShader(o);if(!gl.getShaderParameter(o,gl.COMPILE_STATUS))throw gl.getShaderInfoLog(o);return o};
   prog=gl.createProgram();gl.attachShader(prog,sh(gl.VERTEX_SHADER,VS));gl.attachShader(prog,sh(gl.FRAGMENT_SHADER,FS));gl.linkProgram(prog);gl.useProgram(prog);
@@ -4173,6 +4185,10 @@ const api={
   celebrate(t,col){confetti();pop(t,col||'#ffcf3f',null,true);fanfare();shake=.012},
   banner(t,col){const b=q('b3banner');if(!b)return;b.textContent=t||'';b.style.color=col||'#ffcf3f';b.classList.toggle('on',!!t)},
   slots(arr){for(let i=0;i<3;i++){const s=q('b3s'+i);if(!s)continue;const v=arr[i];s.textContent=v==null?'–':v;s.classList.toggle('empty',v==null)}},
+  sb(d){const e=q('b3sb');if(!e)return;root.classList.add('sb');
+    const pips=(n,need,col)=>Array.from({length:need},(_,i)=>`<i class="${i<n?'on':''}" style="--c:${col}"></i>`).join('');
+    const half=(p,i)=>`<div class="sbp ${p.on?'on':''} ${i?'r':'l'}"><div class="sbn">${p.on?'🎯 ':''}${p.n}</div><div class="sbr">${p.rest}</div><div class="sbl">${pips(p.legs,d.need,p.col)}</div><div class="sbs">Ø ${p.avg} · Letzte ${p.last}</div>${p.x?`<div class="sbx">${p.x}</div>`:''}</div>`;
+    e.innerHTML=`<div class="sbm">${d.mid}</div>${half(d.p[0],0)}${half(d.p[1],1)}${d.co?`<div class="sbc">🎯 ${d.co}</div>`:''}`},
   info(h){const e=q('b3info');if(e)e.innerHTML=h},title(h){const e=q('b3title');if(e)e.innerHTML=h},bar(h){const e=q('b3bar');if(e)e.innerHTML=h;return e},
   stickers(list){pendSt=list;if(!root||!ok)return;stickTex=texFromCanvas(stickerCanvas(list),stickTex);stickOn=!!(list&&list.some(Boolean))},
   unzoom(){camT={x:0,y:-.03,f:1};opt.zone=null},
@@ -4268,7 +4284,7 @@ function cardPick(n){return new Promise(res=>{const keys=shuffle(Object.keys(BCA
 function oppPoint(rest,O){let tl='T20';if(rest<=170){const p=coPath(rest);if(p)tl=p[0]}else if(rest<=180&&rest>170)tl='T20';const t=parseT(tl);const pt=t.k==='obull'?[0,.011]:B3.pointFor(t.k==='obull'?'bull':t.k,t.n);return{pt,t}}
 async function bmMatch(cfg){const me={rest:cfg.start,legs:0,pts:0,darts:0,inn:!cfg.din},op={rest:cfg.start,legs:0,pts:0,darts:0,inn:!cfg.din},O=cfg.opp,p=cfg.player;let starter=0,leg=1,turn=0,ev={sig:1,dbl:1,cancel:false},myDebuff=null;
   B3.open();stkSync();const nCards=3+stk('card')+(p&&p.cls==='stratege'?1:0);
-  const hud=(mr,orr)=>{mr=mr??me.rest;orr=orr??op.rest;B3.title(`<b>${esc(cfg.label)}</b> · Leg ${leg} · ${me.legs}:${op.legs}`);B3.info(`<span style="color:#7fdc9f">${esc(p.name)} <b>${mr}</b></span><br><span style="color:#ff8a8a">${esc(O.nick||O.name)} <b>${orr}</b></span>${cfg.nerves?`<br>❤️ ${S.run.nerves}/${S.run.maxN}`:''}`);const w=coPath(mr);const t=$('#b3title');if(t&&w&&turn===0)t.innerHTML+=` · 🎯 ${w.join(' · ')}`};
+  const hud=(mr,orr)=>{mr=mr??me.rest;orr=orr??op.rest;B3.title(`<b>${esc(cfg.label)}</b> · Leg ${leg} · ${me.legs}:${op.legs}`);B3.info(`<span style="color:#7fdc9f">${esc(p.name)} <b>${mr}</b></span><br><span style="color:#ff8a8a">${esc(O.nick||O.name)} <b>${orr}</b></span>${cfg.nerves?`<br>❤️ ${S.run.nerves}/${S.run.maxN}`:''}`);const w=coPath(mr);const t=$('#b3title');if(t&&w&&turn===0)t.innerHTML+=` · 🎯 ${w.join(' · ')}`;const avg=o=>o.darts?(Math.round(o.pts/o.darts*30)/10).toFixed(1):'0.0';B3.sb({mid:`${esc(cfg.label).toUpperCase()} · LEG ${leg}`,need:cfg.need,co:(turn===0&&w)?w.join(' · '):'',p:[{n:esc(p.name),rest:mr,legs:me.legs,avg:avg(me),last:me.last??'–',on:turn===0,col:'#7fdc9f',x:cfg.nerves?`❤️ ${S.run.nerves}/${S.run.maxN}`:''},{n:esc(O.nick||O.name),rest:orr,legs:op.legs,avg:avg(op),last:op.last??'–',on:turn===1,col:'#ff8a8a'}]})};
   while(me.legs<cfg.need&&op.legs<cfg.need){me.rest=op.rest=cfg.start;me.inn=op.inn=!cfg.din;turn=starter;hud();B3.banner(`Leg ${leg} · ${turn===0?'Du beginnst':esc(O.nick)+' beginnt'}`,'#fff');if(leg===1&&O.ab&&O.ab.length){B3.fx('',`<div class="b3fxtag">${esc(O.nick)} kann: ${O.ab.map(a=>BOPP[a].i+' '+BOPP[a].n).join(' · ')}</div>`);setTimeout(()=>B3.fx(''),2600)}await sleepB(900);B3.banner('');
     let done=null;
     while(!done){hud();
@@ -4298,7 +4314,7 @@ async function bmMatch(cfg){const me={rest:cfg.start,legs:0,pts:0,darts:0,inn:!c
           if(nr<2){bust=true;B3.banner('BUST!','#ff5a5a');snd('bust');break}
           vis+=val}
         myDebuff=null;B3.fx('');
-        if(!bust){me.rest-=vis;me.pts+=vis}
+        me.last=bust?0:vis;if(!bust){me.rest-=vis;me.pts+=vis}
         if(vis===180&&!bust){B3.celebrate('180!');S.stats.s180++;S.stats.tons++;S.stats.bm180=(S.stats.bm180||0)+1;await sleepB(1600)}else if(vis>=100&&!bust)S.stats.tons++;
         if(co){S.stats.hico=Math.max(S.stats.hico||0,start);S.stats.bmHico=Math.max(S.stats.bmHico||0,start);if(start===170){B3.celebrate('170!');await sleepB(1500)}else if(start>=100){B3.celebrate(`${start} CHECKOUT!`,'#7dffb0');await sleepB(1300)}else{B3.banner('CHECKOUT!','#7dffb0');snd('checkout')}done='me'}
         ev={sig:v.oppSig,dbl:v.oppDbl,cancel:v.cancel};await sleepB(700);B3.banner('');await B3.clear()}
@@ -4311,7 +4327,7 @@ async function bmMatch(cfg){const me={rest:cfg.start,legs:0,pts:0,darts:0,inn:!c
           const pt=[tgt.pt[0]+B3.gauss()*s/1000,tgt.pt[1]+B3.gauss()*s/1000];const sc=await B3.auto(pt,{delay:UI.speed>1?120:300});op.darts++;let val=sc.v;
           if(!op.inn){if(sc.kind==='d'||sc.kind==='bull')op.inn=true;else val=0}sl[d]=sc.label;B3.slots(sl);const nr=op.rest-vis-val;if(nr>=2)hud(undefined,nr);
           if(nr===0&&(sc.kind==='d'||sc.kind==='bull')){vis+=val;co=true;break}if(nr<2){bust=true;B3.banner(`${esc(O.nick)}: BUST`,'#7dffb0');break}vis+=val}
-        if(!bust){op.rest-=vis;op.pts+=vis}if(vis===180&&!bust)B3.banner(`${esc(O.nick)}: ONE HUNDRED AND EIGHTY!`,'#ff8a8a');
+        op.last=bust?0:vis;if(!bust){op.rest-=vis;op.pts+=vis}if(vis===180&&!bust)B3.banner(`${esc(O.nick)}: ONE HUNDRED AND EIGHTY!`,'#ff8a8a');
         if(co){B3.banner(`${esc(O.nick)} checkt ${start}!`,'#ff5a5a');snd('bust');done='op'}
         ev={sig:1,dbl:1,cancel:false};await sleepB(900);B3.banner('');await B3.clear()}
       turn=1-turn}
@@ -4463,6 +4479,7 @@ function lvOpen(code,cb){lvClose();LV.code=code;let told=false;const tell=ok=>{i
     else if(m.event==='broadcast'&&m.topic===LV_CH(code)){const p=m.payload||{},d=p.payload||{};if(d.id===LV.id)return;const ev=p.event;
       if(ev==='dart'||ev==='leave'){LV.q.push({ev,d});if(LV.wait){const w=LV.wait;LV.wait=null;w(LV.q.shift())}}else if(LV.hand[ev])LV.hand[ev](d)}};
   ws.onclose=()=>{LV.joined=false;tell(false);lvWake(null)};ws.onerror=()=>tell(false)}
+const LVAB={wackeln:{i:'🫨',n:'Wackeln',c:2},spiegel:{i:'🪞',n:'Spiegel',c:2},nebel:{i:'🌫',n:'Nebel',c:2},wind:{i:'🌬',n:'Wind',c:3},schild:{i:'🛡',n:'Schild',c:2}};
 const lvCode=()=>{const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let c='';for(let i=0;i<4;i++)c+=a[Math.floor(Math.random()*a.length)];return c};
 const lvMe=()=>({name:onName(),club:S.club});
 function lvMenu(){modal(`<h3>⚡ Live-Duell</h3><div class="small mut">Spiele in Echtzeit gegen einen Freund. Jeder wirft selbst an der 3D-Scheibe, ohne Karten und mit gleichen Bedingungen für beide. Du brauchst Internet, und ihr müsst beide gleichzeitig online sein.</div>
@@ -4490,31 +4507,45 @@ function lvJoin(code){LV.started=false;modal(`<h3>⚡ Live-Duell</h3><div class=
     const hi=()=>{lvSend('hello',lvMe());if(++tries>14&&!LV.started){clearInterval(LV.hi);lvClose();modal(`<h3>⚡ Live-Duell</h3><div class="small">Kein Freund im Raum ${code} gefunden. Stimmt der Code, und hat dein Freund den Raum erstellt?</div><button class="btn gray block" style="margin-top:8px" onclick="closeModal()">Schließen</button>`)}};
     hi();LV.hi=setInterval(hi,1500)})}
 async function lvMatch(cfg){const seat=cfg.seat,oo=1-seat,me=cfg.me,opn=cfg.op||{name:'Gegner'};LV.q=[];
-  const st={rest:[cfg.start,cfg.start],legs:[0,0],pts:[0,0]};let leg=1,forfeit=null;
+  const st={rest:[cfg.start,cfg.start],legs:[0,0],pts:[0,0],dn:[0,0],last:[null,null]};let leg=1,forfeit=null;LV.fok=1;LV.shield=false;LV.inc=[];
   B3.open();LV.pg=setInterval(()=>lvSend('ping'),5000);
   const qb=document.createElement('button');qb.id='lvq';qb.textContent='✕';qb.style.cssText='position:fixed;right:10px;bottom:90px;z-index:99999;background:#3a1416;color:#fff;border:1px solid #d9333f;border-radius:10px;padding:8px 12px;font:700 14px system-ui';
   qb.onclick=()=>{if(confirm('Duell aufgeben? Dein Freund gewinnt.')){lvSend('leave');setTimeout(()=>location.reload(),250)}};document.body.appendChild(qb);
-  const hud=()=>{B3.title(`<b>⚡ Live-Duell</b> · Leg ${leg} · ${st.legs[seat]}:${st.legs[oo]}`);B3.info(`<span style="color:#7fdc9f">${esc(me.name)} <b>${st.rest[seat]}</b></span><br><span style="color:#ff8a8a">${esc(opn.name)} <b>${st.rest[oo]}</b></span>`)};
+  const hud=(rr)=>{rr=rr||st.rest;const avg=i=>st.dn[i]?(Math.round(st.pts[i]/st.dn[i]*30)/10).toFixed(1):'0.0',co=(turn0===seat&&coPath(rr[seat]))?coPath(rr[seat]).join(' · '):'';
+    B3.sb({mid:`⚡ LIVE-DUELL · LEG ${leg}`,need:cfg.need,co,p:[{n:esc(me.name),rest:rr[seat],legs:st.legs[seat],avg:avg(seat),last:st.last[seat]??'–',on:turn0===seat,col:'#7fdc9f',x:'Fokus '+'⚡'.repeat(LV.fok)+'○'.repeat(4-LV.fok)+(LV.shield?' 🛡':'')},{n:esc(opn.name),rest:rr[oo],legs:st.legs[oo],avg:avg(oo),last:st.last[oo]??'–',on:turn0===oo,col:'#ff8a8a'}]})};
+  let turn0=0;
+  LV.hand.fx=d=>{const a=LVAB[d.k];if(!a)return;if(LV.shield){LV.shield=false;lvSend('blocked',{k:d.k});B3.banner(`🛡 Geblockt: ${a.n}!`,'#7dffb0');snd('checkout');hud();return}LV.inc.push(d);B3.banner(`⚠ ${esc(opn.name)} setzt ${a.i} ${a.n} ein!`,'#ff8a8a');try{navigator.vibrate&&navigator.vibrate([40,30,40])}catch(e){}};
+  LV.hand.blocked=d=>{B3.banner(`🛡 ${esc(opn.name)} hat ${LVAB[d.k]?LVAB[d.k].n:'deinen Angriff'} geblockt!`,'#ffcf3f')};
   while(st.legs[0]<cfg.need&&st.legs[1]<cfg.need&&!forfeit){
-    st.rest=[cfg.start,cfg.start];let turn=(cfg.first+leg-1)%2,done=null;hud();B3.banner(`Leg ${leg} · ${turn===seat?'Du beginnst':esc(opn.name)+' beginnt'}`,'#fff');await sleepB(1000);B3.banner('');
-    while(done===null&&!forfeit){hud();
+    st.rest=[cfg.start,cfg.start];let turn=(cfg.first+leg-1)%2,done=null;turn0=turn;hud();B3.banner(`Leg ${leg} · ${turn===seat?'Du beginnst':esc(opn.name)+' beginnt'}`,'#fff');await sleepB(1000);B3.banner('');
+    while(done===null&&!forfeit){turn0=turn;hud();
       if(LV.q.some(m=>m.ev==='leave')){forfeit='op';break}
       const sl=[null,null,null],start=st.rest[turn];let vis=0,bust=false,co=false;B3.slots(sl);
       if(turn!==seat){B3.banner(`${esc(opn.name)} ist dran …`,'#bbb')}
+      let swayMul=1,spd=1,mir=false,drift=null;
+      if(turn===seat){const inc=LV.inc.splice(0);
+        for(const e of inc){if(e.k==='wackeln'){swayMul*=1.9;spd=1.7}if(e.k==='spiegel')mir=true;if(e.k==='wind')drift=[(e.dir||1)*.011,-.004]}
+        if(inc.length){const e=inc[inc.length-1],a=LVAB[e.k];B3.fx({wackeln:'zittern',spiegel:'spiegel',nebel:'nebel',wind:'wind'}[e.k],`<div class="b3fxtag">${a.i} ${esc(opn.name)}: ${a.n}!</div>`);await sleepB(700)}
+        if(LV.fok>=2){const can=k=>LV.fok>=LVAB[k].c&&!(k==='schild'&&LV.shield);
+          B3.bar(`<div class="lvab">${Object.keys(LVAB).map(k=>`<button data-lvab="${k}" ${can(k)?'':'disabled'}><span>${LVAB[k].i}</span><b>${LVAB[k].n}</b><small>${k==='schild'&&LV.shield?'aktiv':LVAB[k].c+' ⚡'}</small></button>`).join('')}<button data-lvab="">▶ Werfen</button></div>`);
+          const k=await new Promise(res=>{const bar=document.getElementById('b3bar');bar.onclick=e=>{const b=e.target.closest('[data-lvab]');if(b&&!b.disabled)res(b.dataset.lvab)};setTimeout(()=>res(''),15000)});B3.bar('');
+          if(k){LV.fok-=LVAB[k].c;if(k==='schild'){LV.shield=true;B3.banner('🛡 Schild bereit','#7dffb0')}else{lvSend('fx',{k,dir:Math.random()<.5?-1:1});B3.banner(`${LVAB[k].i} ${LVAB[k].n} gesendet!`,'#ffcf3f')}hud();await sleepB(500)}}
+        if(inc.length&&!B3.state)hud()}
       for(let d=0;d<3;d++){let sc;
         if(turn===seat){const r=st.rest[seat]-vis;let zone=null,zoom=0,mul=1;
           if((r<=40&&r%2===0&&r>=2)||r===50){zone=r===50?{k:'bull',n:25}:{k:'d',n:r/2};zoom=2.5;B3.banner(`🎯 Checkout: ${r===50?'BULL':'D'+r/2}`,'#ffcf3f');mul=1.5}
-          sc=await B3.throw({zone,zoom,sway:.0038*mul,assist:.3,swaySpd:1,hint:zone?'Schnippen! · „🔍“ = ganze Scheibe':undefined});B3.banner('');
+          sc=await B3.throw({zone,zoom,sway:.0038*mul*swayMul,assist:.3,swaySpd:spd,mirror:mir,drift,hint:zone?'Schnippen! · „🔍“ = ganze Scheibe':undefined});B3.banner('');
           lvSend('dart',{pos:sc.pos,d})}
         else{const m=await lvNext(50000);if(!m||m.ev==='leave'){forfeit='op';break}B3.banner('');sc=await B3.auto(m.d.pos,{exact:true,delay:350,color:[.3,.7,1]})}
-        const nr=st.rest[turn]-vis-sc.v;sl[d]=sc.label;B3.slots(sl);
+        st.dn[turn]++;const nr=st.rest[turn]-vis-sc.v;sl[d]=sc.label;B3.slots(sl);
         if(nr===0&&(sc.kind==='d'||sc.kind==='bull')){vis+=sc.v;co=true;break}
         if(nr<2){bust=true;B3.banner(turn===seat?'BUST!':`${esc(opn.name)}: BUST`,'#ff5a5a');snd('bust');break}
-        vis+=sc.v;if(nr>=2){const t=st.rest.slice();t[turn]=nr;B3.info(`<span style="color:#7fdc9f">${esc(me.name)} <b>${t[seat]}</b></span><br><span style="color:#ff8a8a">${esc(opn.name)} <b>${t[oo]}</b></span>`)}}
+        vis+=sc.v;if(nr>=2){const t=st.rest.slice();t[turn]=nr;hud(t)}}
       if(forfeit)break;
-      if(!bust){st.rest[turn]-=vis;st.pts[turn]+=vis}
+      st.last[turn]=bust?0:vis;if(!bust){st.rest[turn]-=vis;st.pts[turn]+=vis}
       if(vis===180&&!bust){B3.celebrate('180!');if(turn===seat){S.stats.s180++;S.stats.tons++}await sleepB(1500)}else if(vis>=100&&!bust&&turn===seat)S.stats.tons++;
       if(co){if(turn===seat)S.stats.hico=Math.max(S.stats.hico||0,start);if(start>=100)B3.celebrate(`${start} CHECKOUT!`,'#7dffb0');else{B3.banner('CHECKOUT!','#7dffb0');snd('checkout')}done=turn}
+      if(turn===seat){LV.fok=Math.min(4,LV.fok+1);B3.fx('')}
       await sleepB(900);B3.banner('');await B3.clear();if(done===null)turn=1-turn}
     if(forfeit)break;
     st.legs[done]++;B3.banner(done===seat?'Leg gewonnen!':`Leg für ${esc(opn.name)}`,done===seat?'#7dffb0':'#ff8a8a');await sleepB(1300);B3.banner('');leg++}

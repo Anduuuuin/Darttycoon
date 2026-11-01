@@ -1,4 +1,4 @@
-// Dart Tycoon Service Worker v3: Spiel zuerst online laden, offline aus dem Zwischenspeicher.
+// Bullseye Boss Service Worker v3: Spiel zuerst online laden, offline aus dem Zwischenspeicher.
 // Online-Datenbank (Supabase) wird NIE zwischengespeichert.
 const CACHE='dt-cache-v3';
 const CORE=['./','./index.html','./manifest.json','./icon-192.png','./icon-512.png'];

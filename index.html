@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
-<title>Dart Tycoon</title>
-<meta name="dt-version" content="3.0.1">
+<title>Bullseye Boss</title>
+<meta name="dt-version" content="3.1">
 <meta name="theme-color" content="#0e1511">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Dart Tycoon">
+<meta name="apple-mobile-web-app-title" content="Bullseye Boss">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
@@ -280,6 +280,21 @@ textarea{font-size:12px;height:90px}
 .surr{position:relative;width:240px;height:240px;margin:10px auto;border-radius:50%;background:radial-gradient(#222 58%,#0c0c0e 59%);box-shadow:inset 0 0 0 6px #000,0 6px 18px #000a}.surrb{position:absolute;left:21%;top:21%;width:58%;height:58%;image-rendering:pixelated;border-radius:50%}
 .surrs{position:absolute;transform:translate(-50%,-50%);background:none;border:0;padding:0;cursor:pointer}.stke{display:inline-flex;width:40px;height:40px;border-radius:50%;border:2px dashed #fff6;color:#fff9;align-items:center;justify-content:center;font-size:20px}
 .stkgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}.stkit{display:flex;flex-direction:column;align-items:center;gap:4px;background:#0004;border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center}.stkit.on{border-color:var(--gold)}
+.tbg{position:fixed;inset:0;z-index:0;overflow:hidden;background:#0b120e}.tslide{position:absolute;left:50%;top:50%;width:150vmax;max-width:none;transform:translate(-50%,-50%) scale(1.05);opacity:0;transition:opacity 1.6s ease;image-rendering:pixelated;filter:saturate(.9) brightness(.75)}
+.tslide.on{opacity:1;animation:kb 9s linear forwards}@keyframes kb{from{transform:translate(-50%,-50%) scale(1.05)}to{transform:translate(calc(-50% + var(--kx)),calc(-50% + var(--ky))) scale(1.18)}}
+.tshade{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 38%,#0b120e55 0%,#0b120ecc 70%),linear-gradient(#0b120e88,#0b120e00 30%,#0b120e00 60%,#0b120eee)}
+.title{position:relative;z-index:1}
+.walkers{position:absolute;left:0;right:0;bottom:0;height:40%;pointer-events:none}.walker{position:absolute;left:-40px;animation:walkr linear infinite}.walker.l{animation-name:walkl;left:auto;right:-40px}.walker img{width:30px;height:40px;animation:bob .45s ease-in-out infinite alternate}.walker.l img{transform:scaleX(-1)}
+@keyframes walkr{from{transform:translateX(0)}to{transform:translateX(calc(100vw + 80px))}}@keyframes walkl{from{transform:translateX(0)}to{transform:translateX(calc(-100vw - 80px))}}@keyframes bob{from{margin-bottom:0}to{margin-bottom:3px}}
+.bblogo{display:flex;flex-direction:column;align-items:center;gap:10px;filter:drop-shadow(0 8px 18px #000a)}.bbemb{position:relative;width:150px;height:150px;animation:embIn .9s cubic-bezier(.2,1.5,.4,1)}
+.bbboard{width:150px;height:150px;animation:spin 40s linear infinite}.bbcrown{position:absolute;left:50%;top:-30px;width:78px;height:42px;transform:translateX(-50%) rotate(-8deg);image-rendering:pixelated;animation:crown 2.4s ease-in-out infinite;filter:drop-shadow(0 3px 0 #000)}
+.bbdart{position:absolute;left:58%;top:30%;width:70px;height:6px;background:linear-gradient(90deg,#c0c4c8 0 18%,#4a4f58 18% 62%,#111 62% 75%,#d9333f 75%);transform-origin:0 50%;transform:rotate(-35deg);border-radius:2px;animation:dartIn 1.1s .5s cubic-bezier(.3,1.3,.5,1) both;box-shadow:0 2px 0 #000}
+@keyframes spin{to{transform:rotate(360deg)}}@keyframes crown{50%{transform:translateX(-50%) rotate(6deg) translateY(-4px)}}@keyframes embIn{from{transform:scale(.3) rotate(-30deg);opacity:0}}
+@keyframes dartIn{from{transform:translate(160px,-160px) rotate(-35deg);opacity:0}70%{opacity:1}85%{transform:rotate(-31deg)}to{transform:rotate(-35deg)}}
+.bbname{display:flex;flex-direction:column;align-items:center;line-height:1.15;transform:rotate(-3deg)}.bb1{font-size:24px;letter-spacing:1px;background:linear-gradient(#fff6c8,#f4c430 55%,#c98a10);-webkit-background-clip:text;background-clip:text;color:transparent;-webkit-text-stroke:1px #3a2a00;filter:drop-shadow(3px 3px 0 #000)}
+.bb2{font-size:46px;color:#d9333f;-webkit-text-stroke:2px #fff2c0;filter:drop-shadow(4px 4px 0 #000);animation:bossPulse 2s ease-in-out infinite}@keyframes bossPulse{50%{transform:scale(1.06)}}
+.roomframe{position:relative}.rwalk{position:absolute;inset:0;pointer-events:none}.rw{position:absolute;left:var(--x1);top:var(--y1);animation:rwalk ease-in-out infinite alternate}.rw img{width:22px;height:30px;transform:translate(-50%,-100%);animation:bob .4s ease-in-out infinite alternate}
+@keyframes rwalk{from{left:var(--x1);top:var(--y1)}to{left:var(--x2);top:var(--y2)}}
 </style>
 </head>
 <body>
@@ -338,7 +353,8 @@ function randLook(shirt){return{h:pick(HAIRS),s:pick(SKINS),t:shirt||pick(SHIRTS
 function personSprite(L){
   let rows=PERSON.slice();
   if(L.bald){rows[0]=rows[0].replace(/h/g,'.');rows[1]="..ssssssss.."}
-  if(L.beard){rows[5]="..shhmmhhs..";rows[6]="...hhhhhh..."}
+  if(L.beard&&L.g!=='f'){rows[5]="..shhmmhhs..";rows[6]="...hhhhhh..."}
+  if(L.g==='f'){const set=(r,c,ch)=>{rows[r]=rows[r].slice(0,c)+ch+rows[r].slice(c+1)};[2,3,4,5,6,7].forEach(r=>{set(r,1,'h');set(r,10,'h')});set(0,2,'h');set(0,9,'h')}
   return spriteURL(rows,{h:L.h,s:L.s,e:'#111',m:'#7a2c2c',t:L.t,w:L.w,p:L.p,b:'#141414'});
 }
 function personImg(L,size=48){return `<img class="sp" src="${personSprite(L)}" style="width:${size*.75}px;height:${size}px">`}
@@ -490,6 +506,8 @@ const BOSSES=[
  {name:'Matthias „Die Maschine“ Kühn',nick:'Die Maschine',ab:['cold','comeback','zittern']},
  {name:'Viktor „The Voice“ Varga',nick:'The Voice',ab:['zittern','fieber','cold','comeback']},
 ];
+const FEM=['Mandy','Steffi','Heike','Doreen','Sandy','Silke','Peggy','Anja','Nadine','Jana'];
+const lookFor=(name,L)=>{const f=String(name||'').split(' ')[0];if(FEM.includes(f)){L.g='f';L.bald=false;L.beard=false}else L.g=L.g||'m';return L};
 const FIRST=['Kalle','Uwe','Mandy','Rüdiger','Steffi','Ronny','Heike','Jens','Doreen','Olaf','Torsten','Sandy','Maik','Gunnar','Silke','Dieter','Peggy','Rico','Anja','Holger','Kevin','Nadine','Marco','Jana'];
 const LAST=['Krause','Bauer','Schulz','Lenz','Wolf','Richter','Vogt','Hahn','Meier','Fuchs','Peters','König','Weber','Schröder','Berg','Lange','Kühn','Pohl','Seidel','Franke'];
 const NICK=['Kante','Ufo','Mamba','Rakete','Stahl','Rolle','Hammer','Jet','Dynamit','Orkan','Turbo','Sniper','Magnet','Goldarm','Falke','Blitz','Bulle','Zange','Laser','Komet'];
@@ -786,10 +804,10 @@ function hubLiga(){
 
 /* ================= Neues Spiel ================= */
 function makePlayer(name,cls,lvl=1){
-  return{id:uid(),name,cls,lvl,xp:0,deck:CLASSES[cls].deck.map(id=>({id,up:false,u:uid()})),look:randLook(),salary:lvl*15,trained:false,gear:{},traits:rollTraits()};
+  return{id:uid(),name,cls,lvl,xp:0,deck:CLASSES[cls].deck.map(id=>({id,up:false,u:uid()})),look:lookFor(name,randLook()),salary:lvl*15,trained:false,gear:{},traits:rollTraits()};
 }
 function newGame(club,pname,cls){
-  const me=makePlayer(pname||'Du',cls);me.salary=0;me.look.t='#1f9d55';me.look.w='#d9333f';me.isMe=true;
+  const me=makePlayer(pname||'Du',cls);me.salary=0;me.look.t='#1f9d55';me.look.w='#d9333f';me.isMe=true;me.look.g=UI.ngG||'m';if(me.look.g==='f'){me.look.bald=false;me.look.beard=false}
   S={v:1,sv:3,club:club||'Mein Dartverein',week:1,money:250,rep:0,fans:0,members:6,b:{boards:1,bar:0,training:0,sponsor:0,fanshop:0},
      players:[me],deco:[],market:[],trophies:[],played:false,inv:[],packs:{basis:1,profi:0,elite:0},ach:{},log:['Willkommen im Verein! Starte mit dem Kneipenturnier.'],run:null,stats:{runs:0,wins:0,legs:0,best:0,tons:0,s180:0,hico:0,wash:0,comeback:0,clutch:0,nightWins:0,promo:0,packs:0,legend:0},ts:Date.now()};
   S.home=UI.home||null;applyHome(S);
@@ -911,9 +929,8 @@ function render0(){
 }
 function renderTitle(app){
   const local=loadLocal();
-  app.innerHTML=`<div class="title">
-    <img class="sp" src="${boardURL()}" style="width:150px;height:150px">
-    <div class="logo px">DART<br><em>TYCOON</em></div>
+  app.innerHTML=`${titleBG()}<div class="title">
+    ${logoHTML(true)}
     <div class="mut small">Führe deinen Verein vom Kneipenturnier bis zur Weltmeisterschaft.</div>
     <div style="display:flex;flex-direction:column;gap:10px;width:100%;max-width:300px">
       ${local?`<button class="btn block" id="cont">▶ Weiterspielen</button>`:''}
@@ -922,6 +939,7 @@ function renderTitle(app){
     </div>
     <div class="cloud">${cloudOn?'☁️ Speicherung in deinem Konto aktiv':'Spielstand wird in diesem Browser gespeichert'}</div>
   </div>`;
+  titleCycle();
   if(local)$('#cont').onclick=()=>{S=fixLoaded(local);render()};
   $('#new').onclick=()=>{if(local)modal(`<h3>Neues Spiel starten?</h3><div class="mut small">Dein bisheriger Spielstand wird überschrieben.</div><button class="btn red" id="y">Ja, neu anfangen</button><button class="btn gray" onclick="closeModal()">Abbrechen</button>`),$('#y').onclick=()=>{closeModal();newGameDialog()};else newGameDialog()};
   $('#imp').onclick=importDialog;{const ti=$('#tinst');if(ti)ti.onclick=installDialog}
@@ -931,13 +949,15 @@ function newGameDialog0(){
   modal(`<h3>Neuer Verein</h3>
    <div class="row between small" style="margin-bottom:6px"><span>📍 <b>${esc(UI.home.city)}</b>, ${esc(LAENDER[UI.home.st].n)}</span><button class="btn gray sm" id="hchg">ändern</button></div>
    <label class="small mut">Vereinsname</label><input type="text" id="club" value="${esc(UI.ngClub||'')}" placeholder="Name deines Vereins" maxlength="28">
+   <div class="small mut">Dein Spieler</div><div class="row" style="gap:6px"><button class="btn ${UI.ngG==='m'?'gold':'gray'}" style="flex:1" data-ngg="m">👦 Junge</button><button class="btn ${UI.ngG==='f'?'gold':'gray'}" style="flex:1" data-ngg="f">👧 Mädchen</button></div>
    <label class="small mut">Dein Spielername</label><input type="text" id="pname" value="${esc(UI.ngName||'')}" placeholder="Dein Name" maxlength="18">
    <div class="small mut">Dein Spielstil</div>
    <div class="cls">${Object.entries(CLASSES).filter(([k])=>clsOpen(k)).map(([k,c])=>`<div data-c="${k}" class="${UI.newCls===k?'on':''}"><span style="font-size:24px">${c.i}</span><b>${c.n}</b><span class="tiny mut">${c.d}</span></div>`).join('')}</div>
    <button class="btn block" id="go">Verein gründen</button>`);
   document.querySelectorAll('.cls div').forEach(el=>el.onclick=()=>{UI.newCls=el.dataset.c;document.querySelectorAll('.cls div').forEach(e=>e.classList.toggle('on',e===el))});
-  $('#go').onclick=()=>{const c=$('#club').value.trim(),p=$('#pname').value.trim();if(!c){toast('Bitte gib deinem Verein einen Namen');return $('#club').focus()}if(!p){toast('Bitte gib deinen Spielernamen ein');return $('#pname').focus()}if(!UI.newCls){toast('Bitte wähle deinen Spielstil');return}UI.ngClub=UI.ngName=null;closeModal();newGame(c,p,UI.newCls)};
+  $('#go').onclick=()=>{const c=$('#club').value.trim(),p=$('#pname').value.trim();if(!c){toast('Bitte gib deinem Verein einen Namen');return $('#club').focus()}if(!p){toast('Bitte gib deinen Spielernamen ein');return $('#pname').focus()}if(!UI.ngG){toast('Bitte wähle Junge oder Mädchen');return}if(!UI.newCls){toast('Bitte wähle deinen Spielstil');return}UI.ngClub=UI.ngName=null;closeModal();newGame(c,p,UI.newCls)};
   ['club','pname'].forEach(id=>{const e=$('#'+id);if(e)e.oninput=()=>{UI[id==='club'?'ngClub':'ngName']=e.value}});
+  document.querySelectorAll('[data-ngg]').forEach(b=>b.onclick=()=>{UI.ngG=b.dataset.ngg;snd('click');newGameDialog0()});
   $('#hchg').onclick=()=>homeDialog(newGameDialog0);
 }
 function importDialog(){
@@ -1818,7 +1838,7 @@ function hubRoom(id){
   else if(id==='scheiben')acts=`<button class="btn block gold" data-act="friendly">🎯 Freundschaftsspiel · 501 · Best of 3</button><div class="tiny mut" style="margin:-4px 0 4px">Freies Werfen gegen ein Vereinsmitglied, jederzeit, ohne Einsatz.</div><div class="panel"><h2>🎯 Echtes Dart</h2><div class="grid2" style="margin-top:8px"><button class="btn" id="scstart">📟 ${S.realCur?'Match fortsetzen':'Scorer starten'}</button><button class="btn" id="rtrain">📝 Training eintragen</button></div><div class="tiny mut" style="margin-top:6px">Für dein echtes Board: Punkte zählen, Checkout-Wege, Statistik. Echte Leistungen bringen Belohnungen im Spiel.</div></div>${realStatsPanel()}`+buildCard('boards')+buildCard('sponsor');
   const dk=Object.keys(DECO).filter(k=>DECO[k].room===id);
   return `<div class="navrow"><button class="btn gray sm" data-go="heim">◀ Vereinsheim</button><b class="small">${R0.i} ${R0.n}</b></div>
-  <div class="roomframe">${roomSVG(id)}</div><div class="tiny mut" style="text-align:center">Tippe auf Dinge im Raum, auf Türen für den nächsten Raum oder auf ➕ für neue Einrichtung.</div>${acts}
+  <div class="roomframe">${roomSVG(id)}${roomWalkers(id)}</div><div class="tiny mut" style="text-align:center">Tippe auf Dinge im Raum, auf Türen für den nächsten Raum oder auf ➕ für neue Einrichtung.</div>${acts}
   <div class="panel"><h2>🛋 Einrichtung für diesen Raum</h2><div class="tiny mut" style="margin-top:4px">Auch im Dartshop unter „Einrichtung“.</div></div>${dk.map(decoCard).join('')}`;
 }
 function backBtn(){return `<div class="navrow"><button class="btn gray sm" data-go="r_buero">◀ Büro</button></div>`}
@@ -2127,7 +2147,8 @@ function drawChar(P,L,fx,fy,o={}){
     else if(style===1){for(let x=-1;x<=4;x++)put(x,-30,hr);put(4,-29,hrS);put(-6,-35,hr);put(-2,-35,hr);put(2,-35,hr);put(5,-35,hrS)}
     else{for(let x=-5;x<=5;x++)put(x,-30,x%2?hr:hrS);for(let y=-24;y<=-21;y++){put(-6,y,hr);put(6,y,hrS)}}
   }else{for(let y=-29;y<=-25;y++){put(-6,y,hr);put(6,y,hrS)}put(-2,-31,mixc(sk,'#fff',.35));put(-1,-31,mixc(sk,'#fff',.35))}
-  if(L.beard){for(let y=-24;y<=-21;y++)for(let x=-5;x<=5;x++){if(y===-23&&x>=-1&&x<=1)continue;if(y===-24&&Math.abs(x)<3)continue;put(x,y,x>=4?hrS:hr)}}
+  if(L.g==='f'){for(let y=-31;y<=-17;y++){put(-7,y,hr);put(-6,y,y>-25?hr:M.get('-6,'+y)||hr);put(7,y,hrS);put(6,y,y>-25?hrS:M.get('6,'+y)||hrS)}put(-8,-20,hr);put(8,-20,hrS);put(-3,-28,'#1a1410');put(3,-28,'#1a1410');put(0,-23,'#c0404a');put(-1,-23,'#a03038');put(1,-23,'#a03038')}
+  if(L.beard&&L.g!=='f'){for(let y=-24;y<=-21;y++)for(let x=-5;x<=5;x++){if(y===-23&&x>=-1&&x<=1)continue;if(y===-24&&Math.abs(x)<3)continue;put(x,y,x>=4?hrS:hr)}}
   // Kontur + Schatten
   for(let i=-8;i<=8;i++)for(let j=-1;j<=1;j++){const t=1-Math.hypot(i/8,j/1.6);if(t>0)P.blend(fx+i,fy+j,'#000',.45*t)}
   const OL='#141016',out=[];
@@ -3021,13 +3042,13 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='3.0.1';
+const GAME_VERSION='3.1';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
 const isIOS=()=>/iphone|ipad|ipod/i.test(navigator.userAgent);
 const pwaOK=()=>location.protocol==='https:'&&'serviceWorker'in navigator&&!/claude|anthropic/.test(location.hostname);
-try{window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e});window.addEventListener('appinstalled',()=>{installEvt=null;toast('📲 Dart Tycoon ist jetzt als App installiert!')})}catch(e){}
+try{window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e});window.addEventListener('appinstalled',()=>{installEvt=null;toast('📲 Bullseye Boss ist jetzt als App installiert!')})}catch(e){}
 function installDialog(){
   if(isStandalone())return modal(`<h3>📲 App</h3><div class="small">Du spielst schon die installierte App. Updates kommen automatisch.</div><button class="btn block" onclick="closeModal()">Super</button>`);
   if(installEvt){const ev=installEvt;installEvt=null;ev.prompt();ev.userChoice.then(r=>{if(r.outcome==='accepted')toast('📲 Wird installiert …')});return}
@@ -3035,7 +3056,7 @@ function installDialog(){
   modal(`<h3>📲 Als App installieren</h3><div class="small" style="line-height:1.6">${ios?
    '<b>iPhone/iPad (Safari):</b><br>1. Unten auf <b>Teilen</b> ⬆️ tippen<br>2. <b>„Zum Home-Bildschirm“</b> wählen<br>3. <b>Hinzufügen</b> tippen':
    '<b>Android (Chrome):</b><br>1. Oben rechts auf <b>⋮</b> tippen<br>2. <b>„App installieren“</b> oder <b>„Zum Startbildschirm hinzufügen“</b> wählen<br><br><b>PC (Chrome/Edge):</b> In der Adressleiste rechts auf das Installieren-Symbol klicken.'}
-   <br><br>Danach startet Dart Tycoon wie eine echte App im Vollbild, auch offline. Updates kommen automatisch, dein Spielstand bleibt erhalten.</div><button class="btn block" onclick="closeModal()">Alles klar</button>`)}
+   <br><br>Danach startet Bullseye Boss wie eine echte App im Vollbild, auch offline. Updates kommen automatisch, dein Spielstand bleibt erhalten.</div><button class="btn block" onclick="closeModal()">Alles klar</button>`)}
 function updateBanner(){if(document.getElementById('updbar'))return;const d=document.createElement('div');d.id='updbar';d.innerHTML='🆕 Neue Version verfügbar <button class="btn sm gold">Neu laden</button>';d.querySelector('button').onclick=()=>{try{save()}catch(e){}location.reload()};document.body.appendChild(d)}
 async function checkUpdate(){try{const r=await fetch('index.html?u='+Date.now(),{cache:'no-store'});if(!r.ok)return;const t=await r.text();const m=t.match(/name="dt-version" content="([^"]+)"/);const cur=document.querySelector('meta[name="dt-version"]').content;if(m&&m[1]!==cur)updateBanner()}catch(e){}}
 if(pwaOK()){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{});setInterval(checkUpdate,10*60*1000)});document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkUpdate()})}
@@ -3044,7 +3065,7 @@ function feedbackDialog(){
    <button class="btn block" id="fbgh">📮 Als GitHub-Issue senden</button><button class="btn gray block" id="fbcp">📋 Text kopieren (für WhatsApp & Co.)</button><button class="btn gray" onclick="closeModal()">Abbrechen</button>`);
   const info=()=>`\n\n---\nVersion ${GAME_VERSION} · Woche ${S.week} · Ruf ${S.rep} · Liga ${DIVS[S.league.div]} · ${navigator.userAgent.slice(0,80)}`;
   $('#fbgh').onclick=()=>{const t=$('#fbt').value.trim();if(!t)return toast('Schreib erst etwas 🙂');const url=`https://github.com/Anduuuuin/darttycoon/issues/new?title=${encodeURIComponent('Feedback: '+t.slice(0,50))}&body=${encodeURIComponent(t+info())}`;const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove()};
-  $('#fbcp').onclick=async()=>{const t=$('#fbt').value.trim()+info();try{await navigator.clipboard.writeText('Dart Tycoon Feedback:\n'+t);toast('Kopiert!')}catch(e){$('#fbt').select();toast('Bitte manuell kopieren')}};
+  $('#fbcp').onclick=async()=>{const t=$('#fbt').value.trim()+info();try{await navigator.clipboard.writeText('Bullseye Boss Feedback:\n'+t);toast('Kopiert!')}catch(e){$('#fbt').select();toast('Bitte manuell kopieren')}};
 }
 
 
@@ -3803,7 +3824,7 @@ const CODE_CH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 function ghostOf(p){return{name:p.name,lvl:p.lvl,cls:p.cls,traits:p.traits||[],look:p.look,deck:p.deck.map(c=>c.id+(c.up?'+':'')),gear:gearOf(p),rank:rankOf(p),legend:p.legend||null}}
 async function duelCreate(pid){const p=player(pid);const code=[...Array(6)].map(()=>CODE_CH[Math.floor(Math.random()*CODE_CH.length)]).join('');
   try{await sb('ghosts',{method:'POST',prefer:'return=minimal',body:{code,name:p.name.slice(0,24),club:(S.club||'').slice(0,30),data:ghostOf(p)}});S.myCodes=(S.myCodes||[]).concat({code,pid,name:p.name,lvl:p.lvl,t:Date.now()}).slice(-10);save();
-    const txt=`🎯 Fordere mich in Dart Tycoon heraus! Mein Duell-Code: ${code}\nhttps://anduuuuin.github.io/darttycoon/`;
+    const txt=`🎯 Fordere mich in Bullseye Boss heraus! Mein Duell-Code: ${code}\nhttps://anduuuuin.github.io/darttycoon/`;
     modal(`<div style="text-align:center"><h3>⚔️ Dein Duell-Code</h3><div class="px" style="font-size:28px;letter-spacing:4px;color:var(--gold);margin:12px 0">${code}</div><div class="small mut">Schick ihn Freunden. Sie spielen gegen eine KI-Kopie von ${esc(p.name)} (Lv${p.lvl}) mit seinem Deck. Die Ergebnisse siehst du unter „Meine Duelle“.</div></div><button class="btn gold block" id="dshare">📤 Teilen</button><button class="btn gray" onclick="closeModal()">Fertig</button>`);
     $('#dshare').onclick=async()=>{try{if(navigator.share)await navigator.share({text:txt});else{await navigator.clipboard.writeText(txt);toast('Kopiert!')}}catch(e){}}}
   catch(e){toast('⚠️ Online nicht erreichbar: '+e.message)}}
@@ -3862,7 +3883,7 @@ async function vlCreate(name){name=(name||'').trim().slice(0,30);if(!name)return
   try{await sb('leagues',{method:'POST',prefer:'return=minimal',body:{code,name,owner:myKey()}});S.vl={code};await vlSync();toast(`🏟 Liga „${name}“ gegründet!`);render()}catch(e){toast('⚠️ '+e.message)}}
 async function vlJoin(code){code=(code||'').toUpperCase().replace(/[^A-Z0-9]/g,'');if(code.length!==6)return toast('Der Code hat 6 Zeichen');
   try{const lg=await sb(`leagues?select=code,name&code=eq.${code}`);if(!lg.length)return toast('Liga nicht gefunden');S.vl={code};await vlSync();VL.t=0;toast(`🏟 Willkommen in „${lg[0].name}“!`);render()}catch(e){toast('⚠️ '+e.message)}}
-function vlShare(){const L=VL;const txt=`🏟 Tritt meiner Dart-Tycoon-Vereinsliga „${L.lg.name}“ bei! Liga-Code: ${L.code}\nhttps://anduuuuin.github.io/darttycoon/`;(async()=>{try{if(navigator.share)await navigator.share({text:txt});else{await navigator.clipboard.writeText(txt);toast('Kopiert!')}}catch(e){}})()}
+function vlShare(){const L=VL;const txt=`🏟 Tritt meiner Bullseye-Boss-Vereinsliga „${L.lg.name}“ bei! Liga-Code: ${L.code}\nhttps://anduuuuin.github.io/darttycoon/`;(async()=>{try{if(navigator.share)await navigator.share({text:txt});else{await navigator.clipboard.writeText(txt);toast('Kopiert!')}}catch(e){}})()}
 function hubVliga(){if(!S.vl)return `<div class="navrow"><button class="btn gray sm" data-go="online">◀ Online</button><b class="small">🏟 Vereinsliga</b></div>
   <div class="panel"><h2>🏟 Eigene Liga mit Freunden</h2><div class="tiny mut" style="margin-top:4px">Gründe eine Liga und lade Freunde per Code ein. Jeder Verein spielt einmal zu Hause gegen jeden anderen: ein Ligaabend mit 3 Einzeln gegen die KI-Kopien des gegnerischen Teams. Sieg = 2 Punkte.</div></div>
   <div class="panel"><h3>➕ Liga gründen</h3><input type="text" id="vlname" placeholder="z. B. Thüringer Feierabendliga" maxlength="30"><button class="btn gold block" id="vlnew">Gründen</button></div>
@@ -4267,11 +4288,42 @@ async function avgChallenge(){const M=avgInfo();if(M.avgPlays>=3)return toast('D
   B3.close();const avg=pts/10;M.avgPlays++;M.avgBest=Math.max(M.avgBest||0,avg);const g=Math.round(avg*4),f=Math.floor(avg/10),xp=trainXP(p,Math.round(avg*.6));S.money+=g;S.fans+=f;p.xp+=xp;checkLvl(p);stkUse();save();postScore('click',Math.round(avg));snd('win');render();
   modal(`<div style="text-align:center"><div style="font-size:44px">🎯</div><h3>Ø ${avg.toFixed(1)}</h3><div class="small mut">Beste Aufnahme ${best} · Rekord Ø ${M.avgBest.toFixed(1)} · noch ${3-M.avgPlays}× diese Woche</div></div><div class="panel small">💶 +${g} € · 📣 +${f} Fans · ✨ +${xp} XP</div><button class="btn gold block" onclick="closeModal()">Super</button>`)}
 
+
+/* ================= Bullseye Boss: Logo, Startbildschirm, animierte Figuren ================= */
+const GAME_NAME='Bullseye Boss';
+const CROWN=["..g...g...g..",".gyg.gyg.gyg.",".gyyggyggyyg.","gyyyyyyyyyyyg","gyrryyyyyrryg","gyyyyyyyyyyyg","ggggggggggggg"];
+function crownURL(){return cached('crown',()=>spriteURL(CROWN,{g:'#7a5a10',y:'#f4c430',r:'#d9333f'}))}
+function logoHTML(big){return `<div class="bblogo ${big?'big':''}"><div class="bbemb"><img class="sp bbboard" src="${boardURL()}"><img class="sp bbcrown" src="${crownURL()}"><span class="bbdart"></span></div><div class="bbname px"><span class="bb1">BULLSEYE</span><span class="bb2">BOSS</span></div></div>`}
+function demoState(lvl){const pl=[0,1,2,3].slice(0,lvl?4:1).map(i=>{const p=makePlayer(`${pick(FIRST)} ${pick(LAST)}`,pick(BASE_CLS),1+i*2);p.look=randLook();return p});
+  const st={club:'Demo',week:1,money:0,rep:lvl?320:5,fans:lvl?500:0,members:lvl?40:6,b:lvl?{boards:8,bar:5,training:5,sponsor:5,fanshop:5}:{boards:1,bar:0,training:0,sponsor:0,fanshop:0},
+    deco:lvl?Object.keys(DECO):[],players:pl,trophies:lvl?[{tier:0,n:'A'},{tier:3,n:'B'},{tier:4,n:'C'},{tier:1,n:'D'}]:[],stats:{},hq:lvl?2:0,plots:lvl?{A:{st:3},B:{st:3}}:{A:{st:0},B:{st:0}},hall:lvl?{built:true,up:{trib:2,boards:2,stage:2},plan:null}:{built:false,up:{trib:0,boards:0,stage:0}},pl:null,prestige:{lvl:0,pts:0,perks:{},hist:[]}};
+  return st}
+let TITLE_SLIDES=null;
+function titleSlides(){if(TITLE_SLIDES)return TITLE_SLIDES;const out=[],old=S,oldN=UI.night;
+  const grab=(lvl,fn)=>{try{S=demoState(lvl);const u=fn();if(u)out.push(u)}catch(e){console.warn('slide',e)}};
+  grab(1,()=>{UI.night=false;return renderCity().url});
+  grab(0,()=>renderRoom('theke').url);grab(1,()=>renderRoom('theke').url);
+  grab(1,()=>{try{return venueImg('arena')}catch(e){return null}});
+  grab(0,()=>renderRoom('scheiben').url);grab(1,()=>renderRoom('scheiben').url);
+  grab(1,()=>{UI.night=true;return renderCity().url});
+  grab(1,()=>renderRoom('training').url);grab(1,()=>{try{return venueImg('kneipe')}catch(e){return null}});grab(1,()=>renderRoom('buero').url);
+  S=old;UI.night=oldN;TITLE_SLIDES=out;return out}
+function walkersHTML(n,cls){let h='';for(let i=0;i<n;i++){const L=randLook();if(R()<.4){L.g='f';L.bald=false;L.beard=false}const dir=i%2?'l':'r',dur=14+R()*12,del=-R()*dur,bottom=4+R()*14;
+  h+=`<div class="walker ${dir}" style="bottom:${bottom}%;animation-duration:${dur}s;animation-delay:${del}s"><img class="sp" src="${personSprite(L)}" style="animation-delay:${-R()}s"></div>`}return `<div class="walkers ${cls||''}">${h}</div>`}
+let titleTimer=null;
+function titleBG(){const sl=titleSlides();return `<div class="tbg">${sl.map((u,i)=>`<img class="pximg tslide ${i===0?'on':''}" src="${u}" style="--kx:${(i%2?-1:1)*(3+R()*4)}%;--ky:${-2+R()*4}%">`).join('')}<div class="tshade"></div>${walkersHTML(6)}</div>`}
+function titleCycle(){clearInterval(titleTimer);let i=0;titleTimer=setInterval(()=>{const im=document.querySelectorAll('.tslide');if(!im.length){clearInterval(titleTimer);return}im[i%im.length].classList.remove('on');i++;im[i%im.length].classList.add('on')},5200)}
+// Animierte Figuren in den Räumen
+const ROOM_WALK={theke:[[28,72,46,82],[60,70,70,62]],scheiben:[[30,78,48,70],[58,80,70,72]],training:[[34,76,50,84],[62,72,52,64]],buero:[[30,74,44,82],[56,78,68,70]]};
+function roomWalkers(id){const P0=ROOM_WALK[id]||[[30,75,50,82]];const n=Math.min(P0.length,1+Math.floor(((S&&S.members)||6)/12));
+  return `<div class="rwalk">${P0.slice(0,Math.max(1,n)).map((p,i)=>{const L=NPC(i+3+(id.length));if(i%2){L.g='f';L.bald=false;L.beard=false}const d=7+i*2.5;
+    return `<div class="rw" style="--x1:${p[0]}%;--y1:${p[1]}%;--x2:${p[2]}%;--y2:${p[3]}%;animation-duration:${d}s;animation-delay:${-i*1.7}s"><img class="sp" src="${personSprite(L)}"></div>`}).join('')}</div>`}
+
 /* ================= Match ================= */
 function makeOpp(tier,kind,step){
   let o;
   if(kind==='b'){const B=BOSSES[tier]||BOSSES[4];o={name:B.name,nick:B.nick,ab:B.ab.slice(),look:MAJ_BOSS_LOOK[tier]?Object.assign({},MAJ_BOSS_LOOK[tier]):randLook('#111')};if(!MAJ_BOSS_LOOK[tier])o.look.w='#f4c430'}
-  else{const f=pick(FIRST),l=pick(LAST),n=pick(NICK);o={name:`${f} „${n}“ ${l}`,nick:n,ab:[],look:randLook()}}
+  else{const f=pick(FIRST),l=pick(LAST),n=pick(NICK);o={name:`${f} „${n}“ ${l}`,nick:n,ab:[],look:lookFor(f,randLook())}}
   const t=lvOf(tier),sb=Math.round(step*1.5);
   o.min=24+t*11+sb;o.max=48+t*17+sb;o.dr=2+t*2;o.finish=Math.min(40+t*12,110);o.co=.22+t*.07;
   if(kind==='e'){o.min+=8;o.max+=10;o.dr+=2;o.co+=.06;o.ab.push(pick(['zittern','druck','cold','comeback']))}

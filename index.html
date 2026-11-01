@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Bullseye Boss</title>
-<meta name="dt-version" content="4.1">
+<meta name="dt-version" content="4.2">
 <meta name="theme-color" content="#0e1511">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -3100,7 +3100,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='4.1';
+const GAME_VERSION='4.2';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
@@ -4192,7 +4192,7 @@ const api={
   info(h){const e=q('b3info');if(e)e.innerHTML=h},title(h){const e=q('b3title');if(e)e.innerHTML=h},bar(h){const e=q('b3bar');if(e)e.innerHTML=h;return e},
   stickers(list){pendSt=list;if(!root||!ok)return;stickTex=texFromCanvas(stickerCanvas(list),stickTex);stickOn=!!(list&&list.some(Boolean))},
   unzoom(){camT={x:0,y:-.03,f:1};opt.zone=null},
-  fx(cls,txt){if(!root)return;root.className='on'+(cls?' fx-'+cls:'');const e=q('b3fx');if(e)e.innerHTML=txt||''},
+  fx(cls,txt){if(!root)return;[...root.classList].forEach(c=>{if(c.indexOf('fx-')===0)root.classList.remove(c)});root.classList.add('on');if(cls)root.classList.add('fx-'+cls);const e=q('b3fx');if(e)e.innerHTML=txt||''},
   testThrow(rel){if(state==='aim'&&hand){const c=hand.color,fr=handPos(performance.now());hand=null;launch(rel,c,fr,performance.now());return true}return false},
   zoneOf:(k,n)=>({k,n}),score:(x,y,o)=>score(x,y,o||{}),pointFor:(k,n)=>zonePt({k,n}),gauss,SECTORS,
   get state(){return state}
@@ -4482,7 +4482,7 @@ function lvOpen(code,cb){lvClose();LV.code=code;let told=false;const tell=ok=>{i
 const LVAB={wackeln:{i:'🫨',n:'Wackeln',c:2},spiegel:{i:'🪞',n:'Spiegel',c:2},nebel:{i:'🌫',n:'Nebel',c:2},wind:{i:'🌬',n:'Wind',c:3},schild:{i:'🛡',n:'Schild',c:2}};
 const lvCode=()=>{const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let c='';for(let i=0;i<4;i++)c+=a[Math.floor(Math.random()*a.length)];return c};
 const lvMe=()=>({name:onName(),club:S.club});
-function lvMenu(){modal(`<h3>⚡ Live-Duell</h3><div class="small mut">Spiele in Echtzeit gegen einen Freund. Jeder wirft selbst an der 3D-Scheibe, ohne Karten und mit gleichen Bedingungen für beide. Du brauchst Internet, und ihr müsst beide gleichzeitig online sein.</div>
+function lvMenu(){modal(`<h3>⚡ Live-Duell</h3><div class="small mut">Spiele in Echtzeit gegen einen Freund. Jeder wirft selbst an der 3D-Scheibe, ohne Karten und mit gleichen Bedingungen für beide. Das Ausbullen entscheidet, wer anfängt, danach wechselt der Anwurf jedes Leg. Du brauchst Internet, und ihr müsst beide gleichzeitig online sein.</div>
   <div class="row" style="gap:6px;margin:10px 0"><select id="lvs" style="flex:1"><option value="501">501</option><option value="301">301</option></select><select id="lvn" style="flex:1"><option value="1">1 Leg</option><option value="2" selected>Best of 3</option><option value="3">Best of 5</option></select></div>
   <button class="btn gold block" id="lvh">Raum erstellen</button>
   <div class="row" style="gap:6px;margin-top:8px"><input id="lvc" maxlength="4" placeholder="CODE" style="flex:1;text-transform:uppercase;letter-spacing:4px;margin:0"><button class="btn block" id="lvj" style="flex:1">Beitreten</button></div>
@@ -4512,10 +4512,23 @@ async function lvMatch(cfg){const seat=cfg.seat,oo=1-seat,me=cfg.me,opn=cfg.op||
   const qb=document.createElement('button');qb.id='lvq';qb.textContent='✕';qb.style.cssText='position:fixed;right:10px;bottom:90px;z-index:99999;background:#3a1416;color:#fff;border:1px solid #d9333f;border-radius:10px;padding:8px 12px;font:700 14px system-ui';
   qb.onclick=()=>{if(confirm('Duell aufgeben? Dein Freund gewinnt.')){lvSend('leave');setTimeout(()=>location.reload(),250)}};document.body.appendChild(qb);
   const hud=(rr)=>{rr=rr||st.rest;const avg=i=>st.dn[i]?(Math.round(st.pts[i]/st.dn[i]*30)/10).toFixed(1):'0.0',co=coPath(rr[seat])?coPath(rr[seat]).join(' · '):'';
-    B3.sb({mid:`⚡ LIVE-DUELL · LEG ${leg}`,need:cfg.need,co,p:[{n:esc(me.name),rest:rr[seat],legs:st.legs[seat],avg:avg(seat),last:st.last[seat]??'–',on:turn0===seat,col:'#7fdc9f',x:'Fokus '+'⚡'.repeat(LV.fok)+'○'.repeat(4-LV.fok)+(LV.shield?' 🛡':'')},{n:esc(opn.name),rest:rr[oo],legs:st.legs[oo],avg:avg(oo),last:st.last[oo]??'–',on:turn0===oo,col:'#ff8a8a'}]})};
-  let turn0=0;
+    B3.sb({mid:midT||`⚡ LIVE-DUELL · LEG ${leg}`,need:cfg.need,co,p:[{n:esc(me.name),rest:rr[seat],legs:st.legs[seat],avg:avg(seat),last:st.last[seat]??'–',on:turn0===seat,col:'#7fdc9f',x:'Fokus '+'⚡'.repeat(LV.fok)+'○'.repeat(4-LV.fok)+(LV.shield?' 🛡':'')},{n:esc(opn.name),rest:rr[oo],legs:st.legs[oo],avg:avg(oo),last:st.last[oo]??'–',on:turn0===oo,col:'#ff8a8a'}]})};
+  let turn0=0,midT=null;
   LV.hand.fx=d=>{const a=LVAB[d.k];if(!a)return;if(LV.shield){LV.shield=false;lvSend('blocked',{k:d.k});B3.banner(`🛡 Geblockt: ${a.n}!`,'#7dffb0');snd('checkout');hud();return}LV.inc.push(d);B3.banner(`⚠ ${esc(opn.name)} setzt ${a.i} ${a.n} ein!`,'#ff8a8a');try{navigator.vibrate&&navigator.vibrate([40,30,40])}catch(e){}};
   LV.hand.blocked=d=>{B3.banner(`🛡 ${esc(opn.name)} hat ${LVAB[d.k]?LVAB[d.k].n:'deinen Angriff'} geblockt!`,'#ffcf3f')};
+  // Ausbullen: wer näher am Bull ist, beginnt das erste Leg; danach wechselt der Anwurf jedes Leg
+  let first=null;midT='⚡ AUSBULLEN';
+  while(first===null&&!forfeit){const dist=[null,null];
+    for(const t of [0,1]){turn0=t;hud();let pos;
+      B3.banner(t===seat?'🎯 Ausbullen: Triff möglichst nah ans Bull!':`${esc(opn.name)} wirft aufs Bull …`,'#ffcf3f');
+      if(t===seat){const sc=await B3.throw({zone:{k:'bull',n:25},zoom:2.2,sway:.0038*1.3,assist:.3,swaySpd:1,hint:'Schnippen! Wer näher am Bull ist, beginnt.'});pos=sc.pos;lvSend('dart',{pos,bo:1})}
+      else{const m=await lvNext(50000);if(!m||m.ev==='leave'){forfeit='op';break}pos=m.d.pos||[1,1];await B3.auto(pos,{exact:true,delay:350,color:[.3,.7,1]})}
+      dist[t]=Math.hypot(pos[0],pos[1]);B3.banner('');await sleepB(700)}
+    if(forfeit)break;
+    if(Math.abs(dist[0]-dist[1])<1e-5){B3.banner('Gleichstand, nochmal!','#ffcf3f');await B3.clear();await sleepB(900);continue}
+    first=dist[0]<dist[1]?0:1;const wn=first===seat?'Du beginnst':esc(opn.name)+' beginnt';
+    B3.banner(`🎯 ${first===seat?'Du gewinnst':esc(opn.name)+' gewinnt'} das Ausbullen! ${wn}.`,'#7dffb0');await sleepB(1800);B3.banner('');await B3.clear()}
+  midT=null;if(first!==null)cfg.first=first;
   while(st.legs[0]<cfg.need&&st.legs[1]<cfg.need&&!forfeit){
     st.rest=[cfg.start,cfg.start];let turn=(cfg.first+leg-1)%2,done=null;turn0=turn;hud();B3.banner(`Leg ${leg} · ${turn===seat?'Du beginnst':esc(opn.name)+' beginnt'}`,'#fff');await sleepB(1000);B3.banner('');
     while(done===null&&!forfeit){turn0=turn;hud();

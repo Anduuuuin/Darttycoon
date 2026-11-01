@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Bullseye Boss</title>
-<meta name="dt-version" content="3.4">
+<meta name="dt-version" content="3.5">
 <meta name="theme-color" content="#0e1511">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -312,7 +312,7 @@ textarea{font-size:12px;height:90px}
 .rp.thr{animation:plean var(--d) ease-in-out infinite;transform-origin:50% 95%}@keyframes plean{0%,50%{transform:none}60%{transform:translateY(-1%) rotate(-2deg)}66%{transform:rotate(3deg)}80%,100%{transform:none}}
 .rdart{position:absolute;left:70%;top:24%;width:5%;height:6%;background:#d9333f;box-shadow:0 2px 0 #c0c4c8;opacity:0;animation:pdart var(--d) linear infinite}
 @keyframes pdart{0%,64%{opacity:0;transform:none}65%{opacity:1;transform:none}79%{opacity:1;transform:translate(2600%,-1900%) scale(.5)}80%,100%{opacity:0;transform:translate(2600%,-1900%) scale(.5)}}
-</style>
+.enb{letter-spacing:1px;font-size:15px}.enb i{opacity:.22;font-style:normal}#enbar{background:var(--panel,#1d2a24);border:1px solid var(--line,#33463d);border-radius:10px}</style>
 </head>
 <body>
 <div id="app"></div>
@@ -941,7 +941,7 @@ function player(id){id=id||(S.run&&S.run.pid);if(S.run&&S.run.sub&&id==='sub')re
 function xpNeed(l){return 60+l*50}
 
 /* ================= Rendering: Titel ================= */
-function render(){if(S&&S.players)fixMg(S);render0();try{autoKick()}catch(e){}if(S&&S.players&&!UI.offOnce){UI.offOnce=1;setTimeout(offlineCheck,300)}try{coachCheck()}catch(e){}if(S&&!(S.run&&S.run.combat)&&!S.free)setTimeout(()=>{try{metaTick();storyCheck();mgQueueCheck()}catch(e){console.error(e)}},60)}
+function render(){if(S&&S.players)fixMg(S);render0();try{enMount()}catch(e){}try{autoKick()}catch(e){}if(S&&S.players&&!UI.offOnce){UI.offOnce=1;setTimeout(offlineCheck,300)}try{coachCheck()}catch(e){}if(S&&!(S.run&&S.run.combat)&&!S.free)setTimeout(()=>{try{metaTick();storyCheck();mgQueueCheck()}catch(e){console.error(e)}},60)}
 function render0(){
   const app=$('#app');
   if(!S){const c=document.getElementById('coach');if(c)c.remove();return renderTitle(app)}
@@ -1073,7 +1073,7 @@ function hubVerein(){
   </div>
   <button class="btn gold block" id="ach">🏅 Erfolge (${Object.keys(S.ach).length}/${ACH.length})</button>
   <div class="panel"><div class="row between"><h2>🏆 Pokalschrank</h2><span class="tiny mut">${S.trophies.length} Titel</span></div><div class="trophies" style="margin-top:8px">${tro}</div></div>
-  <div class="row"><button class="btn gray sm" id="help" style="flex:1">❔ Anleitung</button><button class="btn gray sm" id="exp" style="flex:1">💾 Sichern</button><button class="btn gray sm" id="mute">${S.mute?'🔇':'🔊'}</button></div>
+  <div class="row"><button class="btn gray sm" id="help" style="flex:1">❔ Anleitung</button><button class="btn gray sm" id="exp" style="flex:1">💾 Sichern</button>${UI.appMode?'<button class="btn gray sm" id="vipb">🔑</button>':''}<button class="btn gray sm" id="mute">${S.mute?'🔇':'🔊'}</button></div>
   <div class="cloud" style="text-align:center">${cloudOn?'☁️ Wird automatisch in deinem Konto gespeichert':'Gespeichert in diesem Browser'}</div>`;
 }
 function hubKader(){
@@ -3086,7 +3086,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='3.4';
+const GAME_VERSION='3.5';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
@@ -4376,6 +4376,56 @@ function roomWalkers(id){return '';const P0=ROOM_WALK[id]||[[30,75,50,82]];const
   return `<div class="rwalk">${P0.slice(0,Math.max(1,n)).map((p,i)=>{const L=NPC(i+3+(id.length));if(i%2){L.g='f';L.bald=false;L.beard=false}const d=7+i*2.5;
     return `<div class="rw" style="--x1:${p[0]}%;--y1:${p[1]}%;--x2:${p[2]}%;--y2:${p[3]}%;animation-duration:${d}s;animation-delay:${-i*1.7}s"><img class="sp" src="${personSprite(L)}"></div>`}).join('')}</div>`}
 
+/* ================= Energie, Werbung, VIP (nur App-Modus) ================= */
+const EN={max:6,regen:20*60000,adMax:6,vip:'3c8a7e92f6c8ffe4cdc9102c47313886d6bd5b548a19c74e2f63bb0802e3589f',salt:'bullseye-boss-v1|',
+  appId:'ca-app-pub-3940256099942544~3347511713',unit:'ca-app-pub-3940256099942544/5224354917'};
+let ENBYP=false;
+try{const q=new URLSearchParams(location.search);if(q.get('app')==='1'||q.get('energy')==='1')localStorage.setItem('bb_app','1');if(q.get('energy')==='0')localStorage.removeItem('bb_app');UI.appMode=!!(localStorage.getItem('bb_app')==='1'||window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform())}catch(e){UI.appMode=false}
+function enOn(){return !!(S&&S.players&&UI.appMode&&!S.vip)}
+function enInit(){if(!S.en)S.en={v:EN.max,t:Date.now(),ads:{d:'',n:0},boost:0};return S.en}
+function enTick(){const E=enInit(),now=Date.now();if(E.v>=EN.max){E.v=EN.max;E.t=now;return E.v}
+  const g=Math.floor((now-E.t)/EN.regen);if(g>0){E.v=Math.min(EN.max,E.v+g);E.t=E.v>=EN.max?now:E.t+g*EN.regen}return E.v}
+function enLeft(){const E=enInit();return E.v>=EN.max?0:Math.max(0,EN.regen-(Date.now()-E.t))}
+const mmss=ms=>{const t=Math.ceil(ms/1000);return Math.floor(t/60)+':'+String(t%60).padStart(2,'0')};
+function adsToday(){const E=enInit(),d=today();if(E.ads.d!==d)E.ads={d,n:0};return E.ads.n}
+function enGate(cost,cb){if(!enOn()||ENBYP)return cb();const v=enTick();
+  if(v>=cost){S.en.v-=cost;save();enMount();return cb()}enNeed(cost)}
+function enHTML(){const v=enTick(),E=S.en,l=enLeft();
+  return `<span class="enb">${'⚡'.repeat(v)}${'<i>⚡</i>'.repeat(EN.max-v)}</span><span class="tiny mut">${v}/${EN.max}${l?' · +1 in '+mmss(l):' · voll'}</span>${E.boost>0?`<span class="chip" style="margin-left:4px">🔥 ${E.boost} Spiele +30%</span>`:''}<button class="btn sm gold" id="enmore" style="margin-left:auto;padding:3px 9px">📺 +</button>`}
+function enMount(){const o=document.getElementById('enbar');if(o)o.remove();if(!enOn()||S.run||S.free)return;const top=document.querySelector('#app .top');if(!top)return;
+  top.insertAdjacentHTML('afterend',`<div id="enbar" class="row" style="gap:6px;align-items:center;padding:6px 10px;margin:4px 0">${enHTML()}</div>`)}
+setInterval(()=>{const b=document.getElementById('enbar');if(b&&enOn())b.innerHTML=enHTML()},1000);
+document.addEventListener('click',e=>{const t=e.target;if(t.closest&&t.closest('#enmore'))enNeed(0);if(t.closest&&t.closest('#vipb'))vipDialog()});
+function enNeed(cost){const v=enTick(),n=adsToday(),left=EN.adMax-n,l=enLeft();
+  const btn=(id,tx)=>`<button class="btn block" id="${id}" ${left<=0?'disabled':''} style="margin-top:6px">📺 ${tx}</button>`;
+  modal(`<h3>${cost?'⚡ Zu wenig Energie':'⚡ Energie &amp; Boni'}</h3><div class="small">${cost?`Das braucht <b>${cost} ⚡</b>, du hast <b>${v}</b>. `:`Du hast <b>${v}/${EN.max} ⚡</b>. `}${l?`Nächste ⚡ in <b>${mmss(l)}</b>.`:'Energie ist voll.'} Verein bauen, Kader, Shop und Training kosten nie Energie.</div>
+  ${btn('en_e','Video ansehen: +3 ⚡')}${btn('en_b',`Video: nächste 5 Spiele +30% Preisgeld &amp; XP${S.en.boost?' (jetzt '+S.en.boost+')':''}`)}${btn('en_d','Video: 1 Dart-Pack')}${btn('en_s','Video: 1 Sticker-Tüte')}
+  <div class="tiny mut" style="margin-top:6px;text-align:center">Videos heute: ${n}/${EN.adMax}</div><button class="btn gray block" style="margin-top:6px" onclick="closeModal()">Später</button>`);
+  const go=(id,fn)=>{const b=$('#'+id);if(b)b.onclick=async()=>{b.disabled=true;const ok=await adShow();if(!ok){toast('Werbung nicht verfügbar. Versuch es gleich nochmal.');b.disabled=false;return}const E=enInit();adsToday();E.ads.n++;fn();save();snd('coin');closeModal();render()}};
+  go('en_e',()=>{enTick();S.en.v=Math.min(EN.max,S.en.v+3);toast('⚡ +3 Energie')});
+  go('en_b',()=>{S.en.boost=Math.min(10,(S.en.boost||0)+5);toast(`🔥 Bonus für ${S.en.boost} Spiele`)});
+  go('en_d',()=>{S.packs.basis=(S.packs.basis||0)+1;toast('🎁 Dart-Pack im Shop')});
+  go('en_s',()=>{const Pk=STK_PACKS.tuete,got=[stkRoll(Pk.odds),stkRoll(Pk.odds)].map(id=>stkGive(id,true));setTimeout(()=>toast('🏷 '+got.map(x=>STK[x.id].n).join(' + ')),300)})}
+function adShow(){return new Promise(res=>{
+  const A=window.AndroidAds;if(A&&A.showRewarded){window.__adDone=ok=>{window.__adDone=null;res(!!ok)};try{A.showRewarded()}catch(e){res(false)}return}
+  const AM=window.Capacitor&&Capacitor.Plugins&&Capacitor.Plugins.AdMob;
+  if(AM){let got=false,h;const fin=ok=>{try{h&&h.remove&&h.remove()}catch(e){}res(ok)};
+    (async()=>{try{await AM.initialize({});h=await AM.addListener('onRewardedVideoAdReward',()=>{got=true});await AM.addListener('onRewardedVideoAdDismissed',()=>fin(got));
+      await AM.prepareRewardVideoAd({adId:EN.unit,isTesting:EN.unit.indexOf('3940256099942544')>0});await AM.showRewardVideoAd();setTimeout(()=>{if(got)fin(true)},800)}catch(e){fin(false)}})();return}
+  // Browser-Test: simulierte Werbung
+  const m=document.createElement('div');m.style.cssText='position:fixed;inset:0;z-index:99999;background:#000d;display:flex;align-items:center;justify-content:center;color:#fff;font:700 18px system-ui;text-align:center';let t=3;m.innerHTML='📺 Test-Werbung<br><span id="adt">3</span>';document.body.appendChild(m);
+  const iv=setInterval(()=>{t--;const e=document.getElementById('adt');if(e)e.textContent=t;if(t<=0){clearInterval(iv);m.remove();res(true)}},1000)})}
+async function sha256(t){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+function vipDialog(){modal(`<h3>🔑 Familien-Code</h3><div class="small mut">Mit dem Code gibt es unbegrenzte Energie und keine Werbung.${S.vip?' <b style="color:var(--gold)">👑 VIP ist aktiv.</b>':''}</div><input id="vipc" placeholder="Code" autocapitalize="characters" style="width:100%;margin:8px 0;padding:10px;border-radius:8px"><button class="btn gold block" id="vipok">Einlösen</button><button class="btn gray block" style="margin-top:6px" onclick="closeModal()">Schließen</button>`);
+  $('#vipok').onclick=async()=>{const c=($('#vipc').value||'').trim().toUpperCase();if(await sha256(EN.salt+c)===EN.vip){S.vip=true;save();closeModal();toast('👑 VIP freigeschaltet!');render()}else toast('Falscher Code')}}
+function enBoostMul(){return enOn()&&S.en&&S.en.boost>0?1.3:1}
+const _sRun=startRun;startRun=function(t,p){if(!enOn()||ENBYP)return _sRun(t,p);return enGate(2,()=>_sRun(t,p))};
+const _sDaily=startDaily;startDaily=function(){ENBYP=true;try{return _sDaily()}finally{ENBYP=false}};
+const _sCup=startCup;startCup=function(p){return enGate(2,()=>_sCup(p))};
+const _sQua=startQuali;startQuali=function(p){return enGate(1,()=>_sQua(p))};
+const _sLg=startLeague;startLeague=function(l){return enGate(1,()=>_sLg(l))};
+const _pkb=pokalBegin;pokalBegin=function(l){return enGate(1,()=>_pkb(l))};
+
 /* ================= Match ================= */
 function makeOpp(tier,kind,step){
   let o;
@@ -4686,7 +4736,8 @@ function runEnd(champ){
   setTimeout(evoCheck,1600);
   const rep=Math.round((r.won*Math.ceil(T.repWin/4)+(champ?T.repWin:0))*.55);
   const fans=Math.round(T.fans*(champ?1:r.won/(r.steps*1.5))*.5);
-  const xp=Math.round((r.won*12*(r.tier+1)+(champ?40*(r.tier+1):0))*(1+.1*pLvl()));
+  let xp=Math.round((r.won*12*(r.tier+1)+(champ?40*(r.tier+1):0))*(1+.1*pLvl()));
+  {const bm=enBoostMul();if(bm>1){r.gold=Math.round(r.gold*bm);S.en.boost=Math.max(0,S.en.boost-Math.max(1,r.matches||1))}xp=Math.round(xp*bm)}
   S.money+=r.gold;S.rep+=rep;S.fans+=fans;p.xp+=xp;S.stats.runs++;
   const prizePack=champ?['basis','basis','profi','profi','elite'][Math.min(4,lvOf(r.tier))]:null;if(prizePack)S.packs[prizePack]=(S.packs[prizePack]||0)+1;
   if(champ){S.trophies.push({tier:r.tier,n:T.n,w:S.week,by:p.name});S.stats.wins++;{const k=r.lastMode==='board'?'bmChamp':'cdChamp';S.stats[k]=(S.stats[k]||0)+1}log(`🏆 ${p.name} gewinnt ${T.bei==='beim'?'das':'die'} ${T.n}!`)}

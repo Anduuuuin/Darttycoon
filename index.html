@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Dart Tycoon</title>
-<meta name="dt-version" content="3.0">
+<meta name="dt-version" content="3.0.1">
 <meta name="theme-color" content="#0e1511">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -290,7 +290,7 @@ textarea{font-size:12px;height:90px}
 <script>
 "use strict";
 /* ================= Helpers ================= */
-const SAVE_KEY='dartTycoon_v2';try{localStorage.removeItem('dartTycoon_v1')}catch(e){}
+const SAVE_KEY='dartTycoon_v3';try{localStorage.removeItem('dartTycoon_v1');localStorage.removeItem('dartTycoon_v2');localStorage.removeItem('dartTycoon_seen')}catch(e){}
 const R=Math.random;
 const rnd=(a,b)=>a+Math.floor(R()*(b-a+1));
 const pick=a=>a[Math.floor(R()*a.length)];
@@ -790,7 +790,7 @@ function makePlayer(name,cls,lvl=1){
 }
 function newGame(club,pname,cls){
   const me=makePlayer(pname||'Du',cls);me.salary=0;me.look.t='#1f9d55';me.look.w='#d9333f';me.isMe=true;
-  S={v:1,sv:2,club:club||'Mein Dartverein',week:1,money:250,rep:0,fans:0,members:6,b:{boards:1,bar:0,training:0,sponsor:0,fanshop:0},
+  S={v:1,sv:3,club:club||'Mein Dartverein',week:1,money:250,rep:0,fans:0,members:6,b:{boards:1,bar:0,training:0,sponsor:0,fanshop:0},
      players:[me],deco:[],market:[],trophies:[],played:false,inv:[],packs:{basis:1,profi:0,elite:0},ach:{},log:['Willkommen im Verein! Starte mit dem Kneipenturnier.'],run:null,stats:{runs:0,wins:0,legs:0,best:0,tons:0,s180:0,hico:0,wash:0,comeback:0,clutch:0,nightWins:0,promo:0,packs:0,legend:0},ts:Date.now()};
   S.home=UI.home||null;applyHome(S);
   fixRival(S);rollMarket();initLeague(0,1);initPokal();fixTycoon(S);fixPrestige(S);fixTraits(S);
@@ -823,7 +823,7 @@ async function cloudSave(json){
   cloudBusy=false;
   if(cloudPending){const j=cloudPending;cloudPending=null;cloudSave(j)}
 }
-function loadLocal(){try{const j=localStorage.getItem(SAVE_KEY);if(j){const st=JSON.parse(j);if(st&&st.sv>=2)return st}}catch(e){}return null}
+function loadLocal(){try{const j=localStorage.getItem(SAVE_KEY);if(j){const st=JSON.parse(j);if(st&&st.sv>=3)return st}}catch(e){}return null}
 function fixLoaded(st){
   if(!st)return st;applyHome(st);
   if(st.run&&st.run.combat){st.run.combat.busy=false}
@@ -847,7 +847,7 @@ function fixLoaded(st){
     DBREF=ref;cloudOn=true;
     if(snap.exists){
       const d=snap.data();
-      if(d&&d.json&&d.json.includes('"sv":2')&&(!S||(d.ts||0)>(S.ts||0)+2000)){
+      if(d&&d.json&&d.json.includes('"sv":3')&&(!S||(d.ts||0)>(S.ts||0)+2000)){
         const busy=S&&S.run&&S.run.combat&&S.run.combat.busy;
         if(!busy){S=fixLoaded(JSON.parse(d.json));try{localStorage.setItem(SAVE_KEY,d.json)}catch(e){}render();toast('☁️ Spielstand geladen');return}
       }
@@ -942,7 +942,7 @@ function newGameDialog0(){
 }
 function importDialog(){
   modal(`<h3>Spielstand-Code laden</h3><textarea id="code" placeholder="Code hier einfügen"></textarea><button class="btn block" id="ok">Laden</button><button class="btn gray" onclick="closeModal()">Abbrechen</button>`);
-  $('#ok').onclick=()=>{try{const st=JSON.parse(decodeURIComponent(escape(atob($('#code').value.trim()))));if(!st||!st.players)throw 0;if(!(st.sv>=2)){toast('Alter Spielstand: nach dem großen Update nicht mehr kompatibel');return}S=fixLoaded(st);save();closeModal();render();toast('Spielstand geladen')}catch(e){toast('Code ungültig')}};
+  $('#ok').onclick=()=>{try{const st=JSON.parse(decodeURIComponent(escape(atob($('#code').value.trim()))));if(!st||!st.players)throw 0;if(!(st.sv>=3)){toast('Alter Spielstand: nach dem großen Update nicht mehr kompatibel');return}S=fixLoaded(st);save();closeModal();render();toast('Spielstand geladen')}catch(e){toast('Code ungültig')}};
 }
 function exportDialog(){
   const code=btoa(unescape(encodeURIComponent(JSON.stringify(S))));
@@ -3021,7 +3021,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='3.0';
+const GAME_VERSION='3.0.1';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};

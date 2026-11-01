@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Dart Tycoon</title>
-<meta name="dt-version" content="2.1">
+<meta name="dt-version" content="2.2">
 <meta name="theme-color" content="#0e1511">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -987,9 +987,10 @@ function renderHub(app){
   else if(t==='jobs')body=hubJobs();
   else if(t==='verw')body=hubVerw();
   else if(t==='scorer')body=hubScorer();
+  else if(t==='online')body=hubOnline();
   else{UI.tab='welt';body=hubWelt()}
   const tabs=[['welt','🏙','Stadt'],['heim','🏠','Heim'],['r_buero','📋','Büro'],['shop','🛍','Shop'],['turnier','🏆','Turniere'],['woche','📅','Woche']];
-  const on=k=>UI.tab===k||(k==='welt'&&(UI.tab==='halle'||UI.tab==='pl'))||(k==='turnier'&&UI.tab==='album')||(k==='r_buero'&&['liga','kader','verein','ruhm','jobs','verw'].includes(UI.tab))||(k==='heim'&&((UI.tab.startsWith('r_')&&UI.tab!=='r_buero')||UI.tab==='scorer'));
+  const on=k=>UI.tab===k||(k==='welt'&&(UI.tab==='halle'||UI.tab==='pl'))||(k==='turnier'&&(UI.tab==='album'||UI.tab==='online'))||(k==='r_buero'&&['liga','kader','verein','ruhm','jobs','verw'].includes(UI.tab))||(k==='heim'&&((UI.tab.startsWith('r_')&&UI.tab!=='r_buero')||UI.tab==='scorer'));
   app.innerHTML=topBar()+`<div class="content">${body}</div><div class="nav">${tabs.map(t=>`<button class="${on(t[0])?'on':''}" data-tab="${t[0]}"><span>${t[1]}</span>${t[2]}</button>`).join('')}</div>`;
   app.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{snd('click');UI.tab=b.dataset.tab;render();window.scrollTo(0,0)});
   bindHub(app);bindWorld(app);
@@ -1053,6 +1054,7 @@ function hubWoche0(){
   <div class="panel small mut">Bilanz: ${S.stats.runs} Turniere · ${S.stats.wins} Titel · ${S.stats.legs} Legs gewonnen</div>`;
 }
 function bindHub(app){
+  bindOnline(app);
   {const q=(id,f)=>{const e=app.querySelector(id);if(e)e.onclick=f};q('#scstart',()=>{if(S.realCur){UI.tab='scorer';render()}else scorerSetup()});q('#rtrain',()=>realTrainDialog());
    if(S.realCur){const M=S.realCur;app.querySelectorAll('[data-sk]').forEach(b=>b.onclick=()=>{const k=b.dataset.sk;if(k==='del')M.inp=M.inp.slice(0,-1);else if(k==='ok')return scSubmit(+(M.inp||0));else if(M.inp.length<3)M.inp+=k;snd('click');render()});
     app.querySelectorAll('[data-sq]').forEach(b=>b.onclick=()=>scSubmit(+b.dataset.sq));q('#scundo',scUndo);q('#scquit',()=>modal(`<h3>Match abbrechen?</h3><div class="small mut">Das laufende Match wird nicht gewertet.</div><button class="btn red" id="scq2">Abbrechen</button><button class="btn gray" onclick="closeModal()">Weiterspielen</button>`)||($('#scq2').onclick=()=>{S.realCur=null;closeModal();UI.tab='r_scheiben';save();render()}))}}
@@ -2993,7 +2995,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='2.1';
+const GAME_VERSION='2.2';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
@@ -3213,7 +3215,7 @@ function dailyMod(){let h=0;for(const ch of today())h=(h*31+ch.charCodeAt(0))>>>
 function dailyInfo(){S.daily=S.daily||{};if(S.daily.date!==today())S.daily={date:today(),done:false,best:S.daily.best||0,last:null};return S.daily}
 function startDaily(){const D=dailyInfo();if(D.done)return;const M=dailyMod(),pl=S.players.slice().sort((a,b)=>b.lvl-a.lvl)[0];const prev=S.played,pm=S.money;
   startRun(M.tier,pl.id);S.money=pm;S.played=prev;S.run.daily=1;S.run.fee=0;addRelic(M.tal);D.done=true;save();render()}
-function dailyEnd(r){const D=dailyInfo();D.last=r.won;D.best=Math.max(D.best||0,r.won);const packs=Math.floor(r.won/2);if(packs)S.packs.basis=(S.packs.basis||0)+packs;const g=r.won*60;S.money+=g;setTimeout(()=>toast(`📅 Tages-Turnier: ${r.won} Siege · +${g} €${packs?` · +${packs} Pack`:''}`),1500)}
+function dailyEnd(r){postScore('daily',r.won);const D=dailyInfo();D.last=r.won;D.best=Math.max(D.best||0,r.won);const packs=Math.floor(r.won/2);if(packs)S.packs.basis=(S.packs.basis||0)+packs;const g=r.won*60;S.money+=g;setTimeout(()=>toast(`📅 Tages-Turnier: ${r.won} Siege · +${g} €${packs?` · +${packs} Pack`:''}`),1500)}
 
 // Sammelalbum
 const ALBUM_IDS=()=>Object.keys(CARDS).filter(k=>CARDS[k].t!=='curse'&&!['zittern','fieber','unruhe','beer'].includes(k));
@@ -3257,7 +3259,7 @@ function metaPanels(){
   <div class="panel" style="border-color:${D.done?'var(--line)':'var(--gold)'}"><div class="row between"><div><h3>📅 Tages-Turnier</h3><div class="tiny mut" style="margin-top:4px">Heute: ${TIERS[M.tier].i} ${TIERS[M.tier].n} mit ${RELICS[M.tal].i} ${RELICS[M.tal].n}. Kostenlos, zählt nicht als Wochenturnier.${D.best?` · Rekord: ${D.best} Siege`:''}</div></div>${D.done?`<span class="chip">✔ ${D.last!=null?D.last+' Siege':'läuft'}</span>`:'<button class="btn sm gold" id="daily">Spielen</button>'}</div></div>
   <div class="panel"><div class="row between"><h3>🔥 Druckstufe ${A.cur}</h3><span class="tiny mut">max ${A.max}</span></div><div class="tiny mut" style="margin-top:4px">${A.cur?ASC_TXT.slice(1,A.cur+1).join(' · '):'Gewinne ein Turnier, um Druckstufe 1 freizuschalten.'}${A.cur?` · Belohnung: +${A.cur*15}% Preisgeld, +${A.cur*20}% Ranglistenpunkte`:''}</div>
    <div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap">${Array.from({length:A.max+1},(_,i)=>`<button class="btn sm ${i===A.cur?'gold':'gray'}" data-asc="${i}">${i}</button>`).join('')}</div></div>
-  <div class="row" style="gap:8px"><button class="btn gray" style="flex:1" data-go="album">📖 Album ${have}/${ids.length}</button><button class="btn gray" style="flex:1" id="pres">📈 Druck ${Math.round((pressure()-1)*100)}%</button></div>`}
+  <div class="row" style="gap:8px"><button class="btn" style="flex:1" data-go="online">🌐 Online</button><button class="btn gray" style="flex:1" data-go="album">📖 Album ${have}/${ids.length}</button><button class="btn gray" style="flex:1" id="pres">📈 Druck ${Math.round((pressure()-1)*100)}%</button></div>`}
 
 TIERS[10].pres=1;
 function hubTurnier(){return metaPanels()+hubTurnier0()}
@@ -3543,7 +3545,7 @@ function clickerStart(){const M=miniInfo();const paid=M.clicks<3;let score=0,com
     e.onpointerdown=ev=>{ev.stopPropagation();if(end)return;score++;combo++;snd('hit');$('#cscore').textContent=score;$('#ccombo').textContent=combo>=5?`🔥 Combo ×${combo}`:'';if(combo>0&&combo%10===0){score+=3;fx&&toast('Combo-Bonus +3!')}spawn()};ar.appendChild(e)};
   ar.onpointerdown=()=>{if(!end){combo=0;$('#ccombo').textContent='';snd('miss')}};spawn();
   tmr=setInterval(()=>{const left=Math.max(0,dur-(Date.now()-t0));const el=$('#ctime');if(el)el.textContent=Math.ceil(left/1000);if(!el){clearInterval(tmr);return}if(left<=0){clearInterval(tmr);end=true;
-    let g=0,f=0;if(paid){M.clicks++;g=score*4;f=Math.floor(score/3);S.money+=g;S.fans+=f}M.cbest=Math.max(M.cbest||0,score);save();snd('win');
+    let g=0,f=0;if(paid){M.clicks++;g=score*4;f=Math.floor(score/3);S.money+=g;S.fans+=f}M.cbest=Math.max(M.cbest||0,score);save();snd('win');if(score>0)postScore('click',score);
     modal(`<div style="text-align:center"><div style="font-size:44px">⚡</div><h3>${score} Treffer!</h3><div class="small mut">Rekord: ${M.cbest}</div>${paid?`<div class="panel small" style="margin-top:8px">💶 +${g} € · 📣 +${f} Fans</div>`:''}</div><button class="btn block" id="cagain" ${M.clicks>=3?'':''}>Nochmal</button><button class="btn gray" onclick="closeModal();render()">Fertig</button>`);$('#cagain').onclick=clickerStart}},100)}
 // 121-Checkout-Training
 function start121(){const pl=S.players.slice().sort((a,b)=>b.lvl-a.lvl)[0];UI.c121={lvl:1,rest:121,darts:[],vals:[],marks:[],mult:1,pid:(UI.c121&&UI.c121.pid)||pl.id};draw121()}
@@ -3576,7 +3578,7 @@ function throw121(n,mm){const G=UI.c121,tgt=120+G.lvl,m=n===0?0:mm,v=n===0?0:seg
   const dbl=(m===2);
   if(G.rest===0&&dbl){snd('checkout');const p=player(G.pid),xp=Math.round((10+G.lvl*4)*(G.hinted?.5:1));if(p){p.xp+=xp;checkLvl(p)}const M=miniInfo();M.best121=Math.max(M.best121||0,G.lvl);save();
     G.lvl++;G.rest=120+G.lvl;G.darts=[];G.vals=[];G.marks=[];G.mult=1;G.hinted=M.show121?1:0;return draw121(`✅ ${tgt} gecheckt! +${xp} XP. Weiter mit ${120+G.lvl}.`)}
-  if(G.rest<2||G.darts.length>=3){const p=coPath(tgt);const M=miniInfo();save();snd('lose');
+  if(G.rest<2||G.darts.length>=3){const p=coPath(tgt);const M=miniInfo();save();snd('lose');if(G.lvl>1&&!G.hinted)postScore('c121',120+G.lvl-1);
     return modal(`<div style="text-align:center"><div style="font-size:40px">${G.rest<2?'💥':'⏱'}</div><h3>${G.rest<2?'Bust!':'Keine Darts mehr'}</h3><div class="small mut">Bei ${tgt} war Schluss. Geschafft: ${G.lvl-1} ${G.lvl-1===1?'Runde':'Runden'} · Rekord: ${M.best121?120+M.best121:'–'}</div>${p?`<div class="panel small" style="margin-top:8px">💡 Ein Profi-Weg für ${tgt}:<br><b style="color:var(--gold)">${p.join(' · ')}</b></div>`:''}</div><button class="btn gold block" id="c121r">Nochmal ab 121</button><button class="btn gray" onclick="closeModal();render()">Fertig</button>`),$('#c121r').onclick=start121}
   draw121()}
 
@@ -3750,6 +3752,62 @@ function tourOk(T,p){if(T.tourOnly)return !!p.tour;if(T.qschool)return !p.tour&&
 Object.assign(COACH,{scorer:'📟 <b>Scorer</b>: Tippe die Punkte deiner Aufnahme ein und drück OK, oder nimm die Schnellknöpfe. Oben steht der Checkout-Weg. Bei einem Checkout fragt das Spiel nach der Anzahl Darts. Echte 180er und High-Finishes geben Belohnungen für deinen Spieler.'});
 Object.assign(COACH2,{r_scheiben:'🆕 Am Oche gibt es jetzt den <b>📟 Scorer für echte Spiele</b> und <b>📝 Echtes Training eintragen</b>. Was du am echten Board leistest, bringt dir im Spiel XP und Geld!'});
 
+
+/* ================= Online (Supabase) ================= */
+const SB_URL='https://nsrgsrbmmxvftkevwgdq.supabase.co',SB_KEY='sb_publishable_u-0FDsQzTWDNMUnDRaThgw_LRdZXpCC';
+async function sb(path,opt={}){const r=await fetch(SB_URL+'/rest/v1/'+path,{method:opt.method||'GET',headers:Object.assign({apikey:SB_KEY,'Content-Type':'application/json'},opt.prefer?{Prefer:opt.prefer}:{}),body:opt.body?JSON.stringify(opt.body):undefined});
+  if(!r.ok){let t='';try{t=(await r.json()).message}catch(e){}throw new Error(t||('HTTP '+r.status))}return r.status===201||r.status===204?null:r.json()}
+const onName=()=>(S.onName||meP().name||'Spieler').slice(0,24);
+const isoDay=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+function postScore(game,value){if(!S||S.onOff)return;sb('scores',{method:'POST',prefer:'return=minimal',body:{game,name:onName(),club:(S.club||'').slice(0,30),value:Math.round(value),day:isoDay()}}).then(()=>toast('🌐 Ergebnis in der Online-Bestenliste!')).catch(e=>console.warn('online',e.message))}
+const GAMES={daily:{n:'📅 Tages-Turnier',u:'Siege',today:1},c121:{n:'🎯 121-Checkout',u:'höchster Checkout'},click:{n:'⚡ Schnellwurf',u:'Treffer',today:1}};
+async function boardDialog(g){g=g||UI.og||'daily';UI.og=g;const G=GAMES[g];
+  modal(`<h3>🌐 Online-Bestenliste</h3><div class="seg">${Object.entries(GAMES).map(([k,x])=>`<button class="btn sm ${k===g?'':'gray'}" data-og="${k}">${x.n}</button>`).join('')}</div><div id="obody" class="small mut">Lade …</div><button class="btn gray block" onclick="closeModal()">Schließen</button>`);
+  document.querySelectorAll('[data-og]').forEach(b=>b.onclick=()=>boardDialog(b.dataset.og));
+  try{const rows=await sb(`scores?select=name,club,value,day&game=eq.${g}${G.today?`&day=eq.${isoDay()}`:''}&order=value.desc,created_at.asc&limit=200`);const best={};rows.forEach(r=>{const k=r.name+'|'+r.club;if(!best[k]||r.value>best[k].value)best[k]=r});const L=Object.values(best).sort((a,b)=>b.value-a.value).slice(0,30);
+    const el=$('#obody');if(!el)return;el.className='small';el.innerHTML=`<div class="tiny mut" style="margin:6px 0">${G.today?'Heute':'Alle Zeiten'} · ${G.u}</div>`+(L.length?L.map((r,i)=>`<div class="row between" style="padding:5px 0;border-bottom:1px solid var(--line);${r.name===onName()&&r.club===S.club?'color:var(--gold)':''}"><span>${i<3?['🥇','🥈','🥉'][i]:(i+1)+'.'} <b>${esc(r.name)}</b> <span class="tiny mut">${esc(r.club||'')}</span></span><b>${g==='c121'?r.value:r.value}</b></div>`).join(''):'<div class="mut">Noch keine Einträge. Sei der Erste!</div>')}
+  catch(e){const el=$('#obody');if(el)el.innerHTML=`⚠️ Keine Verbindung zur Online-Datenbank (${esc(e.message)}).`}}
+// Duelle
+const CODE_CH='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+function ghostOf(p){return{name:p.name,lvl:p.lvl,cls:p.cls,traits:p.traits||[],look:p.look,deck:p.deck.map(c=>c.id+(c.up?'+':'')),gear:gearOf(p),rank:rankOf(p),legend:p.legend||null}}
+async function duelCreate(pid){const p=player(pid);const code=[...Array(6)].map(()=>CODE_CH[Math.floor(Math.random()*CODE_CH.length)]).join('');
+  try{await sb('ghosts',{method:'POST',prefer:'return=minimal',body:{code,name:p.name.slice(0,24),club:(S.club||'').slice(0,30),data:ghostOf(p)}});S.myCodes=(S.myCodes||[]).concat({code,pid,name:p.name,lvl:p.lvl,t:Date.now()}).slice(-10);save();
+    const txt=`🎯 Fordere mich in Dart Tycoon heraus! Mein Duell-Code: ${code}\nhttps://anduuuuin.github.io/darttycoon/`;
+    modal(`<div style="text-align:center"><h3>⚔️ Dein Duell-Code</h3><div class="px" style="font-size:28px;letter-spacing:4px;color:var(--gold);margin:12px 0">${code}</div><div class="small mut">Schick ihn Freunden. Sie spielen gegen eine KI-Kopie von ${esc(p.name)} (Lv${p.lvl}) mit seinem Deck. Die Ergebnisse siehst du unter „Meine Duelle“.</div></div><button class="btn gold block" id="dshare">📤 Teilen</button><button class="btn gray" onclick="closeModal()">Fertig</button>`);
+    $('#dshare').onclick=async()=>{try{if(navigator.share)await navigator.share({text:txt});else{await navigator.clipboard.writeText(txt);toast('Kopiert!')}}catch(e){}}}
+  catch(e){toast('⚠️ Online nicht erreichbar: '+e.message)}}
+async function duelJoin(code){code=(code||'').toUpperCase().replace(/[^A-Z0-9]/g,'');if(code.length!==6)return toast('Der Code hat 6 Zeichen');
+  try{const r=await sb(`ghosts?select=*&code=eq.${code}`);if(!r.length)return toast('Code nicht gefunden');const G=r[0];if((S.myCodes||[]).some(c=>c.code===code))return toast('Gegen dich selbst geht nicht 😉');
+    chooseFree(`⚔️ Duell gegen ${esc(G.name)}`,`${esc(G.club||'')} · Lv${G.data.lvl} · ${CLASSES[G.data.cls]?CLASSES[G.data.cls].n:''} · 501 · Best of 5. Wer spielt für dich?`,pid=>duelStart(G,pid))}
+  catch(e){toast('⚠️ Online nicht erreichbar: '+e.message)}}
+const TRAIT_AB={nerv:'cold',dbl:'cold',tri:'comeback',crowd:'druck',party:'fieber',rhythm:'comeback',start:'druck'};
+function duelStart(G,pid){const p=player(pid),mx=startNerves(p),D=G.data;
+  S.run={mode:'duel',tier:Math.min(4,Math.floor(D.lvl/2)),pid:p.id,deck:p.deck.map(c=>({id:c.id,up:c.up,u:uid()})),gear:gearOf(p),relics:[],nerves:mx,maxN:mx,gold:0,step:3,steps:99,map:[],path:[],added:[],combat:null,won:0,matches:0,duel:{code:G.code,name:G.name}};
+  startCombat('e');const C=S.run.combat,o=C.opp;o.name=`${D.name} (${G.club||'Gast'})`;o.nick=D.name.split(' ')[0];o.look=Object.assign({},D.look);o.ab=[...new Set((D.traits||[]).map(t=>TRAIT_AB[t]).filter(Boolean))].slice(0,2);
+  o.min=22+D.lvl*9;o.max=Math.min(180,46+D.lvl*13+(D.gear.heat||0)*3);o.co=Math.min(.85,.24+D.lvl*.045+(D.gear.dbl||0)/100);o.finish=Math.min(40+D.lvl*10,130);C.label=`Duell gegen ${D.name}`;save();render()}
+function duelEnd(win){const r=S.run,C=r.combat,x=win?C.need:C.me.legs,y=win?C.opp.legs:C.need,D=r.duel;S.run=null;
+  if(win){S.money+=100;S.fans+=10}save();UI.tab='online';render();snd(win?'win':'lose');
+  sb('duels',{method:'POST',prefer:'return=minimal',body:{code:D.code,challenger:`${onName()}`.slice(0,24),won:win,result:`${x}:${y}`}}).catch(()=>{});
+  modal(`<div style="text-align:center"><div style="font-size:44px">${win?'🏆':'😤'}</div><h3>${win?'Duell gewonnen!':'Duell verloren'}</h3><div class="px" style="font-size:18px;margin:8px 0">${x} : ${y}</div><div class="small mut">gegen ${esc(D.name)}${win?' · +100 € · +10 Fans':''}</div></div><button class="btn block" onclick="closeModal()">OK</button>`)}
+async function myDuels(){const codes=(S.myCodes||[]).map(c=>c.code);const el=$('#mydu');if(!el)return;if(!codes.length){el.innerHTML='<div class="small mut">Noch keine Codes erstellt.</div>';return}
+  try{const rows=await sb(`duels?select=code,challenger,won,result,created_at&code=in.(${codes.join(',')})&order=created_at.desc&limit=30`);const e2=$('#mydu');if(!e2)return;
+    e2.innerHTML=(S.myCodes||[]).slice().reverse().map(c=>{const R0=rows.filter(r=>r.code===c.code);const lost=R0.filter(r=>r.won).length;return `<div class="panel"><div class="row between"><b class="small">${esc(c.name)} · <span class="px" style="color:var(--gold)">${c.code}</span></b><span class="tiny mut">${R0.length} Duelle · ${R0.length-lost} Siege für dich</span></div>${R0.slice(0,5).map(r=>`<div class="tiny" style="margin-top:4px">${r.won?'❌':'✅'} ${esc(r.challenger)} ${r.won?'hat dich geschlagen':'hat verloren'} (${esc(r.result||'')})</div>`).join('')}</div>`}).join('')}
+  catch(e){el.innerHTML=`<div class="small">⚠️ Keine Verbindung (${esc(e.message)})</div>`}}
+function hubOnline(){setTimeout(myDuels,50);
+  return `<div class="navrow"><button class="btn gray sm" data-go="turnier">◀ Turniere</button><b class="small">🌐 Online</b></div>
+  <div class="panel"><div class="row between"><div><h3>👤 Online-Name</h3><div class="tiny mut">So erscheinst du in Bestenlisten und Duellen.</div></div><button class="btn gray sm" id="oname">${esc(onName())} ✏️</button></div><div class="row between" style="margin-top:8px"><span class="tiny mut">Ergebnisse automatisch hochladen</span><button class="btn sm ${S.onOff?'gray':''}" id="otog">${S.onOff?'Aus':'An'}</button></div></div>
+  <button class="btn gold block" id="oboard">🏆 Online-Bestenlisten</button>
+  <div class="panel"><h2>⚔️ Freundes-Duelle</h2><div class="tiny mut" style="margin-top:4px">Erstelle einen Code für deinen Spieler und schick ihn Freunden. Oder gib den Code eines Freundes ein und spiel gegen seine KI-Kopie (501 · Best of 5). Siege bringen 100 € und Fans.</div>
+   <div class="row" style="gap:6px;margin-top:8px"><input type="text" id="dcode" placeholder="CODE" maxlength="6" style="flex:1;text-transform:uppercase;letter-spacing:3px;margin:0"><button class="btn" id="djoin">Antreten</button></div>
+   <div class="small" style="margin-top:10px"><b>Code für meinen Spieler erstellen:</b></div><div class="row" style="gap:6px;flex-wrap:wrap;margin-top:6px">${S.players.map(p=>`<button class="btn gray sm" data-dc="${p.id}">${esc(p.name)} Lv${p.lvl}</button>`).join('')}</div></div>
+  <div class="panel"><h2>📬 Meine Duelle</h2></div><div id="mydu"><div class="small mut">Lade …</div></div>`}
+function bindOnline(app){const q=(id,f)=>{const e=app.querySelector(id);if(e)e.onclick=f};
+  q('#oboard',()=>boardDialog());q('#otog',()=>{S.onOff=!S.onOff;save();render()});
+  q('#oname',()=>{modal(`<h3>👤 Online-Name</h3><input type="text" id="onin" value="${esc(onName())}" maxlength="24"><div class="tiny mut">Bitte keinen vollen echten Namen, ein Spitzname reicht.</div><button class="btn block" id="onok">Speichern</button>`);$('#onok').onclick=()=>{const v=$('#onin').value.trim();if(v){S.onName=v.slice(0,24);save()}closeModal();render()}});
+  q('#djoin',()=>duelJoin(($('#dcode')||{}).value));app.querySelectorAll('[data-dc]').forEach(b=>b.onclick=()=>duelCreate(b.dataset.dc))}
+
+Object.assign(COACH,{online:'🌐 <b>Online</b>: Deine Ergebnisse vom Tages-Turnier, 121-Checkout und Schnellwurf landen automatisch in der Bestenliste. Bei den <b>Freundes-Duellen</b> erstellst du einen Code für deinen Spieler. Freunde spielen dann gegen seine KI-Kopie, und du siehst, wer gewonnen hat.'});
+
 /* ================= Match ================= */
 function makeOpp(tier,kind,step){
   let o;
@@ -3771,6 +3829,7 @@ function roundName(r,kind){
 function fmtFor(r,kind){
   if(r.mode==='liga')return{start:301,need:2};
   if(r.mode==='pl')return{start:501,need:4};
+  if(r.mode==='duel')return{start:501,need:3};
   if(r.mode==='pokal')return r.pk&&r.pk.sd==='pending'?{start:501,need:1}:{start:501,need:3};
   const T=TIERS[r.tier];if(T.sets)return{start:501,need:3,sets:kind==='b'?3:2,din:false};return{start:T.st||301,need:kind==='b'?(T.bn||2):(T.ln||2),din:!!T.din};
 }
@@ -3780,7 +3839,7 @@ function startCombat(kind){
     me:{rest:f.start,legs:0,block:0,darts:3,hand:[],draw:[],discard:[],exhaust:[],pw:{heat:0,ice:0,walk:0,mental:0,armor:0,acc:0},accBuff:0,played:0,turnStart:301,sure:false},
     leg:1,starter:'me',turn:0,used:[],phase:'player',busy:false,firstTurn:true,stats:{s180:0,hi:0},start:f.start,need:f.need,sets:f.sets||0,din:!!f.din,aim:(r.mode!=='liga'&&kind==='b')?'all':null};
   if(UI.auto){UI.auto=false;if(UI.autoT){clearTimeout(UI.autoT);UI.autoT=null}}
-  if((kind==='b'&&!r.mode)||r.mode==='pl'){const pp=player(r.pid);setTimeout(()=>walkOn(pp,r.combat&&r.combat.opp.name),150)}
+  if((kind==='b'&&!r.mode)||r.mode==='pl'||r.mode==='duel'){const pp=player(r.pid);setTimeout(()=>walkOn(pp,r.combat&&r.combat.opp.name),150)}
   bossSetup(r.combat);applyFlagsCombat(r.combat);scaleOpp(r.combat);ascApplyCombat(r.combat);
   UI.sel=-1;
   if(r.combat.aim)setTimeout(()=>toast('🎯 Finale: Zielmodus! Jeden Wurf wirfst du selbst.'),400);
@@ -4016,6 +4075,7 @@ function matchWon(){
   if(S.run.mode==='liga')return leagueEnd(true);
   if(S.run.mode==='pokal')return pokalGameEnd(true);
   if(S.run.mode==='pl')return plGameEnd(true);
+  if(S.run.mode==='duel')return duelEnd(true);
   snd('win');
   const r=S.run,C=r.combat,T=TIERS[r.tier];
   r.won++;r.matches++;
@@ -4041,6 +4101,7 @@ function matchLost(){
   if(r.mode==='liga')return leagueEnd(false);
   if(r.mode==='pokal')return pokalGameEnd(false);
   if(r.mode==='pl')return plGameEnd(false);
+  if(r.mode==='duel')return duelEnd(false);
   snd('lose');r.combat=null;save();runEnd(false);
 }
 function runEnd(champ){

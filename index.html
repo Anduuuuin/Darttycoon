@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Bullseye Boss</title>
-<meta name="dt-version" content="4.4">
+<meta name="dt-version" content="4.5">
 <meta name="theme-color" content="#0e1511">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -323,7 +323,8 @@ textarea{font-size:12px;height:90px}
 .sbl{display:flex;gap:4px;margin:2px 0;min-height:11px}.sbp.r .sbl{justify-content:flex-end}.sbl i{width:11px;height:11px;border-radius:50%;border:2px solid var(--c);box-sizing:border-box}.sbl i.on{background:var(--c);box-shadow:0 0 6px var(--c)}
 .sbs{font-size:10px;color:#ffffffb0}.sbx{font-size:11px;margin-top:2px;color:#ffe27a}
 .sbc{position:absolute;left:50%;transform:translateX(-50%);bottom:-15px;background:#000d;border:1px solid #f4c430aa;border-radius:999px;padding:3px 12px;font-size:12px;font-weight:800;color:#ffe27a;white-space:nowrap}
-.lvab{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.lvab button{background:#1a2a20f2;border:2px solid #2fd673;border-radius:12px;color:#fff;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:1px;font-family:inherit;font-size:11px}.lvab button span{font-size:20px}.lvab button small{color:#ffe27a}.lvab button:disabled{opacity:.35;border-color:#444}.lvab button[data-lvab=""]{border-color:#f4c430;background:#3a2c08f2}
+.lvab{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.lvab button{background:#1a2a20f2;border:2px solid #2fd673;border-radius:12px;color:#fff;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:1px;font-family:inherit;font-size:11px}.lvab button span{font-size:20px}.lvab button small{color:#ffe27a}.lvab button:disabled{opacity:.35;border-color:#444}.lvab button[data-lvab=""]{border-color:#f4c430;background:#3a2c08f2}
+#b3d.fx-blind #b3fx{background:#fff;animation:blindfl 3.4s ease-out forwards}@keyframes blindfl{0%,30%{opacity:1}100%{opacity:.5}}
 </style>
 </head>
 <body>
@@ -3100,7 +3101,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='4.4';
+const GAME_VERSION='4.5';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
@@ -4005,7 +4006,7 @@ const marketCls=()=>BASE_CLS.concat(((S&&S.prestige&&S.prestige.cls)||[]).filter
 /* ================= 3D-Dartscheibe (WebGL, aus dem Prototyp) ================= */
 const B3=(()=>{
 const SECTORS=[20,1,18,4,13,6,10,15,2,17,3,19,7,16,8,11,14,9,12,5],BOARD_Y=1.73,DART_LEN=0.162;
-const P={reticleOffset:95,sway:.003,flickMin:35,boardFill:.96,scatter:.002,assist:.5,dartScale:1.45,flightTime:.34,
+const P={reticleOffset:95,sway:.003,flickMin:35,boardFill:.96,scatter:.0035,assist:.3,dartScale:1.45,flightTime:.34,
   flightColors:[[0.12,0.62,0.33],[0.85,0.2,0.25],[0.95,0.95,0.95]],oppColors:[[0.95,0.75,0.15],[0.95,0.75,0.15],[0.95,0.75,0.15]]};
 let root,cv,gl,ok=false,running=false,U,A,prog;
 const q=id=>root&&root.querySelector('#'+id);
@@ -4166,7 +4167,7 @@ function frame(now){if(!running)return;const dt=Math.min(.05,(now-last)/1000);la
   gl.blendFunc(gl.SRC_ALPHA,gl.ONE);glows.forEach(g=>{const a=.6*Math.pow(1-g.t/1.1,1.5)*(.75+.25*Math.sin(g.t*22));drawMesh(g.mesh,BM,g.color,{},3,a)});
   gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);
   if(opt.zone&&state==='aim'){const z=opt.zone;drawMesh(z.mesh,BM,[1,.85,.2],{},3,.18+.12*Math.sin(now/180))}
-  if(aim&&hand){const Pp=aimPoint(now),k=1/Math.max(1,cam.f*.75);const m=[k,0,0,0,0,k,0,0,0,0,1,0,Pp[0]+.0008*k,BOARD_Y+Pp[1]-.0008*k,0,1];drawMesh(reticleMesh,m,[0,0,0],{},3,.75);m[12]=Pp[0];m[13]=BOARD_Y+Pp[1];m[14]=.0003;drawMesh(reticleMesh,m,[1,.82,.1],{},3,1)}
+  if(aim&&hand&&!opt.noRet){const Pp=aimPoint(now),k=1/Math.max(1,cam.f*.75);const m=[k,0,0,0,0,k,0,0,0,0,1,0,Pp[0]+.0008*k,BOARD_Y+Pp[1]-.0008*k,0,1];drawMesh(reticleMesh,m,[0,0,0],{},3,.75);m[12]=Pp[0];m[13]=BOARD_Y+Pp[1];m[14]=.0003;drawMesh(reticleMesh,m,[1,.82,.1],{},3,1)}
   shQ.forEach(s=>drawMesh(quadMesh,s.m,[0,0,0],{tex:blobTex},1,s.alpha));
   particles.forEach(p=>{if(p.life<0)return;const a=p.alpha*(p.mode===3?cl((p.max-p.life)/.6,0,1):1-p.life/p.max);drawMesh(quadMesh,billboard(p.p,p.size),p.color,{tex:blobTex},p.mode,a)});
   gl.depthMask(true);gl.disable(gl.BLEND);requestAnimationFrame(frame)}
@@ -4250,8 +4251,8 @@ function needModeChoice(){return !UI.modeSkip&&B3.open()&&(B3.close(),true)}
 
 /* ================= Wurf-Werte des Spielers ================= */
 function plSkill(p,run){p=p||player();const g=gearOf(p)||{};let a=.36+(p.lvl||1)*.035+(g.acc||0)/100+presBonus()+stk('acc')+(hasT(p,'nerv')?.03:0);if(run&&S.run&&S.run.nerves<S.run.maxN*.3&&p.cls!=='eisblock')a-=.08;return clamp(a,.2,.95)}
-function swayFor(p,kind,mul){const a=plSkill(p,true),g=gearOf(p)||{};let s=.0018+(1-a)*.0075;if(kind==='d'||kind==='bull')s*=1.5*(1-((g.dbl||0)/100+stk('dbl'))*2);if(kind==='t')s*=1-((g.tri||0)/100+stk('tri'))*2;return s*(1-stk('sway'))*(mul||1)*(p&&p.cls==='handwerker'?.82:p&&p.cls==='zweiwelten'?.9:1)}
-const assistFor=p=>clamp(.28+plSkill(p)*.3+stk('assist')+(p&&p.cls==='zweiwelten'?.1:0),0,.9);
+function swayFor(p,kind,mul){const a=plSkill(p,true),g=gearOf(p)||{};let s=.0018+(1-a)*.0075;if(kind==='d'||kind==='bull')s*=1.5*(1-((g.dbl||0)/100+stk('dbl'))*2);if(kind==='t')s*=1-((g.tri||0)/100+stk('tri'))*2;return 1.6*s*(1-stk('sway'))*(mul||1)*(p&&p.cls==='handwerker'?.82:p&&p.cls==='zweiwelten'?.9:1)}
+const assistFor=p=>clamp(.04+plSkill(p)*.13+stk('assist')*.5+(p&&p.cls==='zweiwelten'?.04:0),0,.4);
 const parseT=l=>l==='Bull'?{k:'bull',n:25}:l==='25'?{k:'obull',n:25}:l[0]==='T'?{k:'t',n:+l.slice(1)}:l[0]==='D'?{k:'d',n:+l.slice(1)}:{k:'s',n:+l};
 const sleepB=ms=>new Promise(r=>setTimeout(r,ms));
 
@@ -4278,11 +4279,12 @@ const BCARDS={
  konter:{n:'Konter',i:'⛔',d:'Gegner trifft seine Doppel nächste Aufnahme deutlich schlechter',fx:v=>{v.oppDbl*=1.7}},
 };
 const BOPP={druck:{n:'Druck',i:'💢',d:'Du zitterst deutlich stärker und verlierst Nerven'},zittern:{n:'Störfeuer',i:'🫨',d:'Dein Fadenkreuz wackelt wild'},fieber:{n:'Lampenfieber',i:'😰',d:'Keine Zielhilfe, unruhige Hand'},cold:{n:'Eiskalt',i:'🧊',d:'Er trifft Doppel viel besser'},comeback:{n:'Aufholjagd',i:'🔥',d:'Er wirft viel konzentrierter'},
- spiegel:{n:'Seitenwechsel',i:'🪞',d:'Deine Steuerung ist links-rechts vertauscht!'},wind:{n:'Ventilator',i:'🌬',d:'Deine Darts werden zur Seite abgetrieben'},nebel:{n:'Nebelmaschine',i:'🌫',d:'Du siehst die Scheibe kaum'},kopfkino:{n:'Kopfkino',i:'🧠',d:'Keine Karte für dich diese Aufnahme'}};
+ spiegel:{n:'Seitenwechsel',i:'🪞',d:'Deine Steuerung ist links-rechts vertauscht!'},wind:{n:'Ventilator',i:'🌬',d:'Deine Darts werden zur Seite abgetrieben'},nebel:{n:'Nebelmaschine',i:'🌫',d:'Du siehst die Scheibe kaum und dein Fadenkreuz ist weg'},blind:{n:'Blitzlicht',i:'📸',d:'Ein greller Blitz blendet dich, dein Fadenkreuz ist weg'},kopfkino:{n:'Kopfkino',i:'🧠',d:'Keine Karte für dich diese Aufnahme'}};
 function cardPick(n){return new Promise(res=>{const keys=shuffle(Object.keys(BCARDS)).slice(0,n);const bar=B3.bar(`<div class="b3cards">${keys.map(k=>`<button data-bc="${k}"><span>${BCARDS[k].i}</span><b>${BCARDS[k].n}</b><i>${BCARDS[k].d}</i></button>`).join('')}</div><button class="b3skip" data-bc="">Ohne Karte werfen</button>`);
   bar.querySelectorAll('[data-bc]').forEach(b=>b.onclick=()=>{snd('click');B3.bar('');res(b.dataset.bc||null)})})}
 function oppPoint(rest,O){let tl='T20';if(rest<=170){const p=coPath(rest);if(p)tl=p[0]}else if(rest<=180&&rest>170)tl='T20';const t=parseT(tl);const pt=t.k==='obull'?[0,.011]:B3.pointFor(t.k==='obull'?'bull':t.k,t.n);return{pt,t}}
 async function bmMatch(cfg){const me={rest:cfg.start,legs:0,pts:0,darts:0,inn:!cfg.din},op={rest:cfg.start,legs:0,pts:0,darts:0,inn:!cfg.din},O=cfg.opp,p=cfg.player;let starter=0,leg=1,turn=0,ev={sig:1,dbl:1,cancel:false},myDebuff=null;
+  const tierMul=(cfg.nerves&&S.run)?1+lvOf(S.run.tier)*.07+(S.run.asc||0)*.04:1;
   B3.open();stkSync();const nCards=3+stk('card')+(p&&p.cls==='stratege'?1:0);
   const hud=(mr,orr)=>{mr=mr??me.rest;orr=orr??op.rest;B3.title(`<b>${esc(cfg.label)}</b> · Leg ${leg} · ${me.legs}:${op.legs}`);B3.info(`<span style="color:#7fdc9f">${esc(p.name)} <b>${mr}</b></span><br><span style="color:#ff8a8a">${esc(O.nick||O.name)} <b>${orr}</b></span>${cfg.nerves?`<br>❤️ ${S.run.nerves}/${S.run.maxN}`:''}`);const w=coPath(mr);const t=$('#b3title');if(t&&w&&turn===0)t.innerHTML+=` · 🎯 ${w.join(' · ')}`;const avg=o=>o.darts?(Math.round(o.pts/o.darts*30)/10).toFixed(1):'0.0';B3.sb({mid:`${esc(cfg.label).toUpperCase()} · LEG ${leg}`,need:cfg.need,co:w?w.join(' · '):'',p:[{n:esc(p.name),rest:mr,legs:me.legs,avg:avg(me),last:me.last??'–',on:turn===0,col:'#7fdc9f',x:cfg.nerves?`❤️ ${S.run.nerves}/${S.run.maxN}`:''},{n:esc(O.nick||O.name),rest:orr,legs:op.legs,avg:avg(op),last:op.last??'–',on:turn===1,col:'#ff8a8a'}]})};
   while(me.legs<cfg.need&&op.legs<cfg.need){const ld0=me.darts;me.rest=op.rest=cfg.start;me.inn=op.inn=!cfg.din;turn=starter;hud();B3.banner(`Leg ${leg} · ${turn===0?'Du beginnst':esc(O.nick)+' beginnt'}`,'#fff');if(leg===1&&O.ab&&O.ab.length){B3.fx('',`<div class="b3fxtag">${esc(O.nick)} kann: ${O.ab.map(a=>BOPP[a].i+' '+BOPP[a].n).join(' · ')}</div>`);setTimeout(()=>B3.fx(''),2600)}await sleepB(900);B3.banner('');
@@ -4296,17 +4298,18 @@ async function bmMatch(cfg){const me={rest:cfg.start,legs:0,pts:0,darts:0,inn:!c
           if(myDebuff==='zittern'){v.spd=1.6+.5*st;v.sway*=1.1+.1*st}
           if(myDebuff==='fieber'){v.assist=-1;v.sway*=1.1+.1*st}
           if(myDebuff==='spiegel')v.mirror=true;
+          if(myDebuff==='nebel'||myDebuff==='blind')v.noRet=true;
           if(myDebuff==='wind'){const dir=R()<.5?-1:1;v.drift=[dir*(.005+.004*st),-.002*st]}
           B3.fx(myDebuff,`<div class="b3fxtag">${D.i} ${D.n}: ${D.d}${myDebuff==='wind'?` ${v.drift[0]>0?'➡️':'⬅️'}`:''}</div>`);await sleepB(900)}
         const ck=myDebuff==='kopfkino'?(B3.banner('🧠 Kopfkino: keine Karte!','#ff8a8a'),await sleepB(900),null):await cardPick(nCards);B3.banner('');if(ck){BCARDS[ck].fx(v);B3.banner(`${BCARDS[ck].i} ${BCARDS[ck].n}`,'#7fdc9f');if(v.heal&&cfg.nerves)heal(v.heal)}
         const start=me.rest,sl=[null,null,null];let vis=0,bust=false,co=false;const dsl=[];B3.slots(sl);
-        for(let d=0;d<3;d++){let zone=null,zoom=0,mul=v.sway*(myDebuff==='zittern'?1:1);const r=me.rest-vis;
+        for(let d=0;d<3;d++){let zone=null,zoom=0,mul=v.sway*tierMul;const r=me.rest-vis;
           if(!me.inn){zone={k:'d',n:20};zoom=1.4}
           else if((r<=40&&r%2===0&&r>=2)||r===50){zone=r===50?{k:'bull',n:25}:{k:'d',n:r/2};zoom=2.5;B3.banner(`🎯 Checkout: ${r===50?'BULL':'D'+r/2}`,'#ffcf3f');mul*=1.5}
           else if(d===2&&dsl[0]==='T20'&&dsl[1]==='T20'&&start===170){zone={k:'bull',n:25};zoom=2.6;mul*=1.7;B3.banner('🐟 THE BIG FISH! 170 auf dem Bull','#ffcf3f')}
           else if(d===2&&dsl[0]==='T20'&&dsl[1]==='T20'){zone={k:'t',n:20};zoom=2.4;mul*=1.6;B3.banner('🔥 180-CHANCE!','#ff9a3c')}
           else if(v.tunnel){zone={k:'t',n:20};zoom=1.7}
-          const sc=await B3.throw({zone,zoom,sway:swayFor(p,zone?zone.k:'s',mul),assist:v.assist<0?0:clamp(assistFor(p)+v.assist,0,.95),swaySpd:v.spd,mirror:v.mirror,drift:v.drift,dblWide:v.dblWide,hint:zone?'Schnippen! · „🔍“ = ganze Scheibe':undefined});
+          const sc=await B3.throw({zone,zoom,sway:swayFor(p,zone?zone.k:'s',mul),assist:v.assist<0?0:clamp(assistFor(p)+v.assist,0,.95),swaySpd:v.spd,mirror:v.mirror,drift:v.drift,noRet:v.noRet,dblWide:v.dblWide,hint:zone?'Schnippen! · „🔍“ = ganze Scheibe':undefined});
           B3.banner('');me.darts++;stDart(sc,r);let val=sc.v;if(sc.kind==='t')val+=v.tripts;
           if(!me.inn){if(sc.kind==='d'||sc.kind==='bull')me.inn=true;else val=0}
           sl[d]=sc.label;dsl[d]=sc.label;B3.slots(sl);const nr=me.rest-vis-val;if(nr>=2)hud(nr);
@@ -4321,7 +4324,7 @@ async function bmMatch(cfg){const me={rest:cfg.start,legs:0,pts:0,darts:0,inn:!c
       else{// --- Gegner-Aufnahme
         let fx=null;const pool=(O.ab||[]);if(!ev.cancel&&pool.length&&R()<clamp(.25+(O.str-1)*.55,.25,.9))fx=pick(pool);
         if(fx){B3.banner(`${BOPP[fx].i} ${esc(O.nick)} spielt: ${BOPP[fx].n}`,'#ff8a8a');await sleepB(700)}
-        const sig=O.sig*ev.sig*(fx==='comeback'?(op.rest>me.rest+40?.72:.85):1),dsig=O.dsig*ev.dbl*(fx==='cold'?.6:1);if(['druck','zittern','fieber','spiegel','wind','nebel','kopfkino'].includes(fx))myDebuff=fx;
+        const sig=O.sig*ev.sig*(fx==='comeback'?(op.rest>me.rest+40?.72:.85):1),dsig=O.dsig*ev.dbl*(fx==='cold'?.6:1);if(['druck','zittern','fieber','spiegel','wind','nebel','blind','kopfkino'].includes(fx))myDebuff=fx;
         const start=op.rest,sl=[null,null,null];let vis=0,bust=false,co=false;B3.slots(sl);
         for(let d=0;d<3;d++){const r=op.rest-vis;let tgt;if(!op.inn)tgt={pt:B3.pointFor('d',20),t:{k:'d',n:20}};else tgt=oppPoint(r,O);const s=(tgt.t.k==='d'||tgt.t.k==='bull')?dsig:sig;
           const pt=[tgt.pt[0]+B3.gauss()*s/1000,tgt.pt[1]+B3.gauss()*s/1000];const sc=await B3.auto(pt,{delay:UI.speed>1?120:300});op.darts++;let val=sc.v;
@@ -4336,7 +4339,7 @@ async function bmMatch(cfg){const me={rest:cfg.start,legs:0,pts:0,darts:0,inn:!c
   B3.banner('');B3.close();return{win:me.legs>=cfg.need,legs:[me.legs,op.legs],st:{me:[me.pts,me.darts],op:[op.pts,op.darts]}}}
 const hasRel=k=>has(k);
 function oppSigOf(o){const avg=(o.min+o.max)/2;const sig=clamp(48-avg*.36,7,34);return{sig,dsig:sig*clamp(1.3-o.co*.75,.6,1.3)}}
-function oppFxPool(base,str){const all=['druck','zittern','fieber','spiegel','wind','nebel','kopfkino','cold','comeback'];const out=(base||[]).filter(a=>BOPP[a]);const n=clamp(Math.round((str-1)*5)+1,1,7);for(const k of shuffle(all)){if(out.length>=n)break;if(!out.includes(k))out.push(k)}return out}
+function oppFxPool(base,str){const all=['druck','zittern','fieber','spiegel','wind','nebel','blind','kopfkino','cold','comeback'];const out=(base||[]).filter(a=>BOPP[a]);const n=clamp(Math.round((str-1)*5)+1,1,7);for(const k of shuffle(all)){if(out.length>=n)break;if(!out.includes(k))out.push(k)}return out}
 async function bmCombat(C){const r=S.run,p=player(),o=C.opp,sg=oppSigOf(o);C.phase='board';C.busy=true;save();render();
   if(stk('nerv'))heal(stk('nerv'));
   const res=await bmMatch({label:C.label,start:C.start||501,need:C.sets?C.need+1:C.need,din:C.din,player:p,nerves:!r.mode||r.mode==='pl'||r.mode==='duel',opp:(()=>{const str=1+lvOf(r.tier||0)*.12+((r.asc||0)*.06)+(C.kind==='e'?.15:C.kind==='b'?.3:0)+(pressure()-1)*.5;return{name:o.name,nick:o.nick,look:o.look,str,ab:oppFxPool(o.ab,str),sig:sg.sig,dsig:sg.dsig}})()});
@@ -4479,7 +4482,7 @@ function lvOpen(code,cb){lvClose();LV.code=code;let told=false;const tell=ok=>{i
     else if(m.event==='broadcast'&&m.topic===LV_CH(code)){const p=m.payload||{},d=p.payload||{};if(d.id===LV.id)return;const ev=p.event;
       if(ev==='dart'||ev==='leave'){LV.q.push({ev,d});if(LV.wait){const w=LV.wait;LV.wait=null;w(LV.q.shift())}}else if(LV.hand[ev])LV.hand[ev](d)}};
   ws.onclose=()=>{LV.joined=false;tell(false);lvWake(null)};ws.onerror=()=>tell(false)}
-const LVAB={wackeln:{i:'🫨',n:'Wackeln',c:2},spiegel:{i:'🪞',n:'Spiegel',c:2},nebel:{i:'🌫',n:'Nebel',c:2},wind:{i:'🌬',n:'Wind',c:3},schild:{i:'🛡',n:'Schild',c:2}};
+const LVAB={wackeln:{i:'🫨',n:'Wackeln',c:2},spiegel:{i:'🪞',n:'Spiegel',c:2},nebel:{i:'🌫',n:'Nebel',c:2},wind:{i:'🌬',n:'Wind',c:3},blind:{i:'📸',n:'Blenden',c:3},schild:{i:'🛡',n:'Schild',c:2}};
 const lvCode=()=>{const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';let c='';for(let i=0;i<4;i++)c+=a[Math.floor(Math.random()*a.length)];return c};
 const lvMe=()=>({name:onName(),club:S.club});
 function lvMenu(){modal(`<h3>⚡ Live-Duell</h3><div class="small mut">Spiele in Echtzeit gegen einen Freund. Jeder wirft selbst an der 3D-Scheibe, ohne Karten und mit gleichen Bedingungen für beide. Das Ausbullen entscheidet, wer anfängt, danach wechselt der Anwurf jedes Leg. Du brauchst Internet, und ihr müsst beide gleichzeitig online sein.</div>
@@ -4522,7 +4525,7 @@ async function lvMatch(cfg){const seat=cfg.seat,oo=1-seat,me=cfg.me,opn=cfg.op||
   while(first===null&&!forfeit){const dist=[null,null];
     for(const t of [0,1]){turn0=t;hud();let pos;
       B3.banner(t===seat?'🎯 Ausbullen: Triff möglichst nah ans Bull!':`${esc(opn.name)} wirft aufs Bull …`,'#ffcf3f');
-      if(t===seat){const sc=await B3.throw({zone:{k:'bull',n:25},zoom:2.2,sway:.0038*1.3,assist:.3,swaySpd:1,hint:'Schnippen! Wer näher am Bull ist, beginnt.'});pos=sc.pos;lvSend('dart',{pos,bo:1})}
+      if(t===seat){const sc=await B3.throw({zone:{k:'bull',n:25},zoom:2.2,sway:.0065*1.3,assist:.1,swaySpd:1,hint:'Schnippen! Wer näher am Bull ist, beginnt.'});pos=sc.pos;lvSend('dart',{pos,bo:1})}
       else{const m=await lvNext(50000);if(!m||m.ev==='leave'){forfeit='op';break}pos=m.d.pos||[1,1];await B3.auto(pos,{exact:true,delay:350,color:[.3,.7,1]})}
       dist[t]=Math.hypot(pos[0],pos[1]);B3.banner('');await sleepB(700)}
     if(forfeit)break;
@@ -4536,10 +4539,10 @@ async function lvMatch(cfg){const seat=cfg.seat,oo=1-seat,me=cfg.me,opn=cfg.op||
       if(LV.q.some(m=>m.ev==='leave')){forfeit='op';break}
       const sl=[null,null,null],start=st.rest[turn];let vis=0,bust=false,co=false;B3.slots(sl);
       if(turn!==seat){B3.banner(`${esc(opn.name)} ist dran …`,'#bbb')}
-      let swayMul=1,spd=1,mir=false,drift=null;
+      let swayMul=1,spd=1,mir=false,drift=null,noRet=false;
       if(turn===seat){const inc=LV.inc.splice(0);
-        for(const e of inc){if(e.k==='wackeln'){swayMul*=1.9;spd=1.7}if(e.k==='spiegel')mir=true;if(e.k==='wind')drift=[(e.dir||1)*.011,-.004]}
-        if(inc.length){const e=inc[inc.length-1],a=LVAB[e.k];B3.fx({wackeln:'zittern',spiegel:'spiegel',nebel:'nebel',wind:'wind'}[e.k],`<div class="b3fxtag">${a.i} ${esc(opn.name)}: ${a.n}!</div>`);await sleepB(700)}
+        for(const e of inc){if(e.k==='wackeln'){swayMul*=1.9;spd=1.7}if(e.k==='spiegel')mir=true;if(e.k==='wind')drift=[(e.dir||1)*.011,-.004];if(e.k==='nebel'||e.k==='blind')noRet=true}
+        if(inc.length){const e=inc[inc.length-1],a=LVAB[e.k];B3.fx({wackeln:'zittern',spiegel:'spiegel',nebel:'nebel',wind:'wind',blind:'blind'}[e.k],`<div class="b3fxtag">${a.i} ${esc(opn.name)}: ${a.n}!</div>`);await sleepB(700)}
         if(LV.fok>=2){const can=k=>LV.fok>=LVAB[k].c&&!(k==='schild'&&LV.shield);
           B3.bar(`<div class="lvab">${Object.keys(LVAB).map(k=>`<button data-lvab="${k}" ${can(k)?'':'disabled'}><span>${LVAB[k].i}</span><b>${LVAB[k].n}</b><small>${k==='schild'&&LV.shield?'aktiv':LVAB[k].c+' ⚡'}</small></button>`).join('')}<button data-lvab="">▶ Werfen</button></div>`);
           const k=await new Promise(res=>{const bar=document.getElementById('b3bar');bar.onclick=e=>{const b=e.target.closest('[data-lvab]');if(b&&!b.disabled)res(b.dataset.lvab)};setTimeout(()=>res(''),15000)});B3.bar('');
@@ -4548,7 +4551,7 @@ async function lvMatch(cfg){const seat=cfg.seat,oo=1-seat,me=cfg.me,opn=cfg.op||
       for(let d=0;d<3;d++){let sc;
         if(turn===seat){const r=st.rest[seat]-vis;let zone=null,zoom=0,mul=1;
           if((r<=40&&r%2===0&&r>=2)||r===50){zone=r===50?{k:'bull',n:25}:{k:'d',n:r/2};zoom=2.5;B3.banner(`🎯 Checkout: ${r===50?'BULL':'D'+r/2}`,'#ffcf3f');mul=1.5}
-          sc=await B3.throw({zone,zoom,sway:.0038*mul*swayMul,assist:.3,swaySpd:spd,mirror:mir,drift,hint:zone?'Schnippen! · „🔍“ = ganze Scheibe':undefined});B3.banner('');
+          sc=await B3.throw({zone,zoom,sway:.0065*mul*swayMul,assist:.1,swaySpd:spd,mirror:mir,drift,noRet:noRet,hint:zone?'Schnippen! · „🔍“ = ganze Scheibe':undefined});B3.banner('');
           lvSend('dart',{pos:sc.pos,d});stDart(sc,r)}
         else{const m=await lvNext(50000);if(!m||m.ev==='leave'){forfeit='op';break}B3.banner('');sc=await B3.auto(m.d.pos,{exact:true,delay:350,color:[.3,.7,1]})}
         st.dn[turn]++;const nr=st.rest[turn]-vis-sc.v;sl[d]=sc.label;B3.slots(sl);

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Bullseye Boss</title>
-<meta name="dt-version" content="5.1">
+<meta name="dt-version" content="5.2">
 <meta name="theme-color" content="#0e1511">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -3107,7 +3107,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='5.1';
+const GAME_VERSION='5.2';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
@@ -4297,7 +4297,7 @@ async function bmMatch(cfg){const me={rest:cfg.start,legs:0,pts:0,darts:0,inn:!c
   const AIA={zittern:['Wackeln',2,'🫨'],spiegel:['Spiegel',2,'🪞'],nebel:['Nebel',2,'🌫'],wind:['Wind',3,'🌬'],blind:['Blenden',3,'📸']},SIGC={druck:2,fieber:2,kopfkino:3},PLK={wackeln:'zittern',spiegel:'spiegel',nebel:'nebel',wind:'wind',blind:'blind'};
   const tierMul=(cfg.nerves&&S.run)?1+lvOf(S.run.tier)*.07+(S.run.asc||0)*.04:1;
   B3.open();stkSync();const nCards=3+stk('card')+(p&&p.cls==='stratege'?1:0);
-  const hud=(mr,orr)=>{mr=mr??me.rest;orr=orr??op.rest;B3.title(`<b>${esc(cfg.label)}</b> · Leg ${leg} · ${me.legs}:${op.legs}`);B3.info(`<span style="color:#7fdc9f">${esc(p.name)} <b>${mr}</b></span><br><span style="color:#ff8a8a">${esc(O.nick||O.name)} <b>${orr}</b></span>${cfg.nerves?`<br>❤️ ${S.run.nerves}/${S.run.maxN}`:''}`);const w=coPath(mr);const t=$('#b3title');if(t&&w&&turn===0)t.innerHTML+=` · 🎯 ${w.join(' · ')}`;const avg=o=>o.darts?(Math.round(o.pts/o.darts*30)/10).toFixed(1):'0.0';B3.sb({mid:`${esc(cfg.label).toUpperCase()} · LEG ${leg}`,need:cfg.need,co:w?w.join(' · '):'',p:[{n:esc(p.name),rest:mr,legs:me.legs,avg:avg(me),last:me.last??'–',on:turn===0,col:'#7fdc9f',x:fkTxt(0)+(FK.sh[0]?' 🛡':'')+(curFx?' · '+curFx:'')+(cfg.nerves?` · ❤️ ${S.run.nerves}/${S.run.maxN}`:'')},{n:esc(O.nick||O.name),rest:orr,legs:op.legs,avg:avg(op),last:op.last??'–',on:turn===1,col:'#ff8a8a',x:fkTxt(1)}]})};
+  const hud=(mr,orr)=>{mr=mr??me.rest;orr=orr??op.rest;B3.title(`<b>${esc(cfg.label)}</b> · Leg ${leg} · ${me.legs}:${op.legs}`);B3.info(`<span style="color:#7fdc9f">${esc(p.name)} <b>${mr}</b></span><br><span style="color:#ff8a8a">${esc(O.nick||O.name)} <b>${orr}</b></span>${cfg.nerves?`<br>❤️ ${S.run.nerves}/${S.run.maxN}`:''}`);const w=coPath(mr);const t=$('#b3title');if(t&&w&&turn===0)t.innerHTML+=` · 🎯 ${w.join(' · ')}`;const avg=o=>o.darts?(Math.round(o.pts/o.darts*30)/10).toFixed(1):'0.0';B3.sb({mid:`${esc(cfg.label).toUpperCase()} · LEG ${leg}`,need:cfg.need,co:w?w.join(' · '):'',p:[{n:esc(p.name),rest:mr,legs:me.legs,avg:avg(me),last:me.last??'–',on:turn===0,col:'#7fdc9f',x:fkTxt(0)+(FK.sh[0]?' 🛡':'')+(curFx?' · '+curFx:'')+(cfg.nerves?` · ❤️ ${S.run.nerves}/${S.run.maxN}${S.run.nerves<=8?' ⚠':''}`:'')},{n:esc(O.nick||O.name),rest:orr,legs:op.legs,avg:avg(op),last:op.last??'–',on:turn===1,col:'#ff8a8a',x:fkTxt(1)}]})};
   const abilityBar=async()=>{const myF=FK.f[0],finP=op.rest<=50;if(myF<2)return;
     const why=k=>{const a=LVAB[k];if(myF<a.c)return `${a.c} ⚡ nötig`;if(k==='schild')return FK.sh[0]?'aktiv':'';if(FK.a[0]>=2)return 'Limit 2/Leg';if(finP)return 'Finish-Schutz';if(FK.last[0]===k)return 'Pause';return ''};
     B3.bar(`<div class="lvab">${Object.keys(LVAB).map(k=>{const w=why(k);return `<button data-lvab="${k}" ${w?'disabled':''}><span>${LVAB[k].i}</span><b>${LVAB[k].n}</b><small>${w||LVAB[k].c+' ⚡'}</small></button>`}).join('')}<button data-lvab="">▶ Weiter</button></div><div class="tiny mut" style="text-align:center;margin-top:4px">Pro Aufnahme eine Aktion · Angriffe ${FK.a[0]}/2 in diesem Leg</div>`);
@@ -4313,7 +4313,7 @@ async function bmMatch(cfg){const me={rest:cfg.start,legs:0,pts:0,darts:0,inn:!c
         const v={sway:1,assist:0,tripts:stk('tripts'),dblWide:false,tunnel:false,oppSig:1,oppDbl:1,cancel:false,heal:0};
         const st=O.str||1;v.mirror=false;v.drift=null;v.spd=1;
         if(myDebuff){const D=BOPP[myDebuff];B3.banner(`${D.i} ${esc(O.nick)}: ${D.n}!`,'#ff8a8a');buzz([60,40,60]);
-          if(myDebuff==='druck'){v.sway*=1.25+.3*st;if(cfg.nerves)S.run.nerves=Math.max(1,S.run.nerves-Math.round(1+st*1.5))}
+          if(myDebuff==='druck'){v.sway*=1.25+.3*st;if(cfg.nerves)S.run.nerves=Math.max(1,S.run.nerves-Math.max(1,Math.min(2,Math.round(st))))}
           if(myDebuff==='zittern'){v.spd=1.6+.5*st;v.sway*=1.1+.1*st}
           if(myDebuff==='fieber'){v.assist=-1;v.sway*=1.1+.1*st}
           if(myDebuff==='spiegel')v.mirror=true;
@@ -4323,7 +4323,7 @@ async function bmMatch(cfg){const me={rest:cfg.start,legs:0,pts:0,darts:0,inn:!c
         await abilityBar();
         const ck=myDebuff==='kopfkino'?(B3.banner('🧠 Kopfkino: keine Karte!','#ff8a8a'),await sleepB(900),null):await cardPick(nCards);B3.banner('');if(ck){BCARDS[ck].fx(v);B3.banner(`${BCARDS[ck].i} ${BCARDS[ck].n}`,'#7fdc9f');if(v.heal&&cfg.nerves)heal(v.heal)}
         const start=me.rest,sl=[null,null,null];let vis=0,bust=false,co=false;const dsl=[];B3.slots(sl);
-        for(let d=0;d<3;d++){let zone=null,zoom=0,mul=v.sway*tierMul;const r=me.rest-vis;
+        for(let d=0;d<3;d++){let zone=null,zoom=0,mul=v.sway*tierMul*((cfg.nerves&&S.run&&S.run.nerves<=0)?1.35:1);const r=me.rest-vis;
           if(!me.inn){zone={k:'d',n:20};zoom=1.4}
           else if((r<=40&&r%2===0&&r>=2)||r===50){zone=r===50?{k:'bull',n:25}:{k:'d',n:r/2};zoom=2.5;B3.banner(`🎯 Checkout: ${r===50?'BULL':'D'+r/2}`,'#ffcf3f');mul*=1.5}
           else if(d===2&&dsl[0]==='T20'&&dsl[1]==='T20'&&start===170){zone={k:'bull',n:25};zoom=2.6;mul*=1.7;B3.banner('🐟 THE BIG FISH! 170 auf dem Bull','#ffcf3f')}
@@ -4366,7 +4366,7 @@ async function bmMatch(cfg){const me={rest:cfg.start,legs:0,pts:0,darts:0,inn:!c
         ev={sig:1,dbl:1,cancel:false};await sleepB(900);B3.banner('');await B3.clear()}
       {const cur=turn===0?me:op,oth=turn===0?op:me;FK.f[turn]=Math.min(3,FK.f[turn]+1);if(cur.rest-oth.rest>150)FK.f[turn]=Math.min(3,FK.f[turn]+1)}
       turn=1-turn}
-    if(done==='me'){me.legs++;S.stats.legs++;stLeg(me.darts-ld0,cfg.start)}else{op.legs++;if(cfg.nerves){const pen=Math.max(2,Math.round((4+lvOf(S.run.tier))*2/(cfg.need||2)));S.run.nerves-=pen;if(hasRel('coach'))heal(6);if(p.cls==='veteran')heal(4);B3.banner(`Leg verloren · −${pen} ❤️`,'#ff8a8a');await sleepB(900);if(S.run.nerves<=0){S.run.nerves=0;break}}}
+    if(done==='me'){me.legs++;S.stats.legs++;stLeg(me.darts-ld0,cfg.start)}else{op.legs++;if(cfg.nerves){const pen=Math.min(4,Math.max(2,Math.round((4+lvOf(S.run.tier))*2/(cfg.need||2))));S.run.nerves-=pen;if(hasRel('coach'))heal(6);if(p.cls==='veteran')heal(4);B3.banner(`Leg verloren · −${pen} ❤️`,'#ff8a8a');await sleepB(900);if(S.run.nerves<=0){S.run.nerves=0;B3.banner('😰 Nerven am Ende: du zitterst stärker','#ff8a8a');await sleepB(900)}}}
     starter=1-starter;leg++;save()}
   B3.banner('');B3.close();return{win:me.legs>=cfg.need,legs:[me.legs,op.legs],st:{me:[me.pts,me.darts],op:[op.pts,op.darts]}}}
 const hasRel=k=>has(k);

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Bullseye Boss</title>
-<meta name="dt-version" content="4.9">
+<meta name="dt-version" content="5.0">
 <meta name="theme-color" content="#0e1511">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -983,7 +983,6 @@ function renderTitle(app){
       <button class="btn gray block" id="imp">⤵ Spielstand-Code laden</button>${pwaOK()&&!isStandalone()?'<button class="btn gold block" id="tinst">📲 Als App installieren</button>':''}
     </div>
     <div class="cloud">${cloudOn?'☁️ Speicherung in deinem Konto aktiv':'Spielstand wird in diesem Browser gespeichert'}</div>
-    <div class="tiny" style="text-align:center;margin-top:8px"><a href="https://anduuuuin.github.io/darttycoon/privacy.html" target="_blank" rel="noopener" style="color:var(--mut)">Datenschutz</a> · <a href="https://anduuuuin.github.io/darttycoon/impressum.html" target="_blank" rel="noopener" style="color:var(--mut)">Impressum</a></div>
   </div>`;
   titleCycle();
   if(local)$('#cont').onclick=()=>{S=fixLoaded(local);render()};
@@ -1063,6 +1062,7 @@ function renderHub(app){
   else if(t==='heim')body=hubHeim();
   else if(t.startsWith('r_')&&ROOMS[t.slice(2)])body=hubRoom(t.slice(2));
   else if(t==='verein')body=backBtn()+hubVerein();
+  else if(t==='einst')body=hubEinst();
   else if(t==='kader')body=backBtn()+hubKader();
   else if(t==='turnier')body=hubTurnier();
   else if(t==='liga'){const due=pokalDue();body=backBtn()+`<div class="seg"><button class="btn ${UI.lt!=='pokal'?'':'gray'} sm" data-lt="liga">📋 Liga</button><button class="btn ${UI.lt==='pokal'?'':'gray'} sm" data-lt="pokal">🏆 Pokal${due?' ❗':''}</button></div>`+(UI.lt==='pokal'?hubPokal():hubLiga())}
@@ -1079,7 +1079,7 @@ function renderHub(app){
   else if(t==='vliga')body=hubVliga();
   else{UI.tab='welt';body=hubWelt()}
   const tabs=[['welt','🏙','Stadt'],['heim','🏠','Heim'],['r_buero','📋','Büro'],['shop','🛍','Shop'],['turnier','🏆','Turniere'],['woche','📅','Woche']];
-  const on=k=>UI.tab===k||(k==='welt'&&(UI.tab==='halle'||UI.tab==='pl'))||(k==='turnier'&&['album','online','vliga'].includes(UI.tab))||(k==='r_buero'&&['liga','kader','verein','ruhm','jobs','verw'].includes(UI.tab))||(k==='heim'&&((UI.tab.startsWith('r_')&&UI.tab!=='r_buero')||UI.tab==='scorer'));
+  const on=k=>UI.tab===k||(k==='welt'&&(UI.tab==='halle'||UI.tab==='pl'))||(k==='turnier'&&['album','online','vliga'].includes(UI.tab))||(k==='r_buero'&&['einst','liga','kader','verein','ruhm','jobs','verw'].includes(UI.tab))||(k==='heim'&&((UI.tab.startsWith('r_')&&UI.tab!=='r_buero')||UI.tab==='scorer'));
   app.innerHTML=topBar()+`<div class="content">${body}</div><div class="nav">${tabs.map(t=>`<button class="${on(t[0])?'on':''}" data-tab="${t[0]}"><span>${t[1]}</span>${t[2]}</button>`).join('')}</div>`;
   app.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{snd('click');UI.tab=b.dataset.tab;render();window.scrollTo(0,0)});
   bindHub(app);bindWorld(app);
@@ -1093,9 +1093,8 @@ function hubVerein(){
   </div>
   <div class="grid2"><button class="btn gold" id="ach">🏅 Erfolge (${Object.keys(S.ach).length}/${ACH.length})</button><button class="btn gold" id="stt">📊 Statistiken</button></div>
   <div class="panel"><div class="row between"><h2>🏆 Pokalschrank</h2><span class="tiny mut">${S.trophies.length} Titel</span></div><div class="trophies" style="margin-top:8px">${tro}</div></div>
-  <div class="row"><button class="btn gray sm" id="help" style="flex:1">❔ Anleitung</button><button class="btn gray sm" id="exp" style="flex:1">💾 Sichern</button>${UI.appMode?'<button class="btn gray sm" id="vipb">🔑</button>':''}<button class="btn gray sm" id="mute">${S.mute?'🔇':'🔊'}</button></div>
-  <div class="cloud" style="text-align:center">${cloudOn?'☁️ Wird automatisch in deinem Konto gespeichert':'Gespeichert in diesem Browser'}</div>
-  <div class="tiny" style="text-align:center;margin-top:6px"><a href="https://anduuuuin.github.io/darttycoon/privacy.html" target="_blank" rel="noopener" style="color:var(--mut)">Datenschutz</a> · <a href="https://anduuuuin.github.io/darttycoon/impressum.html" target="_blank" rel="noopener" style="color:var(--mut)">Impressum</a> · MapSVG, CC BY 4.0</div>`;
+  <button class="btn gray block" data-go="einst">⚙️ Einstellungen</button>
+  <div class="cloud" style="text-align:center">${cloudOn?'☁️ Wird automatisch in deinem Konto gespeichert':'Gespeichert in diesem Browser'}</div>`;
 }
 function hubKader(){
   const T=S.b.training,tcost=Math.round(50*(T>=4?.7:1));
@@ -1145,7 +1144,7 @@ function hubWoche0(){
 }
 function bindHub(app){
   app.querySelectorAll('[data-stkbuy]').forEach(b=>b.onclick=()=>stkBuy(b.dataset.stkbuy));app.querySelectorAll('[data-ssl]').forEach(b=>b.onclick=()=>stkSlotDialog(+b.dataset.ssl));
-  bindOnline(app);bindVliga(app);
+  bindOnline(app);bindVliga(app);bindEinst(app);
   {const q=(id,f)=>{const e=app.querySelector(id);if(e)e.onclick=f};q('#scstart',()=>{if(S.realCur){UI.tab='scorer';render()}else scorerSetup()});q('#rtrain',()=>realTrainDialog());
    if(S.realCur){const M=S.realCur;app.querySelectorAll('[data-sk]').forEach(b=>b.onclick=()=>{const k=b.dataset.sk;if(k==='del')M.inp=M.inp.slice(0,-1);else if(k==='ok')return scSubmit(+(M.inp||0));else if(M.inp.length<3)M.inp+=k;snd('click');render()});
     app.querySelectorAll('[data-sq]').forEach(b=>b.onclick=()=>scSubmit(+b.dataset.sq));q('#scundo',scUndo);q('#scquit',()=>modal(`<h3>Match abbrechen?</h3><div class="small mut">Das laufende Match wird nicht gewertet.</div><button class="btn red" id="scq2">Abbrechen</button><button class="btn gray" onclick="closeModal()">Weiterspielen</button>`)||($('#scq2').onclick=()=>{S.realCur=null;closeModal();UI.tab='r_scheiben';save();render()}))}}
@@ -1879,7 +1878,7 @@ function hubRoom(id){
   if(id==='buero'){const pd=pokalDue();acts=`<div class="grid2">
     <button class="btn" data-act="liga">📋 Liga</button><button class="btn ${pd?'gold':''}" data-act="pokal">🏆 Pokal${pd?' ❗':''}</button>
     <button class="btn gray" data-act="kader">🎯 Kader & Transfers</button><button class="btn gray" data-act="trophy">🏅 Pokale & Erfolge</button>
-    <button class="btn gray" data-act="pc">💻 Anleitung & Sichern</button><button class="btn gray" data-go="woche">📅 Wochenbilanz</button></div><div class="grid2"><button class="btn ${mgReadyCount()?'gold':''}" data-go="jobs">🗂 Aufträge${mgReadyCount()?' ❗':''}</button><button class="btn" data-go="verw">🏛 Verwaltung</button></div><button class="btn gold block" data-go="ruhm">🌟 Ruhmeshalle & Prestige${canPrestige()?' ❗':''}</button>`}
+    <button class="btn gray" data-go="einst">⚙️ Einstellungen</button><button class="btn gray" data-go="woche">📅 Wochenbilanz</button></div><div class="grid2"><button class="btn ${mgReadyCount()?'gold':''}" data-go="jobs">🗂 Aufträge${mgReadyCount()?' ❗':''}</button><button class="btn" data-go="verw">🏛 Verwaltung</button></div><button class="btn gold block" data-go="ruhm">🌟 Ruhmeshalle & Prestige${canPrestige()?' ❗':''}</button>`}
   else if(id==='training'){acts=miniPanel()+buildCard('training')+(S.b.training>0?S.players.map(p=>`<div class="panel"><div class="row">${personImg(p.look,40)}<div style="flex:1"><b class="small">${esc(p.name)} <span class="lvl px">Lv${p.lvl}</span></b><div class="tiny mut">${p.drilled?'✔ Wurftraining':'🎯 Wurftraining frei'} · ${p.trained?'✔ Kartentraining':'🃏 Kartentraining frei'}</div></div><button class="btn sm" data-train="${p.id}" ${p.trained&&p.drilled?'disabled':''}>Trainieren</button></div></div>`).join(''):'<div class="panel small mut">Baue den Trainingsraum aus, um deine Spieler zu trainieren.</div>')}
   else if(id==='theke')acts=buildCard('bar')+buildCard('fanshop');
   else if(id==='scheiben')acts=`<button class="btn block gold" data-act="friendly">🎯 Freundschaftsspiel · 501 · Best of 3</button><div class="tiny mut" style="margin:-4px 0 4px">Freies Werfen gegen ein Vereinsmitglied, jederzeit, ohne Einsatz.</div><div class="panel"><h2>🎯 Echtes Dart</h2><div class="grid2" style="margin-top:8px"><button class="btn" id="scstart">📟 ${S.realCur?'Match fortsetzen':'Scorer starten'}</button><button class="btn" id="rtrain">📝 Training eintragen</button></div><div class="tiny mut" style="margin-top:6px">Für dein echtes Board: Punkte zählen, Checkout-Wege, Statistik. Echte Leistungen bringen Belohnungen im Spiel.</div></div>${realStatsPanel()}`+buildCard('boards')+buildCard('sponsor');
@@ -3108,7 +3107,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='4.9';
+const GAME_VERSION='5.0';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
@@ -4672,6 +4671,38 @@ function revokeOnline(){S.onC=false;S.onCts=null;try{if(FR.inbox){FR.inbox.close
 const ON_TXT=`<div class="small">Die Online-Funktionen (Bestenlisten, Duelle, Ligen, Freunde, Live-Duell) sind freiwillig. Wenn du zustimmst, werden dein <b>Online-Name</b>, dein <b>Vereinsname</b>, deine <b>Ergebnisse und Statistiken</b> und technisch bedingt deine <b>IP-Adresse</b> an unseren Datenbank-Dienstleister (Supabase) gesendet. Bitte gib keinen echten Namen als Spitznamen an. Du kannst die Einwilligung jederzeit hier widerrufen. Mehr steht in der <a href="https://anduuuuin.github.io/darttycoon/privacy.html" target="_blank" rel="noopener" style="color:var(--gold)">Datenschutzerklärung</a>.</div>`;
 function consentHub(back){return `<div class="navrow"><button class="btn gray sm" data-go="${back||'turnier'}">◀ Zurück</button><b class="small">🌐 Online</b></div><div class="panel"><h3>🔒 Online-Funktionen aktivieren?</h3><div style="margin:8px 0">${ON_TXT}</div><button class="btn gold block" onclick="grantOnline()">✅ Zustimmen und aktivieren</button><div class="tiny mut" style="margin-top:6px;text-align:center">Ohne Zustimmung läuft das Spiel komplett offline weiter.</div></div>`}
 function consentModal(then){modal(`<h3>🔒 Online-Funktionen aktivieren?</h3><div style="margin:8px 0">${ON_TXT}</div><button class="btn gold block" id="onc1">✅ Zustimmen und aktivieren</button><button class="btn gray block" style="margin-top:6px" onclick="closeModal()">Nicht jetzt</button>`);$('#onc1').onclick=()=>{S.onC=true;S.onCts=Date.now();save();closeModal();if(then)then()}}
+
+/* ================= Einstellungen ================= */
+function hubEinst(){
+  const row=(id,t,sub)=>`<button class="btn gray block" id="${id}" style="text-align:left;margin-bottom:6px">${t}${sub?`<div class="tiny mut" style="font-weight:400;margin-top:2px">${sub}</div>`:''}</button>`;
+  return `<div class="navrow"><button class="btn gray sm" data-go="r_buero">◀ Büro</button><b class="small">⚙️ Einstellungen</b></div>
+  <div class="panel"><h3>🔊 Ton & Hilfe</h3>
+   ${row('es_mute',S.mute?'🔇 Ton ist aus':'🔊 Ton ist an')}${row('es_music',S.music?'🎵 Musik ist an':'🎵 Musik ist aus')}${row('es_tips',S.tips===false?'💡 Tipps sind aus':'💡 Tipps sind an')}${row('es_help','❔ Anleitung')}
+  </div>
+  <div class="panel"><h3>💾 Spielstand</h3>
+   ${row('es_exp','💾 Spielstand sichern','Als Code speichern oder kopieren')}${row('es_imp','⤵ Spielstand laden','Einen gesicherten Code einfügen')}${!isStandalone()?row('es_inst','📲 Als App installieren'):''}
+   ${row('es_new','🔄 Komplett neu anfangen','Löscht alles, auch Prestige und Erfolge')}
+  </div>
+  <div class="panel"><h3>🌐 Online & Konto</h3>
+   <div class="small mut" style="margin-bottom:8px">Online-Funktionen sind ${S.onC?'<b style="color:#7fdc9f">aktiv</b>':'<b>aus</b>'}.</div>
+   ${S.onC?row('es_onrev','🔒 Einwilligung widerrufen'):row('es_onc','✅ Online-Funktionen aktivieren','Bestenlisten, Duelle, Freunde, Live-Duell')}
+   ${UI.appMode?row('es_vip','🔑 Familien-Code eingeben'):''}
+  </div>
+  <div class="panel"><h3>ℹ️ Info</h3>
+   ${row('es_fb','💬 Feedback geben')}
+   <div class="tiny mut" style="margin:6px 0">Version ${GAME_VERSION}</div>
+   <details style="margin-top:8px"><summary class="tiny mut" style="cursor:pointer">Rechtliches & Lizenzen</summary>
+    <div class="small" style="margin-top:8px;line-height:2"><a href="https://anduuuuin.github.io/darttycoon/privacy.html" target="_blank" rel="noopener" style="color:var(--gold)">Datenschutzerklärung</a><br><a href="https://anduuuuin.github.io/darttycoon/impressum.html" target="_blank" rel="noopener" style="color:var(--gold)">Impressum</a><br><span class="tiny mut">Karte: MapSVG, CC BY 4.0 · Schriften: Press Start 2P und Inter (SIL OFL)</span></div>
+   </details>
+  </div>`}
+function bindEinst(app){const q=(id,f)=>{const e=app.querySelector(id);if(e)e.onclick=f};
+  q('#es_mute',()=>{S.mute=!S.mute;save();render();snd('click')});
+  q('#es_music',()=>{musicToggle(!S.music);render()});
+  q('#es_tips',()=>{S.tips=S.tips===false;if(S.tips)S.seen={};save();render()});
+  q('#es_help',()=>showHelp(false));q('#es_exp',exportDialog);q('#es_imp',importDialog);q('#es_inst',installDialog);q('#es_fb',feedbackDialog);
+  q('#es_new',()=>{modal(`<h3>Wirklich neu anfangen?</h3><div class="small mut">Dein kompletter Spielstand wird gelöscht und überschrieben, auch Prestige und Erfolge. Tipp: Vorher „Spielstand sichern“, falls du ihn behalten willst.</div><button class="btn red" id="pny">Ja, alles löschen und neu starten</button><button class="btn gray" onclick="closeModal()">Abbrechen</button>`);$('#pny').onclick=()=>{closeModal();newGameDialog()}});
+  q('#es_onrev',()=>{modal(`<h3>🔒 Einwilligung widerrufen?</h3><div class="small">Das Spiel sendet dann nichts mehr an den Server. Schon hochgeladene Einträge bleiben zunächst gespeichert. Zum Löschen schreib bitte eine E-Mail an die Adresse in der Datenschutzerklärung.</div><button class="btn gold block" style="margin-top:8px" id="onrv">Widerrufen</button><button class="btn gray block" style="margin-top:6px" onclick="closeModal()">Abbrechen</button>`);$('#onrv').onclick=revokeOnline});
+  q('#es_onc',()=>consentModal(()=>render()));q('#es_vip',()=>vipDialog())}
 
 /* ================= Match ================= */
 function makeOpp(tier,kind,step){

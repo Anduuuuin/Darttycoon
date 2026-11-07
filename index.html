@@ -3107,7 +3107,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='5.3';
+const GAME_VERSION='5.4';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
@@ -4472,7 +4472,7 @@ function roomWalkers(id){return '';const P0=ROOM_WALK[id]||[[30,75,50,82]];const
     return `<div class="rw" style="--x1:${p[0]}%;--y1:${p[1]}%;--x2:${p[2]}%;--y2:${p[3]}%;animation-duration:${d}s;animation-delay:${-i*1.7}s"><img class="sp" src="${personSprite(L)}"></div>`}).join('')}</div>`}
 
 /* ================= Energie, Werbung, VIP (nur App-Modus) ================= */
-const EN={max:26,regen:12*60000,add:10,cap:{e:3,b:3,k:2},vip:'3c8a7e92f6c8ffe4cdc9102c47313886d6bd5b548a19c74e2f63bb0802e3589f',salt:'bullseye-boss-v1|',
+const EN={max:26,regen:15*60000,add:10,cap:{e:3,b:3,k:2},vip:'3c8a7e92f6c8ffe4cdc9102c47313886d6bd5b548a19c74e2f63bb0802e3589f',salt:'bullseye-boss-v1|',
   appId:'ca-app-pub-2153543606081225~1842648321',unit:'ca-app-pub-2153543606081225/5016053682'};
 let ENBYP=false;
 try{const q=new URLSearchParams(location.search);if(q.get('app')==='1'||q.get('energy')==='1')localStorage.setItem('bb_app','1');if(q.get('energy')==='0')localStorage.removeItem('bb_app');UI.appMode=!!(localStorage.getItem('bb_app')==='1'||window.Capacitor&&Capacitor.isNativePlatform&&Capacitor.isNativePlatform())}catch(e){UI.appMode=false}
@@ -4492,10 +4492,10 @@ function enMount(){const o=document.getElementById('enbar');if(o)o.remove();if(!
   top.insertAdjacentHTML('afterend',`<div id="enbar" class="row" style="gap:6px;align-items:center;padding:6px 10px;margin:4px 0">${enHTML()}</div>`)}
 setInterval(()=>{const b=document.getElementById('enbar');if(b&&enOn())b.innerHTML=enHTML()},1000);
 document.addEventListener('click',e=>{const t=e.target;if(t.closest&&t.closest('#enmore'))enNeed(0);if(t.closest&&t.closest('#vipb'))vipDialog()});
-function enCost(t){const l=lvOf(t);return l<=1?1:l<=3?2:3}
+function enCost(t){const l=lvOf(t);return l<=1?3:l<=3?5:8}
 function enNeed(cost){const v=enTick(),l=enLeft(),A=adsDay(),tot=EN.cap.e+EN.cap.b+EN.cap.k;
   const btn=(id,c,tx)=>`<button class="btn block" id="${id}" ${adLeft(c)<=0?'disabled':''} style="margin-top:6px">📺 ${tx}</button>`;
-  modal(`<h3>${cost?'⚡ Zu wenig Energie':'⚡ Energie &amp; Boni'}</h3><div class="small">${cost?`Das braucht <b>${cost} ⚡</b>, du hast <b>${v}</b>. `:`Du hast <b>${v}/${EN.max} ⚡</b>. `}${l?`Nächste ⚡ in <b>${mmss(l)}</b>.`:'Energie ist voll.'} Kleine Turniere kosten 1 ⚡, mittlere 2 ⚡, große 3 ⚡. Verein, Kader, Shop, Training und Tages-Turnier kosten nie Energie.</div>
+  modal(`<h3>${cost?'⚡ Zu wenig Energie':'⚡ Energie &amp; Boni'}</h3><div class="small">${cost?`Das braucht <b>${cost} ⚡</b>, du hast <b>${v}</b>. `:`Du hast <b>${v}/${EN.max} ⚡</b>. `}${l?`Nächste ⚡ in <b>${mmss(l)}</b>.`:'Energie ist voll.'} Kleine Turniere kosten 3 ⚡, mittlere 5 ⚡, große 8 ⚡. Verein, Kader, Shop, Training und Tages-Turnier kosten nie Energie.</div>
   ${btn('en_e','e',`+${EN.add} ⚡ Energie <span class="tiny">(${adLeft('e')}/${EN.cap.e})</span>`)}
   ${btn('en_b','b',`5 Spiele +30% Preisgeld &amp; XP${S.en.boost?' (jetzt '+S.en.boost+')':''} <span class="tiny">(${adLeft('b')}/${EN.cap.b} gemeinsam)</span>`)}${btn('en_d','b','1 Dart-Pack')}${btn('en_s','b','1 Sticker-Tüte')}
   <div class="tiny mut" style="margin-top:6px;text-align:center">Bauzeit verkürzen (${adLeft('k')}/${EN.cap.k}) gibt es bei großen Baustellen im Verein.</div><button class="btn gray block" style="margin-top:6px" onclick="closeModal()">Später</button>`);
@@ -4532,7 +4532,7 @@ function vipDialog(){modal(`<h3>🔑 Familien-Code</h3><div class="small mut">Mi
 function enBoostMul(){return enOn()&&S.en&&S.en.boost>0?1.3:1}
 const _sRun=startRun;startRun=function(t,p){if(!enOn()||ENBYP)return _sRun(t,p);return enGate(enCost(t),()=>_sRun(t,p))};
 const _sDaily=startDaily;startDaily=function(){ENBYP=true;try{return _sDaily()}finally{ENBYP=false}};
-const _sCup=startCup;startCup=function(p){return enGate(2,()=>_sCup(p))};
+const _sCup=startCup;startCup=function(p){return enGate(5,()=>_sCup(p))};
 const _sQua=startQuali;startQuali=function(p){return enGate(1,()=>_sQua(p))};
 const _sLg=startLeague;startLeague=function(l){return enGate(1,()=>_sLg(l))};
 const _pkb=pokalBegin;pokalBegin=function(l){return enGate(1,()=>_pkb(l))};

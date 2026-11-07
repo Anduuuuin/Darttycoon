@@ -3107,7 +3107,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='5.2';
+const GAME_VERSION='5.3';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
@@ -3871,10 +3871,50 @@ Object.assign(COACH,{scorer:'📟 <b>Scorer</b>: Tippe die Punkte deiner Aufnahm
 Object.assign(COACH2,{shop:'🆕 Neu im Shop: <b>🏷 Sticker</b>! Klebe sie an den Surround deiner Dartscheibe, jeder gibt einen Bonus für einige Spiele. Ganz seltene gibt es auch in Turnieren und bei Aufträgen.',r_training:'🆕 Die <b>Average-Challenge</b> ersetzt den Schnellwurf: 10 Aufnahmen auf der echten 3D-Scheibe, 3× pro Spielwoche. Dein Average entscheidet über die Belohnung und kommt in die Online-Bestenliste.',r_scheiben:'🆕 Am Oche gibt es jetzt den <b>📟 Scorer für echte Spiele</b> und <b>📝 Echtes Training eintragen</b>. Was du am echten Board leistest, bringt dir im Spiel XP und Geld!'});
 
 
-/* ================= Online (Supabase) ================= */
-const SB_URL='https://nsrgsrbmmxvftkevwgdq.supabase.co',SB_KEY='sb_publishable_u-0FDsQzTWDNMUnDRaThgw_LRdZXpCC';
-async function sb(path,opt={}){if(!S||!S.onC)throw new Error('Online-Funktionen sind nicht aktiviert');const r=await fetch(SB_URL+'/rest/v1/'+path,{cache:'no-store',method:opt.method||'GET',headers:Object.assign({apikey:SB_KEY,'Content-Type':'application/json'},opt.prefer?{Prefer:opt.prefer}:{}),body:opt.body?JSON.stringify(opt.body):undefined});
-  if(!r.ok){let t='';try{t=(await r.json()).message}catch(e){}throw new Error(t||('HTTP '+r.status))}return r.status===201||r.status===204?null:r.json()}
+/* ================= Online (eigener Server: PocketBase) ================= */
+const PB_URL='https://dart.anduuuuin.de';
+// sb(): nimmt die bisherigen Datenbank-Pfade (z. B. "scores?game=eq.daily&order=value.desc&limit=50") und übersetzt sie für PocketBase.
+async function sb(path,opt={}){if(!S||!S.onC)throw new Error('Online-Funktionen sind nicht aktiviert');
+  const qi=path.indexOf('?'),tbl=qi<0?path:path.slice(0,qi),P=new URLSearchParams(qi<0?'':path.slice(qi+1));
+  const f=[],o={perPage:1000};let conflict=null;const lit=x=>JSON.stringify(String(x));
+  for(const [k,v] of P){if(k==='select')continue;
+    if(k==='order'){o.sort=v.split(',').map(x=>{const [c,d]=x.split('.');return (d==='desc'?'-':'')+(c==='created_at'?'created':c)}).join(',');continue}
+    if(k==='limit'){o.perPage=Math.max(1,Math.min(1000,+v||30));continue}
+    if(k==='on_conflict'){conflict=v;continue}
+    const i=v.indexOf('.'),op=v.slice(0,i),val=v.slice(i+1);
+    if(op==='eq')f.push(`${k}=${lit(val)}`);else if(op==='neq')f.push(`${k}!=${lit(val)}`);
+    else if(op==='in')f.push('('+val.replace(/^\(|\)$/g,'').split(',').map(x=>`${k}=${lit(x)}`).join('||')+')')}
+  const api=async(method,sub,body)=>{const r=await fetch(PB_URL+'/api/collections/'+tbl+'/records'+sub,{cache:'no-store',method,headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
+    if(!r.ok){let t='';try{const j=await r.json();t=j.message||'';const d=j.data&&Object.entries(j.data)[0];if(d)t+=` (${d[0]}: ${d[1].message||''})`}catch(e){}throw new Error(t||('HTTP '+r.status))}
+    return r.status===204?null:r.json()};
+  const list=async()=>{const u=new URLSearchParams({page:'1',perPage:String(o.perPage),skipTotal:'1'});if(o.sort)u.set('sort',o.sort);if(f.length)u.set('filter',f.join(' && '));
+    const j=await api('GET','?'+u.toString());return (j.items||[]).map(x=>(x.created_at=x.created,x))};
+  const m=opt.method||'GET';
+  if(m==='GET')return list();
+  if(m==='POST'){const b=Object.assign({},opt.body);if(tbl==='leagues'&&b.season==null)b.season=1;
+    if(conflict){f.push(`${conflict}=${lit(b[conflict])}`);o.perPage=1;const ex=await list();if(ex.length){await api('PATCH','/'+ex[0].id,b);return null}}
+    await api('POST','',b);return null}
+  if(m==='PATCH'){const ex=await list();await Promise.all(ex.map(x=>api('PATCH','/'+x.id,opt.body)));return null}
+  throw new Error('Nicht unterstützt: '+m)}
+// PBSocket: verhält sich für das Spiel wie die bisherige Echtzeit-Verbindung (Kanal beitreten, Nachrichten senden/empfangen),
+// läuft aber über PocketBase: Senden = Eintrag in "signals", Empfangen = Live-Abo (SSE) auf diesen Kanal.
+class PBSocket{constructor(){this.readyState=0;this.onopen=this.onmessage=this.onclose=this.onerror=null;this.cid='';this.q=Promise.resolve();
+    try{this.es=new EventSource(PB_URL+'/api/realtime')}catch(e){setTimeout(()=>this._end(),0);return}
+    this.es.addEventListener('PB_CONNECT',e=>{if(this.readyState!==0)return this._end();let d={};try{d=JSON.parse(e.data)}catch(_){}this.cid=d.clientId;this.readyState=1;this.onopen&&this.onopen()});
+    this.es.onerror=()=>{if(this.readyState===0&&this.onerror)this.onerror();this._end()}}
+  _emit(o){if(this.readyState===1&&this.onmessage)this.onmessage({data:JSON.stringify(o)})}
+  send(str){let m;try{m=JSON.parse(str)}catch(e){return}if(this.readyState!==1)return;
+    if(m.event==='phx_join'){const topic=m.topic,sub='signals?options='+encodeURIComponent(JSON.stringify({query:{filter:`topic=${JSON.stringify(topic)}`}}));
+      this.es.addEventListener(sub,e=>{let d;try{d=JSON.parse(e.data)}catch(_){return}if(!d||d.action!=='create'||!d.record)return;
+        this._emit({event:'broadcast',topic,payload:{type:'broadcast',event:d.record.event,payload:d.record.payload||{}}})});
+      fetch(PB_URL+'/api/realtime',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({clientId:this.cid,subscriptions:[sub]})})
+        .then(r=>this._emit({event:'phx_reply',topic,ref:m.ref,payload:{status:r.ok?'ok':'error'}}))
+        .catch(()=>this._emit({event:'phx_reply',topic,ref:m.ref,payload:{status:'error'}}))}
+    else if(m.event==='broadcast'){const p=m.payload||{},body=JSON.stringify({topic:m.topic,event:p.event,payload:p.payload||{}});
+      // nacheinander senden, damit Würfe in der richtigen Reihenfolge ankommen
+      this.q=this.q.then(()=>fetch(PB_URL+'/api/collections/signals/records',{method:'POST',headers:{'Content-Type':'application/json'},body})).catch(()=>{})}}
+  close(){this._end()}
+  _end(){if(this.readyState===3)return;this.readyState=3;try{this.es&&this.es.close()}catch(e){}this.onclose&&this.onclose()}}
 const onName=()=>(S.onName||meP().name||'Spieler').slice(0,24);
 const isoDay=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
 function postScore(game,value){if(!S||S.onOff||!S.onC)return;sb('scores',{method:'POST',prefer:'return=minimal',body:{game,name:onName(),club:(S.club||'').slice(0,30),value:Math.round(value),day:isoDay()}}).then(()=>toast('🌐 Ergebnis in der Online-Bestenliste!')).catch(e=>{console.warn('online',e.message);toast('⚠️ Online-Upload fehlgeschlagen: '+e.message)})}
@@ -3974,7 +4014,7 @@ async function vlRender(force){const el=$('#vlbody');if(!el)return;try{await vlS
   q('#vlleave',()=>{modal(`<h3>Liga verlassen?</h3><div class="small mut">Deine Ergebnisse bleiben in der Tabelle der anderen. Mit dem Code kannst du wieder beitreten.</div><button class="btn red" id="vll2">Verlassen</button><button class="btn gray" onclick="closeModal()">Abbrechen</button>`);$('#vll2').onclick=()=>{S.vl=null;save();closeModal();render()}});
   q('#vlseason',async()=>{try{await sb(`leagues?code=eq.${L.code}`,{method:'PATCH',prefer:'return=minimal',body:{season:L.lg.season+1}});VL.t=0;toast('🏟 Neue Saison!');vlRender(true)}catch(e){toast('⚠️ '+e.message)}});
   document.querySelectorAll('[data-vlplay]').forEach(b=>b.onclick=()=>vlStart(L.mem.find(m=>m.mk===b.dataset.vlplay)))}
- catch(e){const e2=$('#vlbody');if(e2)e2.innerHTML=`<div class="panel small">⚠️ Keine Verbindung zur Liga (${esc(e.message)}). Sind die Liga-Tabellen in Supabase angelegt?</div><button class="btn gray block" id="vlleave2">Liga-Verknüpfung entfernen</button>`;const b=$('#vlleave2');if(b)b.onclick=()=>{S.vl=null;save();render()}}}
+ catch(e){const e2=$('#vlbody');if(e2)e2.innerHTML=`<div class="panel small">⚠️ Keine Verbindung zur Liga (${esc(e.message)}). Bitte später nochmal versuchen.</div><button class="btn gray block" id="vlleave2">Liga-Verknüpfung entfernen</button>`;const b=$('#vlleave2');if(b)b.onclick=()=>{S.vl=null;save();render()}}}
 function vlStart(opp){if(!opp)return;const mine=S.players.filter(p=>!p.away).sort((a,b)=>b.lvl-a.lvl).slice(0,3).map(p=>p.id);const theirs=(opp.team||[]).slice(0,3);
   while(theirs.length<3)theirs.push({name:'Ersatzspieler',lvl:1,cls:'scorer',traits:[],look:randLook(),deck:[],gear:{}});
   S.run={mode:'vliga',tier:1,pid:null,deck:[],relics:[],nerves:1,maxN:1,gold:0,step:3,steps:99,map:[],path:[],added:[],combat:null,won:0,matches:0,vl:{code:S.vl.code,season:VL.lg.season,opp:opp.mk,club:opp.club,mine,theirs,idx:0,w:0,l:0,res:[]}};
@@ -4505,9 +4545,9 @@ function lvClose(){clearInterval(LV.hb);clearInterval(LV.pg);clearInterval(LV.hi
 function lvWake(m){if(LV.wait){const w=LV.wait;LV.wait=null;w(m)}}
 function lvNext(ms){return new Promise(res=>{if(LV.q.length)return res(LV.q.shift());const t=setTimeout(()=>{LV.wait=null;res(null)},ms);LV.wait=m=>{clearTimeout(t);res(m)}})}
 function lvOpen(code,cb){lvClose();LV.code=code;if(!S||!S.onC){cb(false);return}let told=false;const tell=ok=>{if(!told){told=true;cb(ok)}};
-  let ws;try{ws=new WebSocket(`wss://${SB_URL.replace('https://','')}/realtime/v1/websocket?apikey=${SB_KEY}&vsn=1.0.0`)}catch(e){return tell(false)}
+  let ws;try{ws=new PBSocket()}catch(e){return tell(false)}
   LV.ws=ws;
-  ws.onopen=()=>{ws.send(JSON.stringify({topic:LV_CH(code),event:'phx_join',payload:{config:{broadcast:{self:false,ack:false},presence:{key:''},postgres_changes:[],private:false},access_token:SB_KEY},ref:'1',join_ref:'1'}));
+  ws.onopen=()=>{ws.send(JSON.stringify({topic:LV_CH(code),event:'phx_join',payload:{config:{broadcast:{self:false,ack:false},presence:{key:''},postgres_changes:[],private:false}},ref:'1',join_ref:'1'}));
     LV.hb=setInterval(()=>{try{ws.send(JSON.stringify({topic:'phoenix',event:'heartbeat',payload:{},ref:String(++LV.ref)}))}catch(e){}},20000)};
   ws.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(_){return}
     if(m.event==='phx_reply'&&m.ref==='1'){if(m.payload&&m.payload.status==='ok'){LV.joined=true;tell(true)}else tell(false)}
@@ -4639,9 +4679,9 @@ function statsDialog(){const a=statAllOf(S),f=n=>fmt(Math.round(n||0));
 /* ================= Freunde: Code, Vergleich, Einladung zum Live-Duell ================= */
 const FR={inbox:null,t:null};
 function pxConn(name,onEv,onReady,onClose){if(!S||!S.onC){onReady&&onReady(false);return null}const topic='realtime:'+name;let ref=0,hb,ws;const id=Math.random().toString(36).slice(2,8);
-  try{ws=new WebSocket(`wss://${SB_URL.replace('https://','')}/realtime/v1/websocket?apikey=${SB_KEY}&vsn=1.0.0`)}catch(e){onReady&&onReady(false);return null}
+  try{ws=new PBSocket()}catch(e){onReady&&onReady(false);return null}
   const c={id,send(ev,data){try{if(ws.readyState===1)ws.send(JSON.stringify({topic,event:'broadcast',payload:{type:'broadcast',event:ev,payload:Object.assign({id},data||{})},ref:String(++ref)}))}catch(e){}},close(){try{clearInterval(hb);ws.close()}catch(e){}}};
-  ws.onopen=()=>{ws.send(JSON.stringify({topic,event:'phx_join',payload:{config:{broadcast:{self:false,ack:false},presence:{key:''},postgres_changes:[],private:false},access_token:SB_KEY},ref:'1',join_ref:'1'}));hb=setInterval(()=>{try{ws.send(JSON.stringify({topic:'phoenix',event:'heartbeat',payload:{},ref:String(++ref)}))}catch(e){}},20000)};
+  ws.onopen=()=>{ws.send(JSON.stringify({topic,event:'phx_join',payload:{config:{broadcast:{self:false,ack:false},presence:{key:''},postgres_changes:[],private:false}},ref:'1',join_ref:'1'}));hb=setInterval(()=>{try{ws.send(JSON.stringify({topic:'phoenix',event:'heartbeat',payload:{},ref:String(++ref)}))}catch(e){}},20000)};
   ws.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(_){return}
     if(m.event==='phx_reply'&&m.ref==='1'){onReady&&onReady(!!(m.payload&&m.payload.status==='ok'))}
     else if(m.event==='broadcast'&&m.topic===topic){const p=m.payload||{};if(onEv&&(p.payload||{}).id!==id)onEv(p.event,p.payload||{})}};
@@ -4691,7 +4731,7 @@ function frInvite(code){const F=S.friends.find(x=>x.code===code);if(!F)return;
 /* ================= Datenschutz: Einwilligung für Online-Funktionen ================= */
 function grantOnline(){S.onC=true;S.onCts=Date.now();save();closeModal();render()}
 function revokeOnline(){S.onC=false;S.onCts=null;try{if(FR.inbox){FR.inbox.close();FR.inbox=null}}catch(e){}try{lvClose()}catch(e){}save();closeModal();render()}
-const ON_TXT=`<div class="small">Die Online-Funktionen (Bestenlisten, Duelle, Ligen, Freunde, Live-Duell) sind freiwillig. Wenn du zustimmst, werden dein <b>Online-Name</b>, dein <b>Vereinsname</b>, deine <b>Ergebnisse und Statistiken</b> und technisch bedingt deine <b>IP-Adresse</b> an unseren Datenbank-Dienstleister (Supabase) gesendet. Bitte gib keinen echten Namen als Spitznamen an. Du kannst die Einwilligung jederzeit hier widerrufen. Mehr steht in der <a href="https://anduuuuin.github.io/darttycoon/privacy.html" target="_blank" rel="noopener" style="color:var(--gold)">Datenschutzerklärung</a>.</div>`;
+const ON_TXT=`<div class="small">Die Online-Funktionen (Bestenlisten, Duelle, Ligen, Freunde, Live-Duell) sind freiwillig. Wenn du zustimmst, werden dein <b>Online-Name</b>, dein <b>Vereinsname</b>, deine <b>Ergebnisse und Statistiken</b> und technisch bedingt deine <b>IP-Adresse</b> an unseren eigenen Server (Rechenzentrum in Deutschland) gesendet. Bitte gib keinen echten Namen als Spitznamen an. Du kannst die Einwilligung jederzeit hier widerrufen. Mehr steht in der <a href="https://anduuuuin.github.io/darttycoon/privacy.html" target="_blank" rel="noopener" style="color:var(--gold)">Datenschutzerklärung</a>.</div>`;
 function consentHub(back){return `<div class="navrow"><button class="btn gray sm" data-go="${back||'turnier'}">◀ Zurück</button><b class="small">🌐 Online</b></div><div class="panel"><h3>🔒 Online-Funktionen aktivieren?</h3><div style="margin:8px 0">${ON_TXT}</div><button class="btn gold block" onclick="grantOnline()">✅ Zustimmen und aktivieren</button><div class="tiny mut" style="margin-top:6px;text-align:center">Ohne Zustimmung läuft das Spiel komplett offline weiter.</div></div>`}
 function consentModal(then){modal(`<h3>🔒 Online-Funktionen aktivieren?</h3><div style="margin:8px 0">${ON_TXT}</div><button class="btn gold block" id="onc1">✅ Zustimmen und aktivieren</button><button class="btn gray block" style="margin-top:6px" onclick="closeModal()">Nicht jetzt</button>`);$('#onc1').onclick=()=>{S.onC=true;S.onCts=Date.now();save();closeModal();if(then)then()}}
 

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Bullseye Boss</title>
-<meta name="dt-version" content="6.2">
+<meta name="dt-version" content="6.3">
 <meta name="theme-color" content="#060d0a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -3327,7 +3327,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='6.2';
+const GAME_VERSION='6.3';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
@@ -4514,8 +4514,8 @@ function modeChoice(C){const last=UI.lastMode||'card';
   modal(`<h3>🎯 Wie willst du spielen?</h3><div class="small mut">${esc(C.label||'Match')} · ${C.start} · Best of ${C.need*2-1}</div>
    <button class="opt ${last==='card'?'on':''}" id="mcard" style="${last==='card'?'border-color:var(--gold)':''}"><b>🃏 Kartenspiel</b><span class="small mut">Reine Taktik mit deinem Deck. Geworfen wird nach deiner Trefferchance.</span></button>
    <button class="opt ${last==='board'?'on':''}" id="mboard" style="${last==='board'?'border-color:var(--gold)':''}"><b>🎯 Dartscheibe</b><span class="small mut">Jeden Pfeil selbst werfen. Vor jeder Aufnahme wählst du eine Karte, die dich stärkt oder den Gegner schwächt.</span></button>`);
-  $('#mcard').onclick=()=>{UI.lastMode='card';closeModal();C.playMode='card';C.aim=null;C.phase='player';C.busy=false;startLeg(true)};
-  $('#mboard').onclick=()=>{UI.lastMode='board';closeModal();C.playMode='board';bmCombat(C)}}
+  $('#mcard').onclick=()=>{UI.lastMode='card';closeModal();C.playMode='card';C.aim=null;C.phase='player';C.busy=false;nivApply(C);startLeg(true)};
+  $('#mboard').onclick=()=>{UI.lastMode='board';closeModal();C.playMode='board';nivApply(C);bmCombat(C)}}
 function needModeChoice(){return !UI.modeSkip&&B3.open()&&(B3.close(),true)}
 
 /* ================= Wurf-Werte des Spielers ================= */
@@ -5452,6 +5452,16 @@ return{
  thumb(id){if(!init())return'';return cached('c3t'+roomKey(id),()=>{SCN=id;key='';yaw=0;upload();cv.width=480;cv.height=366;gl.viewport(0,0,480,366);draw(3,0,480,366,true);return{url:cv.toDataURL('image/jpeg',.84)}}).url},
  hits:()=>HITS,fire,state:()=>({dead,running,scale,night})}})();
 
+/* ================= Gegner-Niveau (passt sich an Siege und Niederlagen an) ================= */
+const NIV_MAX=15;
+function nivGet(tier,mode){S.niv=S.niv||{c:{},b:{}};return S.niv[mode==='board'?'b':'c'][tier]||0}
+function nivApply(C){if(!C||C.nivDone||!S.run||S.run.mode||S.run.daily)return;C.nivDone=true;const n=nivGet(S.run.tier,C.playMode);C.niv=n;if(!n)return;
+  const f=1+n*.06,o=C.opp;o.min=Math.min(170,Math.round(o.min*f));o.max=Math.min(180,Math.round(o.max*f));o.co=Math.min(.92,o.co+n*.02);o.dr=Math.round(o.dr*(1+n*.04));o.finish=Math.min(130,o.finish+n*3);
+  if(!S.run.nivSeen){S.run.nivSeen=1;setTimeout(()=>toast(`🔥 Gegner-Niveau ${n}: Gegner +${n*6}% stärker, Preisgeld +${n*6}%`),700)}}
+function nivResult(r,champ){if(!r||r.mode||r.daily)return null;const mode=r.lastMode==='board'?'board':'card',m=mode==='board'?'b':'c',cur=nivGet(r.tier,mode);
+  let d;if(champ)d=r.nerves>r.maxN*.5?2:1;else d=r.won===0?-2:(r.step>=r.steps-2?0:-1);
+  const nv=clamp(cur+d,0,NIV_MAX);S.niv[m][r.tier]=nv;return{cur,nv,mode}}
+
 /* ================= Match ================= */
 function makeOpp(tier,kind,step){
   let o;
@@ -5488,7 +5498,7 @@ function startCombat(kind){
   bossSetup(r.combat);applyFlagsCombat(r.combat);scaleOpp(r.combat);ascApplyCombat(r.combat);
   UI.sel=-1;
   if(needModeChoice()){r.combat.phase='choose';r.combat.busy=true;r.combat.aim=null;setTimeout(()=>modeChoice(r.combat),UI.speed>1?50:150)}
-  else startLeg(true);
+  else{nivApply(r.combat);startLeg(true)}
 }
 function startLeg(first){
   const C=S.run.combat,me=C.me,o=C.opp;
@@ -5726,7 +5736,7 @@ function matchWon(){
   snd('win');
   const r=S.run,C=r.combat,T=TIERS[r.tier];
   r.won++;r.matches++;
-  const g=Math.round(T.prize*(C.kind==='e'?1.6:C.kind==='b'?3:1)*(1+S.b.sponsor*.1)*(has('scarf')?1.25:1)*(1+decoSum('prize')/100)*(1+perk('preis')*.1)*(r.flags&&r.flags.gross?1.4:1)*(1+.15*(r.asc||0))*(1+.08*pLvl())*(1+stk('prize')));
+  const g=Math.round(T.prize*(C.kind==='e'?1.6:C.kind==='b'?3:1)*(1+S.b.sponsor*.1)*(has('scarf')?1.25:1)*(1+decoSum('prize')/100)*(1+perk('preis')*.1)*(r.flags&&r.flags.gross?1.4:1)*(1+.15*(r.asc||0))*(1+.08*pLvl())*(1+stk('prize'))*(1+.06*(C.niv||0)));
   r.gold+=g;S.stats.mwins=(S.stats.mwins||0)+1;rpGain(player(),(lvOf(r.tier)+1)*8*(C.kind==='e'?1.5:C.kind==='b'?2.5:1)*(1+.2*(r.asc||0))*(T.tourOnly?2:1));
   const hl=(r.asc||0)>=7?0:heal(3+(has('stammtisch')?6:0));
   r.combat=null;save();
@@ -5751,7 +5761,7 @@ function matchLost(){
   if(r.mode==='pl')return plGameEnd(false);
   if(r.mode==='duel')return duelEnd(false);
   if(r.mode==='vliga')return vlSingleEnd(false);
-  if(r.combat&&r.combat.playMode!=='board')stkUse();snd('lose');r.combat=null;save();runEnd(false);
+  if(r.combat)r.lastMode=r.combat.playMode==='board'?'board':'card';if(r.combat&&r.combat.playMode!=='board')stkUse();snd('lose');r.combat=null;save();runEnd(false);
 }
 function runEnd(champ){
   const r=S.run,T=TIERS[r.tier],p=player();
@@ -5762,7 +5772,8 @@ function runEnd(champ){
   setTimeout(evoCheck,1600);
   const rep=Math.round((r.won*Math.ceil(T.repWin/4)+(champ?T.repWin:0))*.38);
   const fans=Math.round(T.fans*(champ?1:r.won/(r.steps*1.5))*.4);
-  let xp=Math.round((r.won*12*(r.tier+1)+(champ?40*(r.tier+1):0))*(1+.1*pLvl()));
+  const NV=nivResult(r,champ);
+  let xp=Math.round((r.won*12*(r.tier+1)+(champ?40*(r.tier+1):0))*(1+.1*pLvl())*(1+.05*(NV?NV.cur:0)));
   {const bm=enBoostMul();if(bm>1){r.gold=Math.round(r.gold*bm);S.en.boost=Math.max(0,S.en.boost-Math.max(1,r.matches||1))}xp=Math.round(xp*bm)}
   S.money+=r.gold;S.rep+=rep;S.fans+=fans;p.xp+=xp;S.stats.runs++;if(!r.daily){S.tplay=S.tplay||{};S.tplay[r.tier]=(S.tplay[r.tier]||0)+1}
   const prizePack=champ?['basis','basis','profi','profi','elite'][Math.min(4,lvOf(r.tier))]:null;if(prizePack)S.packs[prizePack]=(S.packs[prizePack]||0)+1;
@@ -5774,7 +5785,7 @@ function runEnd(champ){
   modal(`<div style="text-align:center">${champ?`<img class="sp" src="${trophyURL(true)}" style="width:72px;height:72px;margin:0 auto">`:'<div style="font-size:48px">😓</div>'}
    <h3 style="margin-top:8px">${champ?`Turniersieg: ${T.n}!`:'Ausgeschieden'}</h3></div>
    <div class="panel small">
-    <div class="row between"><span>Gewonnene Matches</span><b>${r.won}</b></div>
+    <div class="row between"><span>Gewonnene Matches</span><b>${r.won}</b></div>${NV&&(NV.cur||NV.nv)?`<div class="row between"><span>Gegner-Niveau ${NV.mode==='board'?'(Scheibe)':'(Karten)'}</span><b>${NV.nv>NV.cur?`🔥 ${NV.cur} → ${NV.nv}`:NV.nv<NV.cur?`${NV.cur} → ${NV.nv}`:NV.nv}</b></div>`:''}
     <div class="row between"><span>Preisgeld für den Verein</span><b>+${r.gold} €</b></div>
     <div class="row between"><span>Ruf</span><b>+${rep} ⭐</b></div><div class="row between"><span>Fans</span><b>+${fans} 📣</b></div>
     <div class="row between"><span>Erfahrung ${esc(p.name)}</span><b>+${xp} XP</b></div>${prizePack?`<div class="row between"><span>Siegprämie</span><b>🎁 ${PACKS[prizePack].n}</b></div>`:''}</div>

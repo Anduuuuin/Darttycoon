@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Bullseye Boss</title>
-<meta name="dt-version" content="6.3">
+<meta name="dt-version" content="6.4">
 <meta name="theme-color" content="#060d0a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1179,7 +1179,7 @@ function player(id){id=id||(S.run&&S.run.pid);if(S.run&&S.run.sub&&id==='sub')re
 function xpNeed(l){return 60+l*50}
 
 /* ================= Rendering: Titel ================= */
-function render(){if(S&&S.players)fixMg(S);try{statHook();if(S&&S.fc&&!FR.inbox)frInboxStart()}catch(e){}render0();try{if(UI._lt!==UI.tab){UI._lt=UI.tab;const c=document.querySelector('#app .content');if(c)c.classList.add('enter')}}catch(e){}try{enMount()}catch(e){}try{autoKick()}catch(e){}if(S&&S.players&&!UI.offOnce){UI.offOnce=1;setTimeout(offlineCheck,300)}try{coachCheck()}catch(e){}if(S&&!(S.run&&S.run.combat)&&!S.free)setTimeout(()=>{try{metaTick();storyCheck();mgQueueCheck()}catch(e){console.error(e)}},60)}
+function render(){try{navTrack()}catch(e){}if(S&&S.players)fixMg(S);try{statHook();if(S&&S.fc&&!FR.inbox)frInboxStart()}catch(e){}render0();try{if(UI._lt!==UI.tab){UI._lt=UI.tab;const c=document.querySelector('#app .content');if(c)c.classList.add('enter')}}catch(e){}try{enMount()}catch(e){}try{autoKick()}catch(e){}if(S&&S.players&&!UI.offOnce){UI.offOnce=1;setTimeout(offlineCheck,300)}try{coachCheck()}catch(e){}if(S&&!(S.run&&S.run.combat)&&!S.free)setTimeout(()=>{try{metaTick();storyCheck();mgQueueCheck()}catch(e){console.error(e)}},60)}
 function render0(){
   const app=$('#app');
   if(!S){const c=document.getElementById('coach');if(c)c.remove();return renderTitle(app)}
@@ -3327,7 +3327,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='6.3';
+const GAME_VERSION='6.4';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
@@ -5252,8 +5252,8 @@ function buildRoom(id){
  const sh=(x,z,rx,rz,a)=>blob(SH,x,z,rx,rz||rx,a||.7);
  const light=(x,y,z,d,c,k)=>LIGHTS.push([x,y,z,nrm(d),c,k]);
  const lamp=(x,z,c)=>{glowQ(GL,x,.03,z,1.3,'#2a2410','y');light(x,RH-.4,z,[0,-1,0],c||[2.0,1.8,1.4],.45)};
- const door=(side,c,name,target)=>{let H;if(side==='B'){onB(c,1.04,.92,2.08,'#fff',T('door'));bx(c-.52,0,c+.52,.06,0,2.14,'#3a2616');H=hit({go:'r_'+target,a:[c-.5,0,0],b:[c+.5,2.1,.2]});lab(H,'🚪 '+name,c,2.32,.1,'door','#f4c430')}
-  else{onL(c,1.04,.92,2.08,'#fff',T('door'));bx(0,c-.52,.06,c+.52,0,2.14,'#3a2616');H=hit({go:'r_'+target,a:[0,0,c-.5],b:[.2,2.1,c+.5]});lab(H,'🚪 '+name,.1,2.32,c,'door','#f4c430')}};
+ const door=(side,c,name,target)=>{let H;if(side==='B'){bx(c-.54,0,c+.54,.03,0,2.16,'#3a2616');S0.box(B(c,1.04,.055,.92,2.08,.05),'#6a4426',T('door'));H=hit({go:'r_'+target,a:[c-.5,0,0],b:[c+.5,2.1,.2]});lab(H,'🚪 '+name,c,2.32,.1,'door','#f4c430')}
+  else{bx(0,c-.54,.03,c+.54,0,2.16,'#3a2616');S0.box(chain(M4.T(.055,1.04,c),M4.RY(Math.PI/2),M4.S(.92,2.08,.05)),'#6a4426',T('door'));H=hit({go:'r_'+target,a:[0,0,c-.5],b:[.2,2.1,c+.5]});lab(H,'🚪 '+name,.1,2.32,c,'door','#f4c430')}};
  const plus=(did,x,y,z)=>{const H=hit({deco:did,a:[x-.3,y-.3,z-.3],b:[x+.3,y+.3,z+.3]});LABS.push({h:H,t:'+',p:[x,y,z],col:'#f4c430',cls:'plus'})};
  const deco=(did,a,b2)=>hit({deco:did,a,b:b2});
  const fig=(L,x,z,ry,o)=>{const f=Object.assign(lookOf(L),{x,z,ry:ry||0,s:1},o||{});DYN.push(f);sh(x,z,.36);return f};
@@ -5461,6 +5461,25 @@ function nivApply(C){if(!C||C.nivDone||!S.run||S.run.mode||S.run.daily)return;C.
 function nivResult(r,champ){if(!r||r.mode||r.daily)return null;const mode=r.lastMode==='board'?'board':'card',m=mode==='board'?'b':'c',cur=nivGet(r.tier,mode);
   let d;if(champ)d=r.nerves>r.maxN*.5?2:1;else d=r.won===0?-2:(r.step>=r.steps-2?0:-1);
   const nv=clamp(cur+d,0,NIV_MAX);S.niv[m][r.tier]=nv;return{cur,nv,mode}}
+
+/* ================= Zurück-Taste wie in einer App ================= */
+const NAV={st:[],last:null,back:false,t:0,d:0};
+function navTrack(){if(!S||!S.players||S.run||S.free)return;const t=UI.tab;if(NAV.last&&NAV.last!==t&&!NAV.back){NAV.st.push(NAV.last);if(NAV.st.length>25)NAV.st.shift()}NAV.back=false;NAV.last=t}
+function navBack(){const m=document.querySelector('#modal.on');
+  if(m){const b=[...m.querySelectorAll('button')].find(x=>/closeModal\(\)/.test(x.getAttribute('onclick')||'')||/^(✕|×|Schließen|Abbrechen|Zurück|Später|Nein|Fertig|OK|Alles klar|Verstanden|Weiter)/i.test(x.textContent.trim()));if(b)b.click();else toast('Bitte erst hier auswählen');return true}
+  if(!S||!S.players)return false;
+  const b3=document.getElementById('b3c');
+  if(S.run||S.free||(b3&&b3.offsetParent!==null)){toast('Hier geht es über die Knöpfe im Spiel weiter');return true}
+  if(NAV.st.length){NAV.back=true;UI.tab=NAV.st.pop();snd('click');render();window.scrollTo(0,0);return true}
+  if(UI.tab!=='welt'){NAV.back=true;UI.tab='welt';snd('click');render();window.scrollTo(0,0);return true}
+  return false}
+(function(){const DEPTH=5;
+  const arm=()=>{try{let d=(history.state&&history.state.bb)||0;if(!history.state||history.state.bb==null)history.replaceState({bb:0},'');while(d<DEPTH){d++;history.pushState({bb:d},'')}NAV.d=d}catch(e){}};
+  window.addEventListener('pointerdown',arm,{capture:true,passive:true});window.addEventListener('keydown',arm,{capture:true,passive:true});
+  window.addEventListener('popstate',e=>{const d=(e.state&&e.state.bb)||0;NAV.d=d;
+    if(navBack()){if(d<=0)arm();return}
+    const now=Date.now();if(now-NAV.t<2500){try{history.go(-(d+1))}catch(_){}return}
+    NAV.t=now;if(d<=0)arm();toast('Nochmal „Zurück“ drücken zum Beenden')})})();
 
 /* ================= Match ================= */
 function makeOpp(tier,kind,step){

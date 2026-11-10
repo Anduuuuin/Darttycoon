@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="de"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>Bullseye Boss – 3D-Muster Scheibenraum</title>
+<title>Bullseye Boss – 3D-Muster Scheibenraum (runde Figuren)</title>
 <style>
 html,body{margin:0;background:#060d0a;color:#f1f6f2;font:15px/1.4 system-ui,sans-serif;overscroll-behavior:none}
 #wrap{max-width:520px;margin:0 auto;padding:12px}
@@ -101,7 +101,14 @@ class Buf{constructor(){this.a=[]}
  // Quader über Matrix: Einheitswürfel um den Ursprung
  box(M,col,o){o=o||{};const c=typeof col==='string'?hex(col):col;const F=[[[-.5,-.5,.5],[.5,-.5,.5],[.5,.5,.5],[-.5,.5,.5],[0,0,1],1],[[.5,-.5,-.5],[-.5,-.5,-.5],[-.5,.5,-.5],[.5,.5,-.5],[0,0,-1],.82],[[.5,-.5,.5],[.5,-.5,-.5],[.5,.5,-.5],[.5,.5,.5],[1,0,0],.9],[[-.5,-.5,-.5],[-.5,-.5,.5],[-.5,.5,.5],[-.5,.5,-.5],[-1,0,0],.86],[[-.5,.5,.5],[.5,.5,.5],[.5,.5,-.5],[-.5,.5,-.5],[0,1,0],1.08],[[-.5,-.5,-.5],[.5,-.5,-.5],[.5,-.5,.5],[-.5,-.5,.5],[0,-1,0],.6]];
   F.forEach((f,fi)=>{const p=f.slice(0,4).map(v=>tp(M,v)),n=nrm(tn(M,f[4]));const k=f[5];this.quad(p,n,[c[0]*k,c[1]*k,c[2]*k],o.face===fi?o.tex:null,o.e)})}
- flat(p,n,col,rg,e){this.quad(p,n,typeof col==='string'?hex(col):col,rg,e)}}
+ flat(p,n,col,rg,e){this.quad(p,n,typeof col==='string'?hex(col):col,rg,e)}
+ v(p,n,c,e){const r=REG.white;this.a.push(p[0],p[1],p[2],n[0],n[1],n[2],c[0],c[1],c[2],r[0]+r[2]*.5,r[1]+r[3]*.5,e||0)}
+ // Kugel/Ellipsoid: Mb ohne Skalierung, Radien getrennt (damit die Normalen stimmen)
+ sph(Mb,rx,ry,rz,col,e){const c=typeof col==='string'?hex(col):col,M=M4.mul(Mb,M4.S(rx,ry,rz)),NU=12,NV=7;const P=(i,j)=>{const th=i/NU*6.2832,ph=j/NV*3.1416,u=[Math.sin(ph)*Math.cos(th),Math.cos(ph),Math.sin(ph)*Math.sin(th)];return[tp(M,u),nrm(tn(Mb,[u[0]/rx,u[1]/ry,u[2]/rz]))]};
+  for(let j=0;j<NV;j++)for(let i=0;i<NU;i++){const A=P(i,j),B2=P(i+1,j),C=P(i+1,j+1),D=P(i,j+1);[A,B2,C,A,C,D].forEach(q=>this.v(q[0],q[1],c,e))}}
+ // Rohr entlang -y von 0 bis -len, Radius oben r0, unten r1
+ cyl(Mb,r0,r1,len,col,e){const c=typeof col==='string'?hex(col):col,N=10;const P=(i,y)=>{const th=i/N*6.2832,r=y?r1:r0,u=[Math.cos(th),0,Math.sin(th)];return[tp(Mb,[u[0]*r,y?-len:0,u[2]*r]),nrm(tn(Mb,u))]};
+  for(let i=0;i<N;i++){const A=P(i,0),B2=P(i+1,0),C=P(i+1,1),D=P(i,1);[A,B2,C,A,C,D].forEach(q=>this.v(q[0],q[1],c,e))}}}
 const tp=(m,v)=>[m[0]*v[0]+m[4]*v[1]+m[8]*v[2]+m[12],m[1]*v[0]+m[5]*v[1]+m[9]*v[2]+m[13],m[2]*v[0]+m[6]*v[1]+m[10]*v[2]+m[14]];
 const tn=(m,v)=>[m[0]*v[0]+m[4]*v[1]+m[8]*v[2],m[1]*v[0]+m[5]*v[1]+m[9]*v[2],m[2]*v[0]+m[6]*v[1]+m[10]*v[2]];
 const B=(x,y,z,sx,sy,sz,ry)=>chain(M4.T(x,y,z),M4.RY(ry||0),M4.S(sx,sy,sz));
@@ -148,20 +155,27 @@ const glow=(buf,x,y,z,r,col,face)=>{const c=hex(col);face==='x'?buf.flat([[x,y-r
 // Figuren
 const SKIN=['#f2c49b','#d9a06e','#a86a3d','#7a4a2a'],HAIR=['#2b1d14','#6b3e1f','#111111','#c9a15a','#b04a20','#8a8a8a'],SHIRT=['#1fa55a','#2d6cdf','#e23d4b','#f6c64f','#7d3cc8','#e07b24','#17b3a6'];
 function figure(buf,o,t){const base=chain(M4.T(o.x,0,o.z),M4.RY(o.ry||0),M4.T(0,o.bob?Math.sin(t*o.bob+o.x)*.012:0,0));
- const P=(x,y,z,sx,sy,sz,col,e)=>buf.box(chain(base,M4.T(x,y,z),M4.S(sx,sy,sz)),col,e?{e}:null);
- const sw=o.walk?Math.sin(t*6)*.5:0;
- [-1,1].forEach(s=>{buf.box(chain(base,M4.T(s*.105,.84,0),M4.RX(s*sw),M4.T(0,-.42,0),M4.S(.17,.84,.2)),o.pants||'#2b2f3a');buf.box(chain(base,M4.T(s*.105,.84,0),M4.RX(s*sw),M4.T(0,-.8,.04),M4.S(.18,.09,.28)),'#151515')});
- P(0,1.15,0,.46,.64,.26,o.shirt);P(0,1.47,0,.14,.06,.14,o.skin);
- // Kopf leicht größer: wirkt freundlicher
- P(0,1.68,0,.36,.36,.34,o.skin);P(0,1.86,-.02,.39,.12,.38,o.hair);P(0,1.7,-.16,.39,.34,.08,o.hair);if(o.long)P(0,1.5,-.17,.37,.3,.07,o.hair);
- P(-.08,1.7,.172,.045,.05,.01,'#1a1a1a');P(.08,1.7,.172,.045,.05,.01,'#1a1a1a');
- const arm=(s,a,b)=>{const up=chain(base,M4.T(s*.29,1.42,0),M4.RX(a));buf.box(chain(up,M4.T(0,-.15,0),M4.S(.13,.32,.14)),o.shirt);const lo=chain(up,M4.T(0,-.3,0),M4.RX(b));buf.box(chain(lo,M4.T(0,-.14,0),M4.S(.115,.3,.12)),o.skin);return chain(lo,M4.T(0,-.3,0))};
+ const at=(x,y,z)=>chain(base,M4.T(x,y,z));
+ const sw=o.walk?Math.sin(t*6)*.5:0,pants=o.pants||'#2b2f3a';
+ // Beine mit runden Schuhen
+ [-1,1].forEach(s=>{const hip=chain(base,M4.T(s*.105,.86,0),M4.RX(s*sw));buf.cyl(hip,.1,.085,.76,pants);buf.sph(chain(hip,M4.T(0,-.79,.045)),.095,.07,.15,'#17181a')});
+ // Rumpf: Becken, Oberkörper, Schultern
+ buf.sph(at(0,.87,0),.2,.12,.15,pants);buf.sph(at(0,1.21,0),.23,.3,.165,o.shirt);buf.sph(at(0,1.4,0),.265,.11,.15,o.shirt);
+ buf.cyl(at(0,1.56,0),.07,.075,.1,o.skin);
+ // Kopf, Haare, Gesicht
+ buf.sph(at(0,1.72,0),.2,.205,.195,o.skin);
+ buf.sph(at(0,1.815,-.05),.222,.19,.222,o.hair);if(o.long)buf.sph(at(0,1.62,-.13),.2,.24,.12,o.hair);
+ [-1,1].forEach(s=>{buf.sph(at(s*.075,1.725,.178),.026,.032,.02,'#1b1b1b');buf.sph(at(s*.2,1.71,0),.035,.05,.04,o.skin)});
+ buf.sph(at(0,1.665,.19),.03,.022,.025,shade(o.skin,.86));
+ const arm=(s,a,b)=>{const up=chain(base,M4.T(s*.285,1.43,0),M4.RZ(s*.1),M4.RX(a));buf.sph(up,.085,.085,.085,o.shirt);buf.cyl(up,.075,.062,.3,o.shirt);
+  const lo=chain(up,M4.T(0,-.3,0),M4.RX(b));buf.sph(lo,.062,.062,.062,o.skin);buf.cyl(lo,.058,.048,.27,o.skin);const h=chain(lo,M4.T(0,-.3,0));buf.sph(h,.06,.065,.06,o.skin);return h};
  let hand=null;
  if(o.thr!=null){const ph=o.thr;const aim=ph<.55?1:ph<.7?1-(ph-.55)/.15:0,rel=ph>=.7&&ph<.82?(ph-.7)/.12:ph>=.82?1-(ph-.82)/.18:0;
-  hand=arm(1,-1.25-rel*.45,-1.55*aim-(1-aim)*(.25+0)*(ph<.82?1:0)-(ph>=.82?1.55*(ph-.82)/.18:0));arm(-1,.08,-.15)}
- else if(o.drink){arm(1,-.5-Math.max(0,Math.sin(t*.8+o.x))*.5,-1.5);arm(-1,.05,-.1)}
+  hand=arm(1,-1.25-rel*.45,-1.55*aim-(1-aim)*.25*(ph<.82?1:0)-(ph>=.82?1.55*(ph-.82)/.18:0));arm(-1,.08,-.15)}
+ else if(o.drink){const h=arm(1,-.5-Math.max(0,Math.sin(t*.8+o.x))*.5,-1.5);buf.cyl(chain(h,M4.T(0,.02,.06),M4.RX(1.5)),.04,.034,.13,'#f6c64f',.5);arm(-1,.05,-.1)}
  else{arm(1,-sw*.8,-.1);arm(-1,sw*.8,-.1)}
  return hand}
+const shade=(h,k)=>hex(h).map(v=>v*k);
 const THR=BX.map((bx,i)=>({x:bx+.18,z:2.5,ry:Math.PI,skin:SKIN[i%4],hair:HAIR[(i*2+1)%6],shirt:SHIRT[i],long:i%2===1,per:2.6+i*.37,off:i*.9,stuck:[]}));
 const WATCH=[{x:6.2,z:3.2,ry:.9,drink:1,bob:1.7},{x:7.25,z:4.0,ry:-2.4,drink:1,bob:1.3},{x:1.7,z:4.55,ry:.9,bob:1.5,drink:1},{x:2.95,z:4.75,ry:-1.6,bob:1.9}].map((o,i)=>Object.assign(o,{skin:SKIN[(i+1)%4],hair:HAIR[(i+3)%6],shirt:SHIRT[(i+4)%7],long:i===1,pants:i%2?'#3a2f2a':'#2b2f3a'}));
 const WALK={skin:SKIN[2],hair:HAIR[0],shirt:SHIRT[5],walk:1};

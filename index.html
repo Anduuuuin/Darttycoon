@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Bullseye Boss</title>
-<meta name="dt-version" content="6.5">
+<meta name="dt-version" content="7.0">
 <meta name="theme-color" content="#060d0a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -215,6 +215,11 @@ textarea{font-size:12px;height:90px}
 @keyframes c3p{50%{box-shadow:0 0 0 5px #f4c43044}}
 .vimg.c3v{image-rendering:auto;border-radius:12px;box-shadow:0 0 0 2px #0a0f0c,0 0 0 3.5px #b8902c}
 .heimroom img.c3t{display:block;width:100%;height:auto;border-radius:10px}
+.locked{position:relative!important;pointer-events:none}
+.panel.locked{min-height:46px;max-height:46px;overflow:hidden;opacity:.75;border-color:var(--line)!important}.panel.locked>*{visibility:hidden}
+.panel.locked::after{content:"🔒 " attr(data-lkn) " · " attr(data-lk);position:absolute;inset:0;display:flex;align-items:center;padding:0 14px;font:700 13px/1.2 Inter,system-ui,sans-serif;color:#b9c8bd}
+.btn.locked{color:transparent!important;font-size:0!important;min-height:44px;opacity:.6;filter:grayscale(.8)}.btn.locked::after{content:"🔒 " attr(data-lk);position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:700 10.5px/1.1 Inter,system-ui,sans-serif;color:#c9d6cc;text-align:center}
+.tile.locked{opacity:.6}.tile.locked i{filter:grayscale(1)}.tile.locked::after{content:"🔒 " attr(data-lk);position:absolute;left:2px;right:2px;bottom:-7px;font:700 8.5px/1.1 Inter,system-ui,sans-serif;color:#141016;background:#f4c430;border-radius:6px;padding:2px 3px;text-align:center}
 .c3fps{position:absolute;right:8px;top:8px;font:600 10px/1 Inter,system-ui,sans-serif;color:#fffa;z-index:2}
 .pxwrap{position:relative;line-height:0}
 .pximg{display:block;width:100%;height:auto;image-rendering:pixelated;image-rendering:crisp-edges}
@@ -1180,7 +1185,7 @@ function player(id){id=id||(S.run&&S.run.pid);if(S.run&&S.run.sub&&id==='sub')re
 function xpNeed(l){return 60+l*50}
 
 /* ================= Rendering: Titel ================= */
-function render(){try{navTrack()}catch(e){}if(S&&S.players)fixMg(S);try{statHook();if(S&&S.fc&&!FR.inbox)frInboxStart()}catch(e){}render0();try{if(UI._lt!==UI.tab){UI._lt=UI.tab;const c=document.querySelector('#app .content');if(c)c.classList.add('enter')}}catch(e){}try{enMount()}catch(e){}try{autoKick()}catch(e){}if(S&&S.players&&!UI.offOnce){UI.offOnce=1;setTimeout(offlineCheck,300)}try{coachCheck()}catch(e){}if(S&&!(S.run&&S.run.combat)&&!S.free)setTimeout(()=>{try{metaTick();storyCheck();mgQueueCheck()}catch(e){console.error(e)}},60)}
+function render(){try{if(S&&S.stats&&!S.run&&!S.free&&UNL_TAB[UI.tab]&&!unl(UNL_TAB[UI.tab])){const k=UNL_TAB[UI.tab];UI.tab=NAV.last&&NAV.last!==UI.tab?NAV.last:'welt';setTimeout(()=>toast(`🔒 ${UNL[k].n}: ${unlTxt(k)}`),50)}navTrack();setTimeout(unlockCheck,900)}catch(e){}if(S&&S.players)fixMg(S);try{statHook();if(S&&S.fc&&!FR.inbox)frInboxStart()}catch(e){}render0();try{if(UI._lt!==UI.tab){UI._lt=UI.tab;const c=document.querySelector('#app .content');if(c)c.classList.add('enter')}}catch(e){}try{enMount()}catch(e){}try{autoKick()}catch(e){}if(S&&S.players&&!UI.offOnce){UI.offOnce=1;setTimeout(offlineCheck,300)}try{coachCheck()}catch(e){}if(S&&!(S.run&&S.run.combat)&&!S.free)setTimeout(()=>{try{metaTick();storyCheck();mgQueueCheck()}catch(e){console.error(e)}},60)}
 function render0(){
   const app=$('#app');
   if(!S){const c=document.getElementById('coach');if(c)c.remove();return renderTitle(app)}
@@ -1286,7 +1291,7 @@ function renderHub(app){
   else if(t==='kader')body=backBtn()+hubKader();
   else if(t==='turnier')body=hubTurnier();
   else if(t==='liga'){const due=pokalDue();body=backBtn()+`<div class="seg"><button class="btn ${UI.lt!=='pokal'?'':'gray'} sm" data-lt="liga">📋 Liga</button><button class="btn ${UI.lt==='pokal'?'':'gray'} sm" data-lt="pokal">🏆 Pokal${due?' ❗':''}</button></div>`+(UI.lt==='pokal'?hubPokal():hubLiga())}
-  else if(t==='shop')body=`<div class="navrow"><button class="btn gray sm" data-go="welt">◀ Stadt</button><b class="small">🛍 Dartshop</b></div><div class="seg"><button class="btn ${UI.shopT!=='deco'&&UI.shopT!=='stk'?'':'gray'} sm" data-shopt="dart">🎯 Dart-Teile</button><button class="btn ${UI.shopT==='deco'?'':'gray'} sm" data-shopt="deco">🛋 Einrichtung</button><button class="btn ${UI.shopT==='stk'?'':'gray'} sm" data-shopt="stk">🏷 Sticker</button></div>`+(UI.shopT==='deco'?hubDecoShop():UI.shopT==='stk'?hubSticker():hubShop());
+  else if(t==='shop')body=`<div class="navrow"><button class="btn gray sm" data-go="welt">◀ Stadt</button><b class="small">🛍 Dartshop</b></div><div class="seg"><button class="btn ${UI.shopT!=='deco'&&UI.shopT!=='stk'?'':'gray'} sm" data-shopt="dart">🎯 Dart-Teile</button><button class="btn ${UI.shopT==='deco'?'':'gray'} sm" data-shopt="deco">🛋 Einrichtung</button><button class="btn ${UI.shopT==='stk'?'':'gray'} sm${lk('sticker')}" data-shopt="stk">🏷 Sticker</button></div>`+(UI.shopT==='deco'?hubDecoShop():UI.shopT==='stk'?hubSticker():hubShop());
   else if(t==='woche')body=hubWoche();
   else if(t==='halle')body=hubHalle();
   else if(t==='ruhm')body=hubRuhm();
@@ -1298,7 +1303,7 @@ function renderHub(app){
   else if(t==='online')body=hubOnline();
   else if(t==='vliga')body=hubVliga();
   else{UI.tab='welt';body=hubWelt()}
-  const tabs=[['welt','🏙','Stadt'],['heim','🏠','Heim'],['r_buero','📋','Büro'],['shop','🛍','Shop'],['turnier','🏆','Turniere'],['woche','📅','Woche']];
+  const tabs=[['welt','🏙','Stadt'],['heim','🏠','Heim'],['r_buero','📋','Büro'],['shop',unl('shop')?'🛍':'🔒','Shop'],['turnier','🏆','Turniere'],['woche','📅','Woche']];
   const on=k=>UI.tab===k||(k==='welt'&&(UI.tab==='halle'||UI.tab==='pl'))||(k==='turnier'&&['album','online','vliga'].includes(UI.tab))||(k==='r_buero'&&['einst','liga','kader','verein','ruhm','jobs','verw'].includes(UI.tab))||(k==='heim'&&((UI.tab.startsWith('r_')&&UI.tab!=='r_buero')||UI.tab==='scorer'));
   app.innerHTML=topBar()+`<div class="content">${body}</div><div class="nav">${tabs.map(t=>`<button class="${on(t[0])?'on':''}" data-tab="${t[0]}"><span>${t[1]}</span>${t[2]}</button>`).join('')}</div>`;
   app.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{snd('click');UI.tab=b.dataset.tab;render();window.scrollTo(0,0)});
@@ -2096,11 +2101,11 @@ function hubHeim(){return `<div class="navrow"><button class="btn gray sm" data-
   ${heimSVG()}<div class="tiny mut" style="text-align:center">Tippe auf einen Raum.</div>`}
 function hubRoom(id){
   const R0=ROOMS[id];let acts='';
-  if(id==='buero'){const pd=pokalDue(),mr=mgReadyCount(),cp=canPrestige();const T=(at,ic,l,hot)=>`<button class="tile${hot?' hot':''}" ${at}><i>${ic}</i>${l}</button>`;
-    acts=`<div class="tiles">${T('data-act="liga"','📋','Liga')}${T('data-act="pokal"','🏆','Pokal',pd)}${T('data-act="kader"','🎯','Kader')}${T('data-go="jobs"','🗂','Aufträge',mr)}${T('data-go="verw"','🏛','Verwaltung')}${T('data-go="woche"','📅','Wochenbilanz')}${T('data-act="trophy"','🏅','Erfolge')}${T('data-go="ruhm"','🌟','Ruhmeshalle',cp)}${T('data-go="einst"','⚙️','Einstellungen')}</div>`}
+  if(id==='buero'){const pd=pokalDue(),mr=mgReadyCount(),cp=canPrestige();const T=(at,ic,l,hot,u)=>`<button class="tile${hot&&!(u&&!unl(u))?' hot':''}${u?lk(u):''}" ${at}><i>${ic}</i>${l}</button>`;
+    acts=`<div class="tiles">${T('data-act="liga"','📋','Liga',0,'liga')}${T('data-act="pokal"','🏆','Pokal',pd,'pokal')}${T('data-act="kader"','🎯','Kader')}${T('data-go="jobs"','🗂','Aufträge',mr,'jobs')}${T('data-go="verw"','🏛','Verwaltung',0,'verw')}${T('data-go="woche"','📅','Wochenbilanz')}${T('data-act="trophy"','🏅','Erfolge')}${T('data-go="ruhm"','🌟','Ruhmeshalle',cp,'ruhm')}${T('data-go="einst"','⚙️','Einstellungen')}</div>`}
   else if(id==='training'){acts=miniPanel()+buildCard('training')+(S.b.training>0?S.players.map(p=>`<div class="panel"><div class="row">${personImg(p.look,40)}<div style="flex:1"><b class="small">${esc(p.name)} <span class="lvl px">Lv${p.lvl}</span></b><div class="tiny mut">${p.drilled?'✔ Wurftraining':'🎯 Wurftraining frei'} · ${p.trained?'✔ Kartentraining':'🃏 Kartentraining frei'}</div></div><button class="btn sm" data-train="${p.id}" ${p.trained&&p.drilled?'disabled':''}>Trainieren</button></div></div>`).join(''):'<div class="panel small mut">Baue den Trainingsraum aus, um deine Spieler zu trainieren.</div>')}
   else if(id==='theke')acts=buildCard('bar')+buildCard('fanshop');
-  else if(id==='scheiben')acts=`<button class="btn block gold" data-act="friendly">🎯 Freundschaftsspiel · 501 · Best of 3</button><div class="tiny mut" style="margin:-4px 0 4px">Freies Werfen gegen ein Vereinsmitglied, jederzeit, ohne Einsatz.</div><div class="panel"><h2>🎯 Echtes Dart</h2><div class="grid2" style="margin-top:8px"><button class="btn" id="scstart">📟 ${S.realCur?'Match fortsetzen':'Scorer starten'}</button><button class="btn" id="rtrain">📝 Training eintragen</button></div><div class="tiny mut" style="margin-top:6px">Für dein echtes Board: Punkte zählen, Checkout-Wege, Statistik. Echte Leistungen bringen Belohnungen im Spiel.</div></div>${realStatsPanel()}`+buildCard('boards')+buildCard('sponsor');
+  else if(id==='scheiben')acts=`<button class="btn block gold" data-act="friendly">🎯 Freundschaftsspiel · 501 · Best of 3</button><div class="tiny mut" style="margin:-4px 0 4px">Freies Werfen gegen ein Vereinsmitglied, jederzeit, ohne Einsatz.</div><div class="panel${lk('real')}"><h2>🎯 Echtes Dart</h2><div class="grid2" style="margin-top:8px"><button class="btn" id="scstart">📟 ${S.realCur?'Match fortsetzen':'Scorer starten'}</button><button class="btn" id="rtrain">📝 Training eintragen</button></div><div class="tiny mut" style="margin-top:6px">Für dein echtes Board: Punkte zählen, Checkout-Wege, Statistik. Echte Leistungen bringen Belohnungen im Spiel.</div></div>${realStatsPanel()}`+buildCard('boards')+buildCard('sponsor');
   const dk=Object.keys(DECO).filter(k=>DECO[k].room===id);
   return `<div class="navrow"><button class="btn gray sm" data-go="heim">◀ Vereinsheim</button><b class="small">${R0.i} ${R0.n}</b></div>
   ${C3.on()?`<div class="c3host" id="room3" data-room="${id}"></div>`:`<div class="roomframe">${roomSVG(id)}${roomWalkers(id)}</div>`}<div class="tiny mut" style="text-align:center">Tippe auf Dinge im Raum, auf Türen für den nächsten Raum oder auf ➕ für neue Einrichtung.</div>${acts}
@@ -3328,7 +3333,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='6.5';
+const GAME_VERSION='7.0';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
@@ -3592,10 +3597,10 @@ function metaPanels(){
   const A=ascInfo(),D=dailyInfo(),M=dailyMod(),ids=ALBUM_IDS(),al=albumData(),have=ids.filter(k=>al.c[k]).length;
   const rk=S.players.slice().sort((a,b)=>rankOf(a)-rankOf(b)).slice(0,4);
   return sb+`<div class="panel"><h2>🌍 Weltrangliste</h2>${rk.map(p=>{const n=rankNext(p);return `<div class="row between" style="margin-top:8px"><span class="small"><b>#${rankOf(p)}</b> ${esc(p.name)}</span><span class="tiny mut">${n?`noch ${n.need} Pkt bis Top ${n.m}`:'👑 Nummer 1'}</span></div>`}).join('')}<div class="tiny mut" style="margin-top:6px">Ranglistenpunkte gibt es für jeden Turniersieg-Match, mehr bei großen Turnieren und höheren Druckstufen.</div></div>
-  <div class="panel" style="border-color:${D.done?'var(--line)':'var(--gold)'}"><div class="row between"><div><h3>📅 Tages-Turnier</h3><div class="tiny mut" style="margin-top:4px">Heute: ${TIERS[M.tier].i} ${TIERS[M.tier].n} mit ${RELICS[M.tal].i} ${RELICS[M.tal].n}. Kostenlos, zählt nicht als Wochenturnier.${D.best?` · Rekord: ${D.best} Siege`:''}</div></div>${D.done?`<span class="chip">✔ ${D.last!=null?D.last+' Siege':'läuft'}</span>`:'<button class="btn sm gold" id="daily">Spielen</button>'}</div></div>
-  <div class="panel"><div class="row between"><h3>🔥 Druckstufe ${A.cur}</h3><span class="tiny mut">max ${A.max}</span></div><div class="tiny mut" style="margin-top:4px">${A.cur?ASC_TXT.slice(1,A.cur+1).join(' · '):'Gewinne ein Turnier, um Druckstufe 1 freizuschalten.'}${A.cur?` · Belohnung: +${A.cur*15}% Preisgeld, +${A.cur*20}% Ranglistenpunkte`:''}</div>
+  <div class="panel${lk('daily')}" style="border-color:${D.done?'var(--line)':'var(--gold)'}"><div class="row between"><div><h3>📅 Tages-Turnier</h3><div class="tiny mut" style="margin-top:4px">Heute: ${TIERS[M.tier].i} ${TIERS[M.tier].n} mit ${RELICS[M.tal].i} ${RELICS[M.tal].n}. Kostenlos, zählt nicht als Wochenturnier.${D.best?` · Rekord: ${D.best} Siege`:''}</div></div>${D.done?`<span class="chip">✔ ${D.last!=null?D.last+' Siege':'läuft'}</span>`:'<button class="btn sm gold" id="daily">Spielen</button>'}</div></div>
+  <div class="panel${lk('asc')}"><div class="row between"><h3>🔥 Druckstufe ${A.cur}</h3><span class="tiny mut">max ${A.max}</span></div><div class="tiny mut" style="margin-top:4px">${A.cur?ASC_TXT.slice(1,A.cur+1).join(' · '):'Gewinne ein Turnier, um Druckstufe 1 freizuschalten.'}${A.cur?` · Belohnung: +${A.cur*15}% Preisgeld, +${A.cur*20}% Ranglistenpunkte`:''}</div>
    <div class="row" style="gap:6px;margin-top:8px;flex-wrap:wrap">${Array.from({length:A.max+1},(_,i)=>`<button class="btn sm ${i===A.cur?'gold':'gray'}" data-asc="${i}">${i}</button>`).join('')}</div></div>
-  <div class="row" style="gap:8px"><button class="btn" style="flex:1" data-go="online">🌐 Online</button><button class="btn gray" style="flex:1" data-go="album">📖 Album ${have}/${ids.length}</button><button class="btn gray" style="flex:1" id="pres">📈 Druck ${Math.round((pressure()-1)*100)}%</button></div>`}
+  <div class="row" style="gap:8px"><button class="btn${lk('online')}" style="flex:1" data-go="online">🌐 Online</button><button class="btn gray${lk('album')}" style="flex:1" data-go="album">📖 Album ${have}/${ids.length}</button><button class="btn gray" style="flex:1" id="pres">📈 Druck ${Math.round((pressure()-1)*100)}%</button></div>`}
 
 TIERS[10].pres=1;
 function hubTurnier(){return metaPanels()+hubTurnier0()}
@@ -3854,11 +3859,11 @@ function autoStep(){UI.autoT=null;if(!UI.auto||!S||!S.run||!S.run.combat)return;
   if(C.phase!=='player'||C.busy){UI.autoT=_setT(autoStep,500/UI.speed);return}
   const me=C.me;let bi=-1,bs=0;me.hand.forEach((c,i)=>{const sc=autoScore(c);if(sc>bs){bs=sc;bi=i}});
   if(bi<0){endTurn();return}
-  UI.sel=bi;render();UI.autoT=_setT(()=>{playCard(bi).then(()=>{if(UI.auto&&!UI.autoT)UI.autoT=_setT(autoStep,750/UI.speed)})},350/UI.speed)}
+  C.autoN=(C.autoN||0)+1;UI.sel=bi;render();UI.autoT=_setT(()=>{playCard(bi).then(()=>{if(UI.auto&&!UI.autoT)UI.autoT=_setT(autoStep,750/UI.speed)})},350/UI.speed)}
 function autoKick(){if(!UI.auto||UI.autoT||!S||!S.run)return;if(S.run.combat){const C=S.run.combat;if(C.phase==='player'&&!C.busy)UI.autoT=_setT(autoStep,600/UI.speed)}
   else if(S.run.mode==='liga'&&!document.querySelector('#modal.on')){UI.autoT=_setT(()=>{UI.autoT=null;const b=document.querySelector('#lnext');if(UI.auto&&b)b.click()},1400/UI.speed)}}
 function autoBtns(){return `<button class="btn ${UI.auto?'gold':'gray'}" id="auto" style="flex:none;padding:10px 10px" title="Automatisch spielen">${UI.auto?'⏸':'▶'} Auto</button><button class="btn gray" id="spd" style="flex:none;padding:10px 8px">${UI.speed}×</button>`}
-function bindAuto(app){const a=app.querySelector('#auto');if(a)a.onclick=()=>{UI.auto=!UI.auto;if(UI.autoT){clearTimeout(UI.autoT);UI.autoT=null}snd('click');toast(UI.auto?'▶ Auto-Spiel an: lehn dich zurück!':'⏸ Auto-Spiel aus');render()};
+function bindAuto(app){const a=app.querySelector('#auto');if(a)a.onclick=()=>{UI.auto=!UI.auto;if(UI.autoT){clearTimeout(UI.autoT);UI.autoT=null}snd('click');toast(UI.auto?'▶ Auto-Spiel an: spielt solide, aber 20 % weniger Preisgeld':'⏸ Auto-Spiel aus');render()};
   const s=app.querySelector('#spd');if(s)s.onclick=()=>{UI.speed=UI.speed===1?2:UI.speed===2?3:1;snd('click');render()}}
 
 // ---------- Offline-Einnahmen ----------
@@ -4964,7 +4969,7 @@ function hubEinst(){
    ${row('es_mute',S.mute?'🔇 Ton ist aus':'🔊 Ton ist an')}${row('es_music',S.music?'🎵 Musik ist an':'🎵 Musik ist aus')}${row('es_tips',S.tips===false?'💡 Tipps sind aus':'💡 Tipps sind an')}${row('es_help','❔ Anleitung')}
   </div>
   <div class="panel"><h3>🏙 Grafik</h3>
-   ${row('es_3d',S.opt3d?'🏙 3D-Ansicht ist an':'🏙 3D-Ansicht ist aus','Stadt, Vereinsheim und Räume in 3D zum Testen. Läuft es nicht flüssig, hier wieder ausschalten.')}${S.opt3d?row('es_fps',UI.fps?'⏱ Bildrate wird angezeigt':'⏱ Bildrate anzeigen'):''}
+   ${row('es_3d',S.opt3d?'🏙 3D-Ansicht ist an':'🏙 3D-Ansicht ist aus','Stadt, Vereinsheim und Räume in 3D zum Testen. Läuft es nicht flüssig, hier wieder ausschalten.')}${unlSet()._all?'':row('es_unl','🔓 Alles sofort freischalten','Für erfahrene Spieler: Liga, Pokal, Online und der Rest sind ohne Warten da.')}${S.opt3d?row('es_fps',UI.fps?'⏱ Bildrate wird angezeigt':'⏱ Bildrate anzeigen'):''}
   </div>
   <div class="panel"><h3>💾 Spielstand</h3>
    ${row('es_exp','💾 Spielstand sichern','Als Code speichern oder kopieren')}${row('es_imp','⤵ Spielstand laden','Einen gesicherten Code einfügen')}${!isStandalone()?row('es_inst','📲 Als App installieren'):''}
@@ -4985,6 +4990,7 @@ function hubEinst(){
 function bindEinst(app){const q=(id,f)=>{const e=app.querySelector(id);if(e)e.onclick=f};
   q('#es_mute',()=>{S.mute=!S.mute;save();render();snd('click')});
   q('#es_music',()=>{musicToggle(!S.music);render()});
+  q('#es_unl',()=>{const u=unlSet();u._all=1;Object.keys(UNL).forEach(k=>u[k]=1);save();snd('coin');toast('🔓 Alles freigeschaltet');render()});
   q('#es_3d',()=>{S.opt3d=!S.opt3d;save();snd('click');render()});q('#es_fps',()=>{UI.fps=!UI.fps;snd('click');render()});
   q('#es_tips',()=>{S.tips=S.tips===false;if(S.tips)S.seen={};save();render()});
   q('#es_help',()=>showHelp(false));q('#es_exp',exportDialog);q('#es_imp',importDialog);q('#es_inst',installDialog);q('#es_fb',feedbackDialog);
@@ -5542,6 +5548,51 @@ function navBack(){const m=document.querySelector('#modal.on');
     const now=Date.now();if(now-NAV.t<2500){try{history.go(-(d+1))}catch(_){}return}
     NAV.t=now;if(d<=0)arm();toast('Nochmal „Zurück“ drücken zum Beenden')})})();
 
+/* ================= Gegner-Eigenheiten (Kartenspiel) ================= */
+const OTRAIT={
+ konter:{i:'🤺',n:'Konterspieler',d:'Wirfst du 100 oder mehr, wirft er in seiner nächsten Aufnahme +25.',tip:'Bleib knapp unter 100 oder mach das Leg schnell zu. Sonst wirft er eher wenig.'},
+ drohung:{i:'😠',n:'Einschüchterer',d:'Macht in jeder Aufnahme Druck, und zwar doppelt so stark.',tip:'Bau Fokus auf, bevor du wirfst. Seine Würfe selbst sind schwächer.'},
+ hai:{i:'🦈',n:'Checkout-Hai',d:'Trifft sein Checkout 18 % öfter.',tip:'Stör ihn, sobald er auf Finish steht, oder sei vorher fertig. Beim Scoren ist er schwach.'},
+ blitz:{i:'⚡',n:'Schnellstarter',d:'Die ersten 2 Aufnahmen jedes Legs +30 %, danach −20 %.',tip:'Halte am Anfang mit Stör- und Fokuskarten dagegen, hinten raus lässt er nach.'},
+ schatten:{i:'🪞',n:'Nachahmer',d:'Wirft mindestens so viel wie du in deiner letzten Aufnahme (höchstens 120).',tip:'Hohe Aufnahmen machen ihn stark. Wirf gleichmäßig und setz den großen Wurf erst zum Schluss.'},
+ stoisch:{i:'🗿',n:'Stoiker',d:'Lässt sich nicht nervös machen, stören oder zum Schweigen bringen.',tip:'Störkarten sind hier verschwendet. Dafür checkt er schlechter: Scoren und Fokus zählen.'}};
+function traitRoll(o,tier,kind,step){o.tr=[];const t=lvOf(tier);if(kind==='n'&&t===0&&step<2)return;if(kind==='b'&&t===0)return;
+  const k=pick(Object.keys(OTRAIT));o.tr.push(k);
+  if(k==='konter'){o.min=Math.round(o.min*.92);o.max=Math.round(o.max*.92)}
+  if(k==='drohung'){o.min=Math.round(o.min*.9);o.max=Math.round(o.max*.9);o.dr*=2}
+  if(k==='hai'){o.min=Math.round(o.min*.86);o.max=Math.round(o.max*.86);o.co+=.18}
+  if(k==='schatten'){o.min=Math.round(o.min*.8);o.max=Math.round(o.max*.8)}
+  if(k==='stoisch')o.co=Math.max(.1,o.co-.08)}
+const hasTr=(o,k)=>!!(o&&o.tr&&o.tr.includes(k));
+function traitIntro(C){if(!C||C.playMode==='board'||!C.opp.tr||!C.opp.tr.length)return;S.seenTr=S.seenTr||{};const neu=C.opp.tr.filter(k=>!S.seenTr[k]);if(!neu.length)return;neu.forEach(k=>S.seenTr[k]=1);
+  setTimeout(()=>{if(!S.run||S.run.combat!==C||document.querySelector('#modal.on'))return;modal(`<div class="tiny" style="color:var(--gold)">🆕 NEUE GEGNER-EIGENHEIT</div>${neu.map(k=>`<h3 style="margin-top:6px">${OTRAIT[k].i} ${OTRAIT[k].n}</h3><div class="small" style="line-height:1.5">${OTRAIT[k].d}</div><div class="panel small" style="margin-top:8px"><b>So reagierst du:</b> ${OTRAIT[k].tip}</div>`).join('')}<div class="tiny mut">Tippe im Match auf das Symbol beim Gegner, um das nochmal zu lesen.</div><button class="btn gold block" onclick="closeModal();autoKick()">Verstanden</button>`)},500)}
+
+/* ================= Schrittweises Freischalten ================= */
+const UNL={
+ shop:{i:'🛍',n:'Dartshop',need:1,d:'Kaufe Dart-Teile für deine Spieler und Einrichtung fürs Vereinsheim.',go:'shop'},
+ album:{i:'📖',n:'Karten-Album',need:1,d:'Hier sammelst du alle Karten, die du schon gesehen hast.',go:'album'},
+ asc:{i:'🔥',n:'Druckstufen',ok:()=>(S.stats.wins||0)>=1,lk:'nach dem 1. Turniersieg',d:'Mach Turniere freiwillig schwerer und kassiere dafür mehr Preisgeld.',go:'turnier'},
+ liga:{i:'📋',n:'Liga',need:2,d:'Dein Verein tritt jede Woche zum Ligaabend an. Du findest die Liga im Büro.',go:'liga'},
+ daily:{i:'📅',n:'Tages-Turnier',need:2,d:'Jeden Tag ein kostenloses Turnier mit einer Sonderregel.',go:'turnier'},
+ jobs:{i:'🗂',n:'Aufträge',need:3,d:'Kleine Aufträge im Büro bringen nebenbei Geld und Ruf.',go:'jobs'},
+ online:{i:'🌐',n:'Online & Freunde',need:3,d:'Bestenlisten, Freunde hinzufügen und Live-Duelle.',go:'online'},
+ real:{i:'📟',n:'Echtes Dart',need:3,d:'Im Scheibenraum gibt es einen Scorer für dein echtes Board.',go:'r_scheiben'},
+ pokal:{i:'🏆',n:'Pokal',need:4,d:'K.-o.-Spiele gegen andere Vereine. Du findest den Pokal im Büro bei der Liga.',go:'liga'},
+ sticker:{i:'🏷',n:'Sticker',need:4,d:'Sticker aus dem Shop geben kleine dauerhafte Vorteile.',go:'shop'},
+ verw:{i:'🏛',n:'Verwaltung',need:5,d:'Personal einstellen, Mitgliedsbeitrag festlegen, Finanzen im Blick.',go:'verw'},
+ ruhm:{i:'🌟',n:'Ruhmeshalle',need:6,d:'Prestige: Neustart mit dauerhaften Vorteilen, wenn du weit genug bist.',go:'ruhm'}};
+const UNL_TAB={shop:'shop',album:'album',liga:'liga',jobs:'jobs',online:'online',vliga:'online',verw:'verw',ruhm:'ruhm'};
+function unlSet(){if(!S.life)S.life={};return S.life.unl=S.life.unl||{}}
+function unl(k){const U=UNL[k];if(!U||!S||!S.stats)return true;const u=unlSet();if(u[k]||u._all)return true;return U.ok?U.ok():(S.stats.runs||0)>=U.need}
+const unlTxt=k=>{const U=UNL[k];return U.lk||`nach ${U.need} ${U.need===1?'Turnier':'Turnieren'}`};
+const lk=k=>unl(k)?'':` locked" data-lkn="${UNL[k].n}" data-lk="${unlTxt(k)}`;
+function unlockCheck(){if(!S||!S.stats||S.run||S.free||document.querySelector('#modal.on'))return;const u=unlSet();
+  if(!u._init){u._init=1;if((S.stats.runs||0)>=3||(S.week||1)>6){Object.keys(UNL).forEach(k=>{if(unl(k))u[k]=1})}save()}
+  const neu=Object.keys(UNL).filter(k=>!u[k]&&unl(k));if(!neu.length)return;neu.forEach(k=>u[k]=1);save();snd('win');
+  modal(`<div style="text-align:center"><div style="font-size:42px">🎉</div><div class="tiny" style="color:var(--gold)">NEU FREIGESCHALTET</div></div>${neu.map(k=>`<div class="panel" style="border-color:var(--gold)"><h3>${UNL[k].i} ${UNL[k].n}</h3><div class="small mut" style="margin-top:4px;line-height:1.45">${UNL[k].d}</div></div>`).join('')}
+   <div class="row" style="gap:8px"><button class="btn gray" style="flex:1" onclick="closeModal()">Später</button><button class="btn gold" style="flex:1" id="unlgo">Anschauen</button></div>`);
+  $('#unlgo').onclick=()=>{closeModal();UI.tab=UNL[neu[0]].go;render();window.scrollTo(0,0)}}
+
 /* ================= Match ================= */
 function makeOpp(tier,kind,step){
   let o;
@@ -5551,6 +5602,7 @@ function makeOpp(tier,kind,step){
   o.min=24+t*11+sb;o.max=48+t*17+sb;o.dr=2+t*2;o.finish=Math.min(40+t*12,110);o.co=.22+t*.07;
   if(kind==='e'){o.min+=8;o.max+=10;o.dr+=2;o.co+=.06;o.ab.push(pick(['zittern','druck','cold','comeback']))}
   if(kind==='b'){o.min+=12;o.max+=16;o.dr+=3;o.co+=.1}
+  traitRoll(o,tier,kind,step);
   o.co=Math.min(o.co,.85);o.rest=301;o.legs=0;o.st={nerv:0,dist:0,sil:0};o.intent=null;o.coBonus=0;
   return o;
 }
@@ -5588,7 +5640,7 @@ function startLeg(first){
   if(o.ab.includes('fieber'))deck.push({id:'fieber',up:false,u:uid()});
   me.draw=shuffle(deck);me.discard=[];me.hand=[];me.exhaust=[];me.bustSaved=false;
   o.st={nerv:(player().cls==='psycho'?1:0)+(first&&has('shirt')?2:0),dist:0,sil:0};
-  C.firstTurn=true;me.inn=false;o.inn=false;if((S.run.asc||0)>=9&&!S.run.mode)o.st.nerv=0;if(player().legend==='schlange')o.st.nerv+=1;
+  C.firstTurn=true;me.inn=false;o.inn=false;C.lastMe=0;o.lt=0;if(first)traitIntro(C);if((S.run.asc||0)>=9&&!S.run.mode)o.st.nerv=0;if(player().legend==='schlange')o.st.nerv+=1;
   if(C.starter==='opp'){rollIntent();C.phase='opp';C.busy=true;save();render();setTimeout(oppTurn,900)}
   else startPlayerTurn();
 }
@@ -5620,15 +5672,18 @@ function rollIntent(){
   const C=S.run.combat,o=C.opp,me=C.me;
   if(o.rest<=o.finish){o.intent={type:'co',ch:clamp(o.co+o.coBonus+(o.ab.includes('cold')?.15:0),.05,.95)};return}
   let sc=rnd(o.min,o.max);
+  if(hasTr(o,'blitz'))sc=Math.round(sc*((o.lt||0)<2?1.3:.8));
+  if(hasTr(o,'konter')&&(C.lastMe||0)>=100)sc+=25;
+  if(hasTr(o,'schatten'))sc=Math.max(sc,Math.min(120,C.lastMe||0));
   if(o.ab.includes('comeback')&&o.rest>me.rest+60)sc+=20;
   sc=Math.min(sc,180);
   if(o.rest-sc<2)sc=Math.max(0,o.rest-pick([40,32,36,24,20,16]));
-  let dr=0;if(R()<(o.ab.includes('druck')?1:.38))dr=rnd(Math.max(1,o.dr-1),o.dr+2);
+  let dr=0;if(R()<(o.ab.includes('druck')||hasTr(o,'drohung')?1:.38))dr=rnd(Math.max(1,o.dr-1),o.dr+2);
   if((C.start||301)>301)dr=Math.round(dr*.65);
   o.intent={type:'sc',score:sc,druck:dr,fx:rollOppFx(C)};
 }
 function intentView(){
-  const o=S.run.combat.opp,it=o.intent;if(!it)return '';if(S.run.combat.rule==='nebel')return '<span class="chip">🎭 ??? Pokerface</span>';
+  const o=S.run.combat.opp,it=o.intent;if(!it)return '';if(hasTr(o,'stoisch')){o.st.nerv=0;o.st.dist=0;o.st.sil=0}if(S.run.combat.rule==='nebel')return '<span class="chip">🎭 ??? Pokerface</span>';
   const nerv=o.st.nerv>0;
   if(it.type==='co'){const ch=clamp(it.ch-(nerv?.2:0)-(o.coMinus||0),0,1);return `<span class="chip">🎯 Checkout-Versuch ${Math.round(ch*100)}%</span>`}
   let sc=it.score;if(nerv)sc=Math.round(sc*.75);sc=Math.max(0,sc-o.st.dist);
@@ -5730,7 +5785,7 @@ async function playCard(i){
     if(hitN>0&&specs.some(x=>x.ch<1))evoGain(card.id);
     if(d.post&&!res)d.post(C,card.up,hitN,specs.length);
   }
-  me.played++;
+  me.played++;C.allN=(C.allN||0)+1;
   if(d.fx&&(res!=='bust'||(has('chalkline')&&!me.bustSaved))&&res!=='co')d.fx(C,card.up);
   if(d.t==='power')C.used.push(card.u);
   else if(d.ex)me.exhaust.push(card);
@@ -5763,7 +5818,8 @@ function endTurn(force){
 }
 function oppTurn(){
   const C=S.run&&S.run.combat;if(!C)return;
-  const o=C.opp,me=C.me,it=o.intent||(rollIntent(),o.intent);
+  const o=C.opp,me=C.me,it=o.intent||(rollIntent(),o.intent);o.lt=(o.lt||0)+1;
+  if(hasTr(o,'stoisch')){o.st.nerv=0;o.st.dist=0;o.st.sil=0;o.skip=0}
   const nerv=o.st.nerv>0;
   if(o.skip){o.skip=0;o.intent=null;fx(`${o.nick} ist raus aus dem Rhythmus!`,'#7dffb0');return setTimeout(startPlayerTurn,900)}
   if(it.type==='co'){
@@ -5816,7 +5872,7 @@ function matchWon(){
   snd('win');
   const r=S.run,C=r.combat,T=TIERS[r.tier];
   r.won++;r.matches++;
-  const g=Math.round(T.prize*(C.kind==='e'?1.6:C.kind==='b'?3:1)*(1+S.b.sponsor*.1)*(has('scarf')?1.25:1)*(1+decoSum('prize')/100)*(1+perk('preis')*.1)*(r.flags&&r.flags.gross?1.4:1)*(1+.15*(r.asc||0))*(1+.08*pLvl())*(1+stk('prize'))*(1+.06*(C.niv||0)));
+  const g=Math.round(T.prize*(C.kind==='e'?1.6:C.kind==='b'?3:1)*(1+S.b.sponsor*.1)*(has('scarf')?1.25:1)*(1+decoSum('prize')/100)*(1+perk('preis')*.1)*(r.flags&&r.flags.gross?1.4:1)*(1+.15*(r.asc||0))*(1+.08*pLvl())*(1+stk('prize'))*(1+.06*(C.niv||0))*((C.autoN||0)>(C.allN||1)/2?.8:1));
   r.gold+=g;S.stats.mwins=(S.stats.mwins||0)+1;rpGain(player(),(lvOf(r.tier)+1)*8*(C.kind==='e'?1.5:C.kind==='b'?2.5:1)*(1+.2*(r.asc||0))*(T.tourOnly?2:1));
   const hl=(r.asc||0)>=7?0:heal(3+(has('stammtisch')?6:0));
   r.combat=null;save();
@@ -5887,7 +5943,7 @@ function renderCombat(app){
    <div class="opp">${personImg(o.look,80)}<div style="flex:1;min-width:0">
      <div class="small" style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(o.name)}</div>${o.club?`<div class="tiny mut">${esc(o.club)}</div>`:''}
      <div class="row" style="gap:8px"><span class="score" style="color:#ff8a8a">${o.rest}</span>${o.st.nerv>0?`<span class="chip">😵 nervös ${o.st.nerv}</span>`:''}${o.st.dist>0?`<span class="chip">🌀 −${o.st.dist}</span>`:''}</div>
-     <div class="intent">${ruleChip(C)}${C.phase==='player'?intentView():'<span class="chip">⏳ wirft…</span>'}${o.ab.map(a=>`<span class="chip" data-ab="${a}">${AB_ICON[a]}</span>`).join('')}</div></div></div>
+     <div class="intent">${ruleChip(C)}${C.phase==='player'?intentView():'<span class="chip">⏳ wirft…</span>'}${o.ab.map(a=>`<span class="chip" data-ab="${a}">${AB_ICON[a]}</span>`).join('')}${(o.tr||[]).map(a=>`<span class="chip" data-tr="${a}" style="border-color:var(--gold)">${OTRAIT[a].i} ${OTRAIT[a].n}</span>`).join('')}</div></div></div>
    <div class="arena" style="${combatVenue()?`background:linear-gradient(rgba(10,15,12,.55),rgba(10,15,12,.75)),url(${combatVenue()}) center/cover;image-rendering:pixelated`:''}">${boardHTML(me)}
      <div style="text-align:center"><div class="tiny mut">DEIN REST</div><div class="score">${me.rest}</div>${coHint(me)}</div></div>
    ${coWarn(C)}
@@ -5906,7 +5962,7 @@ function renderCombat(app){
   const th=$('#throw');if(th)th.onclick=()=>playCard(UI.sel);
   $('#end').onclick=()=>endTurn();
   {const rk=$('#risk');if(rk)rk.onclick=()=>{if(!myTurn||me.played>0)return;modal(`<h3>🎲 Risiko-Zug?</h3><div class="small">Diesen Zug zählen <b>alle Treffer ×1,5</b> (Single und Triple), aber −6% Treffer. <b>Ein einziger Fehlwurf</b> und alle Punkte dieses Zugs sind weg, der Zug endet.</div><button class="btn red" id="rky">Volles Risiko!</button><button class="btn gray" onclick="closeModal()">Lieber sicher</button>`);$('#rky').onclick=()=>{me.risk=true;closeModal();snd('power');save();render();fx('🎲 RISIKO!','#ff5a5a')}}}
-  app.querySelectorAll('[data-ab]').forEach(el=>el.onclick=()=>toast(AB_TXT[el.dataset.ab]));
+  app.querySelectorAll('[data-ab]').forEach(el=>el.onclick=()=>toast(AB_TXT[el.dataset.ab]));app.querySelectorAll('[data-tr]').forEach(el=>el.onclick=()=>{const T=OTRAIT[el.dataset.tr];modal(`<h3>${T.i} ${T.n}</h3><div class="small" style="line-height:1.5">${T.d}</div><div class="panel small" style="margin-top:8px"><b>So reagierst du:</b> ${T.tip}</div><button class="btn gray block" onclick="closeModal()">Schließen</button>`)});
   app.querySelectorAll('[data-brule]').forEach(el=>el.onclick=()=>{const B=BRULES[el.dataset.brule];toast(`${B.i} ${B.n}: ${B.d}`)});
   $('#dp').onclick=()=>showDeck(me.draw,'Nachziehstapel');
   $('#dc').onclick=()=>showDeck(me.discard,'Ablagestapel');

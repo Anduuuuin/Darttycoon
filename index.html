@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Bullseye Boss</title>
-<meta name="dt-version" content="7.0">
+<meta name="dt-version" content="7.1">
 <meta name="theme-color" content="#060d0a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -220,6 +220,12 @@ textarea{font-size:12px;height:90px}
 .panel.locked::after{content:"🔒 " attr(data-lkn) " · " attr(data-lk);position:absolute;inset:0;display:flex;align-items:center;padding:0 14px;font:700 13px/1.2 Inter,system-ui,sans-serif;color:#b9c8bd}
 .btn.locked{color:transparent!important;font-size:0!important;min-height:44px;opacity:.6;filter:grayscale(.8)}.btn.locked::after{content:"🔒 " attr(data-lk);position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:700 10.5px/1.1 Inter,system-ui,sans-serif;color:#c9d6cc;text-align:center}
 .tile.locked{opacity:.6}.tile.locked i{filter:grayscale(1)}.tile.locked::after{content:"🔒 " attr(data-lk);position:absolute;left:2px;right:2px;bottom:-7px;font:700 8.5px/1.1 Inter,system-ui,sans-serif;color:#141016;background:#f4c430;border-radius:6px;padding:2px 3px;text-align:center}
+.dkgrid .card{cursor:pointer}.dkgrid .card.dis{border-color:#3a4a40;background:#121914}.dkgrid .card.dis>*{opacity:.28;filter:grayscale(1)}.dkgrid .card.dis::after{content:'BANK';position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) rotate(-14deg);font:900 13px/1 Inter,system-ui,sans-serif;color:#fff;background:#b3242f;padding:4px 8px;border-radius:6px}
+body.fl180::before,body.flco::before,body.flmatch::before{content:'';position:fixed;inset:0;z-index:9990;pointer-events:none;animation:bigfl .9s ease-out forwards}
+body.fl180::before{background:radial-gradient(circle at 50% 38%,#f4c430cc,#f4c43000 72%)}body.flco::before{background:radial-gradient(circle at 50% 38%,#3aff8c99,#3aff8c00 70%)}body.flmatch::before{background:radial-gradient(circle at 50% 38%,#ffffffee,#f4c43088 40%,#f4c43000 78%);animation-duration:1.3s}
+body.fl180 #app,body.flmatch #app{animation:bigsh .45s ease-out}
+@keyframes bigfl{0%{opacity:0}14%{opacity:1}100%{opacity:0}}@keyframes bigsh{0%,100%{transform:none}20%{transform:translate(-5px,3px)}40%{transform:translate(5px,-3px)}60%{transform:translate(-3px,-2px)}80%{transform:translate(3px,2px)}}
+@media (prefers-reduced-motion:reduce){body.fl180 #app,body.flmatch #app{animation:none}}
 .c3fps{position:absolute;right:8px;top:8px;font:600 10px/1 Inter,system-ui,sans-serif;color:#fffa;z-index:2}
 .pxwrap{position:relative;line-height:0}
 .pximg{display:block;width:100%;height:auto;image-rendering:pixelated;image-rendering:crisp-edges}
@@ -1379,7 +1385,7 @@ function bindHub(app){
   app.querySelectorAll('[data-pcard]').forEach(b=>b.onclick=()=>playerCard(player(b.dataset.pcard)));
   {const g=app.querySelector('#plgo');if(g)g.onclick=()=>{snd('click');plPlay()};const n=app.querySelector('#plnew');if(n)n.onclick=()=>{plStart();render()}}
   app.querySelectorAll('[data-build]').forEach(b=>b.onclick=()=>doBuild(b.dataset.build));
-  app.querySelectorAll('[data-deck]').forEach(b=>b.onclick=()=>showDeck(player(b.dataset.deck).deck,`Deck von ${player(b.dataset.deck).name}`));
+  app.querySelectorAll('[data-deck]').forEach(b=>b.onclick=()=>deckManager(b.dataset.deck));
   app.querySelectorAll('[data-train]').forEach(b=>b.onclick=()=>trainDialog(player(b.dataset.train)));
   app.querySelectorAll('[data-fire]').forEach(b=>b.onclick=()=>{const p=player(b.dataset.fire);modal(`<h3>${esc(p.name)} entlassen?</h3><div class="small mut">Ausgerüstete Dart-Teile kommen zurück ins Inventar.</div><button class="btn red" id="y">Entlassen</button><button class="btn gray" onclick="closeModal()">Abbrechen</button>`);$('#y').onclick=()=>{S.players=S.players.filter(x=>x!==p);log(`${p.name} hat den Verein verlassen.`);closeModal();save();render()}});
   app.querySelectorAll('[data-buy]').forEach(b=>b.onclick=()=>{const p=S.market[+b.dataset.buy];if(S.money<p.cost||S.players.length>=4)return;S.money-=p.cost;delete p.cost;snd('coin');S.players.push(p);S.market.splice(+b.dataset.buy,1);log(`${p.name} verstärkt den Kader!`);toast('Neuer Spieler!');save();render()});
@@ -1474,9 +1480,9 @@ function endWeek(){
 function chooseRunPlayer(tier){
   const T=TIERS[tier];
   modal(`<h3>${T.i} ${T.n}</h3><div class="small mut">Wer tritt für ${esc(S.club)} an? Startgeld: ${T.fee} €</div>
-  ${S.players.map(p=>`<button class="opt" data-rp="${p.id}" ${p.away||!tourOk(T,p)?'disabled':''}><div class="row">${personImg(p.look,40)}<div><b>${esc(p.name)} <span class="lvl px">Lv${p.lvl}</span></b><span class="small mut">${CLASSES[p.cls].i} ${CLASSES[p.cls].n} · ${p.deck.length} Karten · ${startNerves(p)} Nerven</span></div></div></button>`).join('')}
+  ${S.players.map(p=>`<button class="opt" data-rp="${p.id}" ${p.away||!tourOk(T,p)?'disabled':''}><div class="row">${personImg(p.look,40)}<div><b>${esc(p.name)} <span class="lvl px">Lv${p.lvl}</span></b><span class="small mut">${CLASSES[p.cls].i} ${CLASSES[p.cls].n} · ${dkCards(p).length} Karten${dkCustom(p)?' · '+esc(dkFix(p)[p.dsel].n):''} · ${startNerves(p)} Nerven</span></div></div></button>`).join('')}
   <button class="btn gray" onclick="closeModal()">Abbrechen</button>`);
-  document.querySelectorAll('[data-rp]').forEach(b=>b.onclick=()=>{closeModal();startRun(tier,b.dataset.rp)});
+  document.querySelectorAll('[data-rp]').forEach(b=>b.onclick=()=>{closeModal();const pp=player(b.dataset.rp);if(dkCustom(pp))deckPick(tier,b.dataset.rp);else startRun(tier,b.dataset.rp)});
 }
 function startNerves(p){return bl('gym')*4+(p.cls==='champion'?10:0)+(p.cls==='veteran'?12:0)+(hasT(p,'nerv')?8:0)-(hasT(p,'party')?3:0)+34+p.lvl*3+S.b.bar*4+(gearOf(p).nerv||0)+decoSum('nerv')+perk('nerven')*3+(p.legend==='macht'?10:0)}
 function genMap(steps){
@@ -1498,7 +1504,7 @@ function genMap(steps){
 function startRun(tier,pid){
   const T=TIERS[tier],p=player(pid);
   S.money-=T.fee;S.played=true;
-  const deck=p.deck.map(c=>({id:c.id,up:c.up,u:uid()}));
+  const deck=dkCards(p).map(c=>({id:c.id,up:c.up,u:uid()}));
   if(S.b.training>=5){const c=deck.filter(x=>!x.up);if(c.length)pick(c).up=true}
   const mx=startNerves(p);
   S.run={tier,pid,gear:gearOf(p),deck,relics:[],nerves:mx,maxN:mx,gold:0,step:0,steps:T.steps,map:genMap(T.steps),path:[],added:[],combat:null,won:0,matches:0};
@@ -3333,7 +3339,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='7.0';
+const GAME_VERSION='7.1';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
@@ -3874,7 +3880,7 @@ setInterval(markSeen,20000);document.addEventListener('visibilitychange',()=>{if
 function offlineCheck(){if(!S||!S.players||S.run||S.free)return;let last=0;try{last=+localStorage.getItem(SEEN_KEY)||0}catch(e){}markSeen();if(!last)return;const ms=Date.now()-last;if(ms<5*60000)return;
   const capH=offCapH(),h=Math.min(ms/3.6e6,capH),w=weekly();const rate=Math.max(30,w.ti*.2);const money=Math.round(rate*h),fans=Math.round((1+S.rep/100)*h);if(money<=0&&fans<=0)return;
   S.money+=money;S.fans+=fans;save();const full=ms/3.6e6>capH;
-  setTimeout(()=>modal(`<div style="text-align:center"><div style="font-size:44px">💤</div><h3>Willkommen zurück!</h3><div class="small mut">Du warst ${ms>=3.6e6?Math.floor(ms/3.6e6)+' Std. '+Math.floor(ms/60000)%60+' Min.':Math.floor(ms/60000)+' Min.'} weg. Der Verein lief weiter:</div><div class="panel small" style="margin-top:8px"><div class="row between"><span>Einnahmen</span><b style="color:#7fdc9f">+${fmt(money)} €</b></div><div class="row between"><span>Neue Fans</span><b>+${fans}</b></div></div>${full?`<div class="tiny" style="color:var(--gold)">Dein Speicher war nach ${capH} Std. voll! Mit dem 🔐 Vereinstresor (Verwaltung → Ausbau) sammelst du länger.</div>`:`<div class="tiny mut">Offline-Speicher: bis ${capH} Std.</div>`}</div><button class="btn gold block" onclick="closeModal()">Einsammeln</button>`),400)}
+  setTimeout(()=>{modal(`<div style="text-align:center"><div style="font-size:44px">💤</div><h3>Willkommen zurück!</h3><div class="small mut">Du warst ${ms>=3.6e6?Math.floor(ms/3.6e6)+' Std. '+Math.floor(ms/60000)%60+' Min.':Math.floor(ms/60000)+' Min.'} weg. Der Verein lief weiter:</div><div class="panel small" style="margin-top:8px"><div class="row between"><span>Einnahmen</span><b style="color:#7fdc9f">+${fmt(money)} €</b></div><div class="row between"><span>Neue Fans</span><b>+${fans}</b></div></div>${full?`<div class="tiny" style="color:var(--gold)">Dein Speicher war nach ${capH} Std. voll! Mit dem 🔐 Vereinstresor (Verwaltung → Ausbau) sammelst du länger.</div>`:`<div class="tiny mut">Offline-Speicher: bis ${capH} Std.</div>`}</div><button class="btn gold block" id="offok">Einsammeln</button>`);const ob=$('#offok');if(ob)ob.onclick=()=>{closeModal();if(ms>=3.6e6)offEvents(money);else render()}},400)}
 BLD.tresor={n:'Vereinstresor',i:'🔐',cost:[1000,3000,8000],d:l=>`Offline-Einnahmen bis ${2+2*l} Std. statt 2 Std.`};
 
 // ---------- Minispiele im Trainingsraum ----------
@@ -4604,7 +4610,7 @@ async function bmMatch(cfg){const me={rest:cfg.start,legs:0,pts:0,darts:0,inn:!c
           vis+=val}
         myDebuff=null;curFx='';B3.fx('');
         me.last=bust?0:vis;stVisit(vis,bust);if(!bust){me.rest-=vis;me.pts+=vis}
-        if(vis===180&&!bust){B3.celebrate('180!');S.stats.s180++;S.stats.tons++;S.stats.bm180=(S.stats.bm180||0)+1;await sleepB(1600)}else if(vis>=100&&!bust)S.stats.tons++;
+        if(vis===180&&!bust){B3.celebrate('180!');bigFx('180');S.stats.s180++;S.stats.tons++;S.stats.bm180=(S.stats.bm180||0)+1;await sleepB(1600)}else if(vis>=100&&!bust)S.stats.tons++;
         if(co){S.stats.hico=Math.max(S.stats.hico||0,start);S.stats.bmHico=Math.max(S.stats.bmHico||0,start);if(start===170){B3.celebrate('170!');await sleepB(1500)}else if(start>=100){B3.celebrate(`${start} CHECKOUT!`,'#7dffb0');await sleepB(1300)}else{B3.banner('CHECKOUT!','#7dffb0');snd('checkout')}done='me'}
         ev={sig:v.oppSig,dbl:v.oppDbl,cancel:v.cancel};await sleepB(700);B3.banner('');await B3.clear()}
       else{// --- Gegner-Aufnahme
@@ -4866,7 +4872,7 @@ async function lvMatch(cfg){const seat=cfg.seat,oo=1-seat,me=cfg.me,opn=cfg.op||
         vis+=sc.v;if(nr>=2){const t=st.rest.slice();t[turn]=nr;hud(t)}}
       if(forfeit)break;
       st.last[turn]=bust?0:vis;if(turn===seat)stVisit(vis,bust);if(!bust){st.rest[turn]-=vis;st.pts[turn]+=vis}
-      if(vis===180&&!bust){B3.celebrate('180!');if(turn===seat){S.stats.s180++;S.stats.tons++}await sleepB(1500)}else if(vis>=100&&!bust&&turn===seat)S.stats.tons++;
+      if(vis===180&&!bust){B3.celebrate('180!');bigFx('180');if(turn===seat){S.stats.s180++;S.stats.tons++}await sleepB(1500)}else if(vis>=100&&!bust&&turn===seat)S.stats.tons++;
       if(co){if(turn===seat)S.stats.hico=Math.max(S.stats.hico||0,start);if(start>=100)B3.celebrate(`${start} CHECKOUT!`,'#7dffb0');else{B3.banner('CHECKOUT!','#7dffb0');snd('checkout')}done=turn}
       fk.f[turn]=Math.min(3,fk.f[turn]+1);if(st.rest[turn]-st.rest[1-turn]>150)fk.f[turn]=Math.min(3,fk.f[turn]+1);
       if(turn===seat){B3.fx('');curFx=''}
@@ -5593,6 +5599,60 @@ function unlockCheck(){if(!S||!S.stats||S.run||S.free||document.querySelector('#
    <div class="row" style="gap:8px"><button class="btn gray" style="flex:1" onclick="closeModal()">Später</button><button class="btn gold" style="flex:1" id="unlgo">Anschauen</button></div>`);
   $('#unlgo').onclick=()=>{closeModal();UI.tab=UNL[neu[0]].go;render();window.scrollTo(0,0)}}
 
+/* ================= Deck-Aufstellungen ================= */
+const DK_MIN=8;
+function dkFix(p){p.deck.forEach(c=>{if(!c.k)c.k=uid()});if(!p.dks||p.dks.length!==3)p.dks=[{n:'Standard',off:[]},{n:'Deck 2',off:[]},{n:'Deck 3',off:[]}];const ks=new Set(p.deck.map(c=>c.k));p.dks.forEach(d=>{d.off=d.off.filter(k=>ks.has(k))});if(p.dsel==null||p.dsel>2||p.dsel<0)p.dsel=0;return p.dks}
+function dkCards(p,i){const d=dkFix(p)[i==null?p.dsel:i];const out=p.deck.filter(c=>!d.off.includes(c.k));return out.length>=Math.min(DK_MIN,p.deck.length)?out:p.deck}
+const dkCustom=p=>dkFix(p).some(d=>d.off.length>0);
+function deckManager(pid,tab){const p=player(pid);if(!p)return;const D=dkFix(p),i=tab==null?p.dsel:tab,d=D[i],inN=p.deck.length-d.off.length;
+  const sorted=p.deck.slice().sort((a,b)=>a.id.localeCompare(b.id));
+  modal(`<div class="row between"><h3>🃏 Decks von ${esc(p.name)}</h3><span class="mut small">${inN}/${p.deck.length} Karten</span></div>
+   <div class="seg">${D.map((x,j)=>`<button class="btn sm ${j===i?'':'gray'}" data-dkt="${j}">${esc(x.n)}${j===p.dsel?' ✔':''}</button>`).join('')}</div>
+   <div class="row" style="gap:6px"><input id="dkn" maxlength="14" value="${esc(d.n)}" aria-label="Name des Decks" style="flex:1;min-width:0;background:#0c130f;border:1px solid var(--line);border-radius:10px;color:var(--text);padding:9px 10px;font:inherit"><button class="btn sm ${i===p.dsel?'gray':'gold'}" id="dkuse" ${i===p.dsel?'disabled':''}>${i===p.dsel?'✔ Aktiv':'Aktiv setzen'}</button></div>
+   <div class="tiny mut">Tippe Karten an, um sie in diesem Deck auf die Bank zu setzen. Mindestens ${Math.min(DK_MIN,p.deck.length)} Karten bleiben drin. Neue Karten kommen automatisch in alle Decks. Das aktive Deck (✔) geht ins nächste Turnier.</div>
+   <div class="deckgrid dkgrid">${sorted.map(c=>cardHTML(c,{attr:`data-dkc="${c.k}"`,dis:d.off.includes(c.k)})).join('')}</div>
+   <button class="btn gray block" id="dkok">Fertig</button>`);
+  const nm=()=>{const v=($('#dkn').value||'').trim();if(v)d.n=v.slice(0,14)};
+  document.querySelectorAll('[data-dkt]').forEach(b=>b.onclick=()=>{nm();save();deckManager(pid,+b.dataset.dkt)});
+  $('#dkuse').onclick=()=>{nm();p.dsel=i;snd('click');save();deckManager(pid,i)};
+  document.querySelectorAll('[data-dkc]').forEach(el=>el.onclick=()=>{nm();const k=el.dataset.dkc,ix=d.off.indexOf(k);if(ix>=0)d.off.splice(ix,1);else{if(p.deck.length-d.off.length<=Math.min(DK_MIN,p.deck.length)){toast(`Mindestens ${Math.min(DK_MIN,p.deck.length)} Karten müssen im Deck bleiben`);return}d.off.push(k)}snd('click');save();const sc=document.querySelector('#modal .sheet'),y=sc?sc.scrollTop:0;deckManager(pid,i);const s2=document.querySelector('#modal .sheet');if(s2)s2.scrollTop=y});
+  $('#dkok').onclick=()=>{nm();save();closeModal();render()}}
+function deckPick(tier,pid){const p=player(pid),D=dkFix(p);
+  modal(`<h3>🃏 Welches Deck nimmt ${esc(p.name)} mit?</h3>${D.map((d,j)=>`<button class="opt" data-dkp="${j}" style="${j===p.dsel?'border-color:var(--gold)':''}"><b>${esc(d.n)}${j===p.dsel?' ✔':''}</b><span class="small mut">${dkCards(p,j).length} Karten${d.off.length?` · ${d.off.length} auf der Bank`:''}</span></button>`).join('')}<button class="btn gray" onclick="closeModal()">Abbrechen</button>`);
+  document.querySelectorAll('[data-dkp]').forEach(b=>b.onclick=()=>{p.dsel=+b.dataset.dkp;closeModal();startRun(tier,pid)})}
+
+/* ================= Vorbereitung vor dem Match ================= */
+function prepDialog(C,go){const o=C.opp,r=S.run;
+  modal(`<div class="tiny" style="color:var(--gold)">${esc(C.label||'Match')} · ${C.start} · Best of ${C.need*2-1}</div>
+   <div class="row" style="gap:10px;margin:8px 0">${personImg(o.look,56)}<div style="min-width:0"><h3>${esc(o.name)}</h3><div class="tiny mut">${C.kind==='b'?'Finalgegner':C.kind==='e'?'Favorit: stärker als normale Gegner':'Dein nächster Gegner'}</div></div></div>
+   ${(o.tr||[]).map(k=>`<div class="panel small" style="border-color:var(--gold)"><b>${OTRAIT[k].i} ${OTRAIT[k].n}:</b> ${OTRAIT[k].d}<div class="tiny mut" style="margin-top:4px">${OTRAIT[k].tip}</div></div>`).join('')}
+   ${o.ab.length?`<div class="tiny mut" style="line-height:1.5">${o.ab.map(a=>AB_ICON[a]+' '+AB_TXT[a]).join('<br>')}</div>`:''}
+   <div class="small" style="margin-top:10px"><b>Wie bereitest du dich vor?</b></div>
+   <button class="opt" data-prep="ruhe"><b>🧘 Durchatmen</b><span class="small mut">+5 Nerven (jetzt ${r.nerves}/${r.maxN})</span></button>
+   <button class="opt" data-prep="scout"><b>🔍 Gegner studieren</b><span class="small mut">Er wirft in diesem Match 7 % weniger</span></button>
+   <button class="opt" data-prep="risk"><b>💰 Auf Sieg wetten</b><span class="small mut">+30 % Preisgeld für dieses Match, dafür wirft er 5 % mehr</span></button>`);
+  document.querySelectorAll('[data-prep]').forEach(b=>b.onclick=()=>{const k=b.dataset.prep;C.prep=k;if(k==='ruhe')heal(5);const f=k==='scout'?.93:k==='risk'?1.05:1;if(f!==1){o.min=Math.round(o.min*f);o.max=Math.min(180,Math.round(o.max*f))}snd('click');closeModal();go()})}
+
+/* ================= Große Momente: 180, Checkout, Matchdart ================= */
+function bigFx(k){buzz({180:[70,40,70,40,70,40,220],co:[50,40,50,40,160],match:[80,50,80,50,80,50,400]}[k]||60);
+  try{const b=document.body;b.classList.remove('fl180','flco','flmatch');void b.offsetWidth;b.classList.add(k==='180'?'fl180':k==='match'?'flmatch':'flco');setTimeout(()=>b.classList.remove('fl180','flco','flmatch'),1400)}catch(e){}
+  if(k==='match')setTimeout(()=>snd('win'),380);if(k==='180')setTimeout(()=>snd('power'),320)}
+const isMatchDart=C=>!!C&&(C.sets?(C.me.legs+1>=C.need&&(C.me.sets||0)+1>=C.sets):C.me.legs+1>=(C.need||2));
+
+/* ================= Rückkehr: kleine Entscheidungen ================= */
+function offEvents(base,list,i){const b=Math.max(20,Math.round(base*.4/5)*5),pl=pick(S.players);
+  const POOL=[
+   ['🍺','Die Theke lief gut, während du weg warst.',[`Gewinn einstreichen`,`+${b} €`,()=>{S.money+=b}],['Lokalrunde ausgeben',`+${Math.round(b/6)+3} Fans, Mitglieder zufriedener`,()=>{S.fans+=Math.round(b/6)+3;MG().happy=Math.min(100,MG().happy+4)}]],
+   ['🎯',`${pl.name} hat stundenlang an der Scheibe gestanden.`,['Loben und weitermachen lassen',`+${20+pl.lvl*6} XP für ${pl.name}`,()=>{pl.xp+=20+pl.lvl*6;checkLvl(pl)}],['Bahnmiete kassieren',`+${Math.round(b*.6)} €`,()=>{S.money+=Math.round(b*.6)}]],
+   ['📰','Die Lokalzeitung hat angerufen und will etwas über den Verein bringen.',['Interview geben','+1 Ruf',()=>{S.rep+=1}],['Lieber eine Anzeige schalten',`−${Math.round(b*.5)} €, +${Math.round(b/4)+6} Fans`,()=>{S.money-=Math.round(b*.5);S.fans+=Math.round(b/4)+6}]],
+   ['🔧','Eine Scheibe hat den Abend nicht überlebt.',['Ordentlich reparieren',`−${Math.round(b*.5)} €, Mitglieder zufriedener`,()=>{S.money-=Math.round(b*.5);MG().happy=Math.min(100,MG().happy+3)}],['Mit Klebeband flicken','kostet nichts, Mitglieder murren',()=>{MG().happy=Math.max(0,MG().happy-4)}]],
+   ['🤝','Ein Geschäftsmann aus dem Ort war da und will den Verein unterstützen.',['Bargeld auf die Hand',`+${Math.round(b*1.2)} €`,()=>{S.money+=Math.round(b*1.2)}],['Lieber sein Logo aufs Trikot','+1 Ruf',()=>{S.rep+=1}]],
+   ['🧹','Nach der Feier gestern sieht das Vereinsheim wild aus.',['Selbst aufräumen','Mitglieder zufriedener',()=>{MG().happy=Math.min(100,MG().happy+5)}],['Putzfirma bestellen',`−${Math.round(b*.4)} €, +${Math.round(b/8)+2} Fans`,()=>{S.money-=Math.round(b*.4);S.fans+=Math.round(b/8)+2}]]];
+  list=list||shuffle(POOL.slice()).slice(0,3);i=i||0;if(i>=list.length){save();render();return}const E=list[i];
+  modal(`<div class="tiny" style="color:var(--gold)">WÄHREND DU WEG WARST · ${i+1}/${list.length}</div><div style="text-align:center;font-size:40px;margin:6px 0">${E[0]}</div><div class="small" style="line-height:1.5;text-align:center;margin-bottom:8px">${esc(E[1])}</div>
+   ${[E[2],E[3]].map((o,j)=>`<button class="opt" data-oe="${j}"><b>${esc(o[0])}</b><span class="small mut">${esc(o[1])}</span></button>`).join('')}`);
+  document.querySelectorAll('[data-oe]').forEach(bn=>bn.onclick=()=>{try{E[2+ +bn.dataset.oe][2]()}catch(e){}snd('coin');closeModal();save();offEvents(base,list,i+1)})}
+
 /* ================= Match ================= */
 function makeOpp(tier,kind,step){
   let o;
@@ -5626,11 +5686,12 @@ function startCombat(kind){
     me:{rest:f.start,legs:0,block:0,darts:3,hand:[],draw:[],discard:[],exhaust:[],pw:{heat:0,ice:0,walk:0,mental:0,armor:0,acc:0},accBuff:0,played:0,turnStart:301,sure:false},
     leg:1,starter:'me',turn:0,used:[],phase:'player',busy:false,firstTurn:true,stats:{s180:0,hi:0},start:f.start,need:f.need,sets:f.sets||0,din:!!f.din,aim:(r.mode!=='liga'&&kind==='b')?'all':null};
   if(UI.auto){UI.auto=false;if(UI.autoT){clearTimeout(UI.autoT);UI.autoT=null}}
-  if((kind==='b'&&!r.mode)||r.mode==='pl'||r.mode==='duel'){const pp=player(r.pid);setTimeout(()=>walkOn(pp,r.combat&&r.combat.opp.name),150)}
+  const wo=()=>{if((kind==='b'&&!r.mode)||r.mode==='pl'||r.mode==='duel'){const pp=player(r.pid);setTimeout(()=>walkOn(pp,r.combat&&r.combat.opp.name),150)}};
   bossSetup(r.combat);applyFlagsCombat(r.combat);scaleOpp(r.combat);ascApplyCombat(r.combat);
   UI.sel=-1;
-  if(needModeChoice()){r.combat.phase='choose';r.combat.busy=true;r.combat.aim=null;setTimeout(()=>modeChoice(r.combat),UI.speed>1?50:150)}
-  else{nivApply(r.combat);startLeg(true)}
+  const C0=r.combat,go=()=>{if(!S.run||S.run.combat!==C0)return;wo();if(needModeChoice()){C0.phase='choose';C0.busy=true;C0.aim=null;setTimeout(()=>modeChoice(C0),UI.speed>1?50:150)}
+    else{C0.phase='player';C0.busy=false;nivApply(C0);startLeg(true)}};
+  if(!r.mode&&!UI.modeSkip){C0.phase='choose';C0.busy=true;save();render();setTimeout(()=>prepDialog(C0,go),UI.speed>1?50:200)}else go();
 }
 function startLeg(first){
   const C=S.run.combat,me=C.me,o=C.opp;
@@ -5772,7 +5833,7 @@ async function playCard(i){
     if(anyAim){C.busy=true;render()}
     let hitN=0;
     for(let si=0;si<specs.length;si++){const sp=specs[si];
-      if(!aimActive(sp)&&(sp.k==='double'||sp.k==='bull')&&outcome(sp,me.rest,true).co){C.busy=true;const ar=document.querySelector('.arena');if(ar){ar.classList.add('slowmo');fx(`Auf ${sp.k==='bull'?'das Bull':'die D'+(sp.pts/2)} …`,'#fff')}snd('click');await slow(750);if(ar)ar.classList.remove('slowmo');C.busy=false}
+      if(!aimActive(sp)&&(sp.k==='double'||sp.k==='bull')&&outcome(sp,me.rest,true).co){C.busy=true;const ar=document.querySelector('.arena');const md=isMatchDart(C);if(ar){ar.classList.add('slowmo');fx(`${md?'MATCHDART auf':'Auf'} ${sp.k==='bull'?'das Bull':'die D'+(sp.pts/2)} …`,md?'#f4c430':'#fff')}snd('click');if(md){buzz([25,260,25,260,25]);_setT(()=>snd('click'),300);_setT(()=>snd('click'),600)}await slow(md?1500:750);if(ar)ar.classList.remove('slowmo');C.busy=false}
       const forced=aimActive(sp)?await aimThrow(sp,si,specs.length,d.n+(card.up?'+':'')):undefined;
       const r=throwDart(sp,forced);if(r.hit||r.co)hitN++;
       if(r.riskFail){res='risk';break}
@@ -5793,11 +5854,11 @@ async function playCard(i){
   if(has('metronome')&&me.played%3===0&&!res)draw(1);
   save();render();
   if(!res){const tp=me.turnStart-me.rest;
-    stVisit(tp,false);if(tp>=180&&!me.got180){me.got180=true;me.gotTon=true;S.stats.s180++;S.stats.tons++;msgs=[];caller('ONE HUNDRED AND EIGHTYYY!');setTimeout(()=>snd('win'),150);buzz([60,40,60,40,120])}
+    stVisit(tp,false);if(tp>=180&&!me.got180){me.got180=true;me.gotTon=true;S.stats.s180++;S.stats.tons++;msgs=[];caller('ONE HUNDRED AND EIGHTYYY!');setTimeout(()=>snd('win'),150);bigFx('180')}
     else if(tp>=100&&!me.gotTon){me.gotTon=true;S.stats.tons++;msgs.push('· TON!');if(has('showman')){C.opp.st.nerv+=2;setTimeout(()=>fx('🎤 Gegner nervös!','#ffb347'),400)}if(player().cls==='showman'){me.block+=4;C.opp.st.nerv+=1}}
     if(me.got180&&has('showman')&&!C.opp.skip){C.opp.skip=1;setTimeout(()=>toast('🎤 Die Halle tobt! Der Gegner verpasst seinen nächsten Zug.'),600)}}
   if(res==='risk'){fx('🎲 RISIKO VERLOREN!','#ff5a5a');snd('bust');buzz(150);setTimeout(()=>endTurn(true),700);return}
-  if(res==='co'){S.stats.hico=Math.max(S.stats.hico||0,me.turnStart);S.stats.cdHico=Math.max(S.stats.cdHico||0,me.turnStart);coBonus(me.turnStart);if(me.turnStart>=100)msgs=[];fx(me.turnStart>=100?`${me.turnStart} CHECKOUT!`:'CHECKOUT!','#f4c430');snd('checkout');buzz([40,40,80]);return endLeg('me')}
+  if(res==='co'){S.stats.hico=Math.max(S.stats.hico||0,me.turnStart);S.stats.cdHico=Math.max(S.stats.cdHico||0,me.turnStart);coBonus(me.turnStart);if(me.turnStart>=100)msgs=[];{const md=isMatchDart(C);fx(md?'GAME, SHOT AND THE MATCH!':me.turnStart>=100?`${me.turnStart} CHECKOUT!`:'CHECKOUT!','#f4c430');snd('checkout');bigFx(md?'match':'co')}return endLeg('me')}
   if(res==='bust'){
     if(has('chalkline')&&!me.bustSaved){me.bustSaved=true;fx('BUST – Kreide rettet!','#f4c430');snd('bust');save();return}
     fx('BUST!','#ff5a5a');snd('bust');buzz(150);setTimeout(()=>endTurn(true),500);return}
@@ -5872,7 +5933,7 @@ function matchWon(){
   snd('win');
   const r=S.run,C=r.combat,T=TIERS[r.tier];
   r.won++;r.matches++;
-  const g=Math.round(T.prize*(C.kind==='e'?1.6:C.kind==='b'?3:1)*(1+S.b.sponsor*.1)*(has('scarf')?1.25:1)*(1+decoSum('prize')/100)*(1+perk('preis')*.1)*(r.flags&&r.flags.gross?1.4:1)*(1+.15*(r.asc||0))*(1+.08*pLvl())*(1+stk('prize'))*(1+.06*(C.niv||0))*((C.autoN||0)>(C.allN||1)/2?.8:1));
+  const g=Math.round(T.prize*(C.kind==='e'?1.6:C.kind==='b'?3:1)*(1+S.b.sponsor*.1)*(has('scarf')?1.25:1)*(1+decoSum('prize')/100)*(1+perk('preis')*.1)*(r.flags&&r.flags.gross?1.4:1)*(1+.15*(r.asc||0))*(1+.08*pLvl())*(1+stk('prize'))*(1+.06*(C.niv||0))*((C.autoN||0)>(C.allN||1)/2?.8:1)*(C.prep==='risk'?1.3:1));
   r.gold+=g;S.stats.mwins=(S.stats.mwins||0)+1;rpGain(player(),(lvOf(r.tier)+1)*8*(C.kind==='e'?1.5:C.kind==='b'?2.5:1)*(1+.2*(r.asc||0))*(T.tourOnly?2:1));
   const hl=(r.asc||0)>=7?0:heal(3+(has('stammtisch')?6:0));
   r.combat=null;save();

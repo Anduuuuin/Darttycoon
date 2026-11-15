@@ -1,4 +1,4 @@
-# Bullseye Boss – alle Raeume des Vereinsheims fuer Blender (Fassung 5)
+# Bullseye Boss – alle Raeume des Vereinsheims fuer Blender (Fassung 6)
 # Baut Scheibenraum, Theke, Training und Buero, rechnet das Licht aus und speichert je Raum eine .glb-Datei.
 # Jeder Raum besteht aus einer Huelle und einzelnen Teilen (Scheiben, Tresen-Stufen, Moebel),
 # damit das Spiel genau das zeigt, was du schon gebaut hast.
@@ -15,7 +15,7 @@ except ImportError:
 AUFLOESUNG = 2048     # Groesse des Lichtbilds je Raum
 QUALITAET  = 32       # Rechenschritte pro Bildpunkt
 HELLIGKEIT = 0.75
-RAEUME = ['scheiben', 'theke', 'training', 'buero']     # hier kann man einzelne Raeume streichen
+RAEUME = ['theke']     # zuerst nur die Theke komplett; moeglich sind: 'scheiben', 'theke', 'training', 'buero'
 ORDNER = os.path.join(os.path.expanduser('~'), 'Desktop', 'BullseyeBoss_Blender')
 
 LOG = []
@@ -37,13 +37,69 @@ def neu():
     PR.clear(); LI.clear(); TE.clear(); teil('huelle')
 def teil(name, grp=None, var=None):
     CUR[0] = name; TE.setdefault(name, (grp, var))
-def box(x0, z0, x1, z1, y0, y1, col, ry=0.0, glow=0.0, rough=.85):
-    PR.append(('box', CUR[0], (col, rough, glow), (min(x0, x1), min(z0, z1), max(x0, x1), max(z0, z1), min(y0, y1), max(y0, y1), ry)))
+def box(x0, z0, x1, z1, y0, y1, col, ry=0.0, glow=0.0, rough=.85, art=None, metal=0.0):
+    PR.append(('box', CUR[0], (col, rough, glow, art, metal), (min(x0, x1), min(z0, z1), max(x0, x1), max(z0, z1), min(y0, y1), max(y0, y1), ry)))
 def bc(cx, cy, cz, w, h, d, col, **k): box(cx - w / 2, cz - d / 2, cx + w / 2, cz + d / 2, cy - h / 2, cy + h / 2, col, **k)
-def cyl(cx, cy, cz, rad, h, col, achse='y', seg=16, glow=0.0, rough=.85):
-    PR.append(('cyl', CUR[0], (col, rough, glow), (cx, cy, cz, rad, h, achse, seg)))
+def cyl(cx, cy, cz, rad, h, col, achse='y', seg=16, glow=0.0, rough=.85, art=None, metal=0.0):
+    PR.append(('cyl', CUR[0], (col, rough, glow, art, metal), (cx, cy, cz, rad, h, achse, seg)))
 def ring(cx, cy, z, r0, r1, a0, a1, col):
-    PR.append(('ring', CUR[0], (col, .9, 0.0), (cx, cy, z, r0, r1, a0, a1)))
+    PR.append(('ring', CUR[0], (col, .9, 0.0, None, 0.0), (cx, cy, z, r0, r1, a0, a1)))
+def netz(V, F, col, glatt=True, glow=0.0, rough=.85, art=None, metal=0.0):
+    PR.append(('netz', CUR[0], (col, rough, glow, art, metal), (V, F, glatt)))
+def dreh(cx, cz, profil, col, seg=14, sx=1.0, sz=1.0, zu=True, **k):
+    # Drehkoerper um die senkrechte Achse; profil = Liste (Radius, Hoehe) von unten nach oben
+    V = []; R = []
+    for r, y in profil:
+        if r < 1e-6: R.append([len(V)]); V.append((cx, y, cz))
+        else:
+            R.append(list(range(len(V), len(V) + seg)))
+            for j in range(seg):
+                a = 2 * math.pi * j / seg; V.append((cx + r * math.cos(a) * sx, y, cz + r * math.sin(a) * sz))
+    F = []; n = len(profil); paare = [(i, i + 1) for i in range(n - 1)] + ([] if zu else [(n - 1, 0)])
+    for i, i2 in paare:
+        A, B = R[i], R[i2]
+        if len(A) == 1 and len(B) == 1: continue
+        for j in range(seg):
+            j2 = (j + 1) % seg
+            if len(A) == 1: F.append((A[0], B[j], B[j2]))
+            elif len(B) == 1: F.append((A[j], B[0], A[j2]))
+            else: F.append((A[j], B[j], B[j2], A[j2]))
+    if zu:
+        if len(R[0]) > 1: F.append(tuple(R[0]))
+        if len(R[-1]) > 1: F.append(tuple(reversed(R[-1])))
+    netz(V, F, col, **k)
+def kugel(cx, cy, cz, rx, ry, rz, col, seg=12, ringe=8, **k):
+    dreh(cx, cz, [(math.sin(math.pi * i / ringe), cy - math.cos(math.pi * i / ringe) * ry) for i in range(ringe + 1)], col, seg=seg, sx=rx, sz=rz, **k)
+def torus(cx, cy, cz, R, r, col, seg=18, rs=8, **k):
+    dreh(cx, cz, [(R + r * math.cos(-math.pi / 2 + 2 * math.pi * i / rs), cy + r * math.sin(-math.pi / 2 + 2 * math.pi * i / rs)) for i in range(rs)], col, seg=seg, zu=False, **k)
+def stab(p0, p1, r, col, seg=8, **k):
+    # runder Stab zwischen zwei Punkten
+    d = [b - a for a, b in zip(p0, p1)]; ln = math.sqrt(sum(a * a for a in d)) or 1; d = [a / ln for a in d]
+    h = (1, 0, 0) if abs(d[0]) < .9 else (0, 1, 0)
+    u = [h[1] * d[2] - h[2] * d[1], h[2] * d[0] - h[0] * d[2], h[0] * d[1] - h[1] * d[0]]; lu = math.sqrt(sum(a * a for a in u)); u = [a / lu for a in u]
+    v = [u[1] * d[2] - u[2] * d[1], u[2] * d[0] - u[0] * d[2], u[0] * d[1] - u[1] * d[0]]
+    V = []
+    for P in (p0, p1):
+        for j in range(seg):
+            a = 2 * math.pi * j / seg; c, s_ = math.cos(a) * r, math.sin(a) * r; V.append(tuple(P[i] + u[i] * c + v[i] * s_ for i in range(3)))
+    F = [(j, seg + j, seg + (j + 1) % seg, (j + 1) % seg) for j in range(seg)] + [tuple(range(seg)), tuple(reversed(range(seg, 2 * seg)))]
+    netz(V, F, col, **k)
+def linie(punkte, r, col, **k):
+    for a, b in zip(punkte, punkte[1:]): stab(a, b, r, col, **k)
+def prisma(punkte, y0, y1, col, **k):
+    # Grundriss (x, z) in Drehrichtung wie bei dreh, senkrecht hochgezogen
+    n = len(punkte); V = [(x, y0, z) for x, z in punkte] + [(x, y1, z) for x, z in punkte]
+    F = [(j, n + j, n + (j + 1) % n, (j + 1) % n) for j in range(n)] + [tuple(range(n)), tuple(reversed(range(n, 2 * n)))]
+    netz(V, F, col, glatt=False, **k)
+def rundeck(x0, z0, x1, z1, rad, seg=5, ecken=(1, 1, 1, 1)):
+    # Rechteck mit runden Ecken; ecken = (vorn rechts, vorn links, hinten links, hinten rechts)
+    P = []
+    for q, (cx, cz, a0) in enumerate(((x1, z1, 0), (x0, z1, 90), (x0, z0, 180), (x1, z0, 270))):
+        if not ecken[q]: P.append((cx, cz)); continue
+        mx = cx - rad if q in (0, 3) else cx + rad; mz = cz - rad if q in (0, 1) else cz + rad
+        for i in range(seg + 1):
+            a = math.radians(a0 + 90 * i / seg); P.append((mx + rad * math.cos(a), mz + rad * math.sin(a)))
+    return P
 def licht(typ, ort, energie, farbe, ziel, groesse=1.0, winkel=70):
     LI.append((CUR[0], typ, ort, energie, farbe, ziel, groesse, winkel))
 def onB(x, y, w, h, col, d=0.0, **k): bc(x, y, .035 + d, w, h, .05, col, **k)      # flach an der Rueckwand
@@ -62,16 +118,16 @@ def huelle(dielen, wand, wand2, leiste, sockel, paneel=None, fliesen=False):
             z0 = r * 0.3; x = -((r % 2) * 0.8)
             while x < RW:
                 a, b = max(0, x), min(RW, x + 1.6)
-                if b > a: box(a + .004, z0 + .004, b - .004, min(RD, z0 + .3) - .004, -.06, 0, dielen[(n * 7 + r) % len(dielen)], rough=.6)
+                if b > a: box(a + .004, z0 + .004, b - .004, min(RD, z0 + .3) - .004, -.06, 0, dielen[(n * 7 + r) % len(dielen)], rough=.5, art='holzx')
                 x += 1.6; n += 1
     box(-.15, -.15, RW + .15, RD + .15, -.3, -.06, '#3a2616')
-    box(-.16, -.16, RW, 0, 0, RH, wand); box(-.16, 0, 0, RD, 0, RH, wand2)
+    box(-.16, -.16, RW, 0, 0, RH, wand, art='putz'); box(-.16, 0, 0, RD, 0, RH, wand2, art='putz')
     box(-.2, -.2, RW + .02, .04, RH, RH + .08, leiste); box(-.2, -.2, .04, RD + .02, RH, RH + .08, leiste)
     if paneel:
         for i in range(27):
-            x = i * 0.3; box(x + .01, 0, min(RW, x + .29), .035, .12, 1.05, paneel[i % 3])
+            x = i * 0.3; box(x + .01, 0, min(RW, x + .29), .035, .12, 1.05, paneel[i % 3], art='holzy')
         for i in range(20):
-            z = i * 0.3; box(0, z + .01, .035, min(RD, z + .29), .12, 1.05, paneel[(i + 1) % 3])
+            z = i * 0.3; box(0, z + .01, .035, min(RD, z + .29), .12, 1.05, paneel[(i + 1) % 3], art='holzy')
         box(0, 0, RW, .06, 1.05, 1.11, paneel[2]); box(0, 0, .06, RD, 1.05, 1.11, paneel[2])
     box(0, 0, RW, .05, 0, .12, sockel); box(0, 0, .05, RD, 0, .12, sockel)
 
@@ -102,17 +158,17 @@ def strahler(x, cy):
 def bahn(x, z1=2.37):
     box(x - .5, 0, x + .5, z1 + .38, 0, .012, '#16241d', rough=1); box(x - .44, 0, x + .44, z1 + .33, .012, .02, '#2b3b33', rough=1)
     box(x - .44, z1 - .03, x + .44, z1 + .03, .02, .03, GOLD, glow=1.2, rough=.4)
-def stehtisch(x, z):
+def stehtisch_einfach(x, z):
     cyl(x, .03, z, .28, .06, METALL, rough=.5); cyl(x, .56, z, .04, 1.0, CHROM, seg=12, rough=.3); cyl(x, 1.09, z, .4, .06, '#7a5232', seg=28)
     for dx, dz in ((-.18, -.1), (.16, .12)):
         cyl(x + dx, 1.19, z + dz, .045, .14, GOLD, seg=12, glow=.6, rough=.2); cyl(x + dx, 1.275, z + dz, .048, .03, '#fffbe8', seg=12)
-def pflanze(x, z):
+def pflanze_einfach(x, z):
     cyl(x, .22, z, .22, .44, '#8a5a2c')
     for i, (dx, y, dz, s) in enumerate(((0, .75, 0, .6), (-.16, .62, .1, .42), (.17, .6, -.1, .44), (0, 1.05, 0, .4), (.1, .9, .16, .34))):
         box(x + dx - s / 2, z + dz - s / 2, x + dx + s / 2, z + dz + s / 2, y - s * .4, y + s * .4, '#2f8a4a' if i % 2 else '#3fa55a', ry=i * .7, rough=.9)
-def flasche(x, y, z, c):
+def flasche_einfach(x, y, z, c):
     cyl(x, y + .14, z, .06, .28, c, seg=10, glow=.25, rough=.3); cyl(x, y + .34, z, .025, .12, c, seg=8, rough=.3); cyl(x, y + .41, z, .03, .03, '#1a1a1a', seg=8)
-def hocker(x, z, edel):
+def hocker_einfach(x, z, edel):
     cyl(x, .02, z, .16, .04, '#c0c4c8' if edel else '#3a2a1a', rough=.4); cyl(x, .37, z, .03, .66, '#c0c4c8' if edel else '#3a2a1a', seg=8, rough=.4); cyl(x, .74, z, .19, .08, '#a32020' if edel else '#7a4a24', seg=18)
 def deckenlicht(x, z, e=420, g=3.0, f=(1, .9, .75)): licht('AREA', (x, 3.6, z), e, f, (x, 0, z), groesse=g)
 def grundlicht():
@@ -122,7 +178,7 @@ def grundlicht():
 # ---------------- Scheibenraum ----------------
 def raum_scheiben():
     huelle(('#8a5a32', '#7a4c2a', '#946238', '#80522e'), '#2b4034', '#253a2e', '#c9b98c', HOLZ_D, paneel=(HOLZ_M, HOLZ_D, HOLZ_H))
-    tuer('L', .85); tuer('B', 7.05); stehtisch(4.6, 4.75)
+    tuer('L', .85); tuer('B', 7.05); stehtisch_einfach(4.6, 4.75)
     deckenlicht(3.2, 3.2); deckenlicht(6.4, 4.2, 260, 2.0, (1, .85, .65)); grundlicht()
     cx = lambda c: 1.0 + c * 1.45
     for i in range(4):                                   # e0..e3: eine Reihe, grosse Scheiben
@@ -142,62 +198,158 @@ def raum_scheiben():
     teil('bank'); box(5.6, 3.3, 7.7, 3.75, .38, .46, '#7a5232'); box(5.6, 3.3, 7.7, 3.38, .46, .95, HOLZ_M)
     for x in (5.75, 6.65, 7.55): box(x - .04, 3.34, x + .04, 3.72, 0, .38, HOLZ_D)
 
-# ---------------- Theke ----------------
+# ---------------- Theke (komplett ausgearbeitet) ----------------
+MESSING = dict(rough=.3, metal=.7); STAHL = dict(rough=.25, metal=.7)
+def bierglas(x, y, z, voll=True):
+    dreh(x, z, [(0, y), (.034, y), (.046, y + .15), (0, y + .15)], '#e8a020' if voll else '#dfe8ee', seg=10, glow=.6 if voll else .2, rough=.15)
+    if voll: dreh(x, z, [(0, y + .15), (.048, y + .15), (.05, y + .175), (.03, y + .19), (0, y + .19)], '#fffbe8', seg=10)
+FLASCHEN = ([(0, 0), (.055, 0), (.055, .2), (.02, .3), (.02, .4), (.026, .4), (.026, .43), (0, .43)],
+            [(0, 0), (.065, 0), (.065, .17), (.045, .24), (.02, .27), (.02, .36), (0, .36)],
+            [(0, 0), (.045, 0), (.05, .24), (.018, .32), (.018, .42), (0, .42)])
+def flasche(x, y, z, c, typ=0):
+    dreh(x, z, [(r, y + h) for r, h in FLASCHEN[typ % 3]], c, seg=10, glow=.3, rough=.15)
+    hh = FLASCHEN[typ % 3][-1][1]; cyl(x, y + hh + .012, z, .022, .024, '#1a1a1a' if typ % 2 else '#c9a227', seg=8)
+    cyl(x, y + .1, z, FLASCHEN[typ % 3][1][0] + .003, .08, '#f4f0e0', seg=10)
+def hocker(x, z, edel):
+    if edel:
+        dreh(x, z, [(0, 0), (.17, 0), (.16, .025), (.045, .05), (0, .05)], '#c0c4c8', seg=16, **STAHL); stab((x, .05, z), (x, .68, z), .028, '#c0c4c8', **STAHL)
+        torus(x, .3, z, .13, .012, '#c0c4c8', **STAHL)
+        for a in (0, 2.09, 4.19): stab((x, .3, z), (x + math.cos(a) * .13, .3, z + math.sin(a) * .13), .01, '#c0c4c8', **STAHL)
+        dreh(x, z, [(0, .68), (.17, .68), (.195, .71), (.195, .75), (.16, .79), (0, .8)], '#a32020', seg=16, rough=.6, art='stoff')
+    else:
+        for a in (.79, 2.36, 3.93, 5.5): stab((x + math.cos(a) * .17, 0, z + math.sin(a) * .17), (x + math.cos(a) * .1, .72, z + math.sin(a) * .1), .022, '#5a3a22')
+        torus(x, .28, z, .135, .012, '#5a3a22'); dreh(x, z, [(0, .72), (.18, .72), (.19, .75), (.18, .78), (0, .78)], '#8a5a32', seg=14, art='holzx')
+def stehtisch(x, z):
+    dreh(x, z, [(0, 0), (.28, 0), (.27, .03), (.06, .07), (0, .07)], METALL, seg=18, rough=.4, metal=.5); stab((x, .07, z), (x, 1.05, z), .035, CHROM, **STAHL)
+    dreh(x, z, [(0, 1.05), (.38, 1.05), (.41, 1.075), (.41, 1.1), (.38, 1.12), (0, 1.12)], '#7a5232', seg=24, rough=.35, art='holzx')
+    bierglas(x - .18, 1.12, z - .1); bierglas(x + .16, 1.12, z + .12); cyl(x + .02, 1.124, z - .2, .055, .008, '#d9333f', seg=10)
+def haengelampe(x, z, staerke=140, farbe='#2a3a30'):
+    stab((x, RH + .05, z), (x, 2.32, z), .008, '#151515', seg=5)
+    dreh(x, z, [(.2, 2.08), (.19, 2.1), (.07, 2.28), (.04, 2.32), (0, 2.32)], farbe, seg=16, rough=.4); dreh(x, z, [(0, 2.09), (.185, 2.09), (.06, 2.27), (0, 2.27)], '#fff2c0', seg=16, glow=3)
+    kugel(x, 2.12, z, .05, .06, .05, '#fff6d8', seg=8, ringe=6, glow=20); licht('SPOT', (x, 2.05, z), staerke, (1, .86, .62), (x, 0, z), winkel=110)
+def pflanze(x, z):
+    dreh(x, z, [(0, 0), (.17, 0), (.24, .42), (.25, .46), (.21, .46), (.2, .43), (0, .43)], '#a0562c', seg=14); cyl(x, .425, z, .2, .02, '#3a2a1a', seg=14)
+    for i in range(11):
+        a = i * 2.4; h = .75 + (i * 37 % 10) * .05; r = .1 + (i * 53 % 10) * .022
+        stab((x, .43, z), (x + math.cos(a) * r, h, z + math.sin(a) * r), .012, '#2f6a3a', seg=5)
+        kugel(x + math.cos(a) * (r + .06), h + .03, z + math.sin(a) * (r + .06), .15, .045, .1, '#3fa55a' if i % 2 else '#2f8a4a', seg=8, ringe=5, rough=.6)
+    kugel(x, .95, z, .2, .22, .2, '#2f8a4a', seg=10, ringe=6, rough=.7)
+def bild(z, y, w, h, farben):
+    onL(z, y, w, h, HOLZ_D, art='holzy'); onL(z, y, w - .1, h - .1, '#efe6cf', d=.01)
+    for k, c in enumerate(farben): onL(z - w * .22 + k * w * .22, y - h * .08 + (k % 2) * h * .16, w * .2, h * .3, c, d=.02)
+
+def tresen(lv):
+    x0 = .9; LEN = (2.6, 3.0, 3.6, 4.2, 4.8, 5.2); x1 = x0 + LEN[lv]
+    if lv == 0:                                          # Stufe 0: Campingtisch, Bierkasten, Kuehlbox
+        box(x0, 1.5, x1, 2.2, .92, .96, '#c8b48a', rough=.5)
+        for x, z, dx, dz in ((x0 + .1, 1.58, -.08, -.06), (x1 - .1, 1.58, .08, -.06), (x0 + .1, 2.12, -.08, .06), (x1 - .1, 2.12, .08, .06)): stab((x + dx, 0, z + dz), (x, .92, z), .02, '#9aa0a8', **STAHL)
+        stab((x0 + .06, .45, 1.55), (x0 + .06, .45, 2.15), .012, '#9aa0a8', **STAHL); stab((x1 - .06, .45, 1.55), (x1 - .06, .45, 2.15), .012, '#9aa0a8', **STAHL)
+        for i in range(3): bierglas(x0 + .5 + i * .7, .96, 1.9, i < 2)
+        prisma(rundeck(1.1, 2.7, 1.8, 3.2, .04), 0, .34, '#2a6a3a'); prisma(rundeck(1.1, 2.7, 1.8, 3.2, .04), .38, .72, '#2f7a44')
+        for i in range(12): cyl(1.2 + (i % 4) * .166, .75, 2.8 + (i // 4) * .15, .028, .12, '#5a3a1a', seg=8, rough=.2); cyl(1.2 + (i % 4) * .166, .815, 2.8 + (i // 4) * .15, .016, .02, '#c9a227', seg=6)
+        prisma(rundeck(2.2, 2.8, 2.95, 3.3, .06), 0, .46, '#e8eef4', rough=.4); prisma(rundeck(2.18, 2.78, 2.97, 3.32, .07), .46, .56, '#2d6cdf', rough=.4); linie([(2.3, .56, 3.05), (2.3, .68, 3.05), (2.85, .68, 3.05), (2.85, .56, 3.05)], .014, '#f4f4f4', seg=6)
+        return
+    front = (None, '#9a6a3a', '#7a4524', '#4a2614', '#5a1e14', '#3a1410')[lv]; top = '#2a1408' if lv >= 3 else '#5a3218'
+    prisma(rundeck(x0, 1.5, x1, 2.2, .3, 6, (1, 0, 0, 0)), .1, 1.0, front, art='holzy', rough=.6)          # Korpus mit runder Ecke
+    prisma(rundeck(x0 + .03, 1.53, x1 - .03, 2.17, .27, 6, (1, 0, 0, 0)), 0, .1, '#1a100a')                # Sockel
+    prisma(rundeck(x0 - .07, 1.42, x1 + .08, 2.29, .36, 7, (1, 0, 0, 0)), 1.0, 1.035, top, art='holzx', rough=.25)
+    prisma(rundeck(x0 - .05, 1.44, x1 + .06, 2.27, .34, 7, (1, 0, 0, 0)), 1.035, 1.07, top, art='holzx', rough=.25)
+    if lv >= 2:                                          # Kassetten an der Front
+        n = int((x1 - .35 - x0) / .6)
+        for k in range(n):
+            xa = x0 + .12 + k * .6; box(xa, 2.2, xa + .5, 2.215, .2, .9, front, rough=.5); box(xa + .05, 2.215, xa + .45, 2.225, .26, .84, '#2a160d' if lv < 4 else '#22100c', art='holzy')
+    stab((x0 + .1, .2, 2.38), (x1 - .32, .2, 2.38), .022, '#c9a227' if lv >= 3 else '#8a8f94', **MESSING)   # Fussstange
+    x = x0 + .2
+    while x < x1 - .3: stab((x, .2, 2.38), (x, .2, 2.2), .014, '#c9a227' if lv >= 3 else '#8a8f94', **MESSING); stab((x, .2, 2.38), (x, 0, 2.38), .014, '#c9a227' if lv >= 3 else '#8a8f94', **MESSING); x += .85
+    if lv >= 3: bc((x0 + x1 - .3) / 2, .97, 2.212, LEN[lv] - .5, .03, .02, '#f4c430', glow=1.2, rough=.3, metal=.6)
+    if lv >= 4:
+        bc((x0 + x1 - .3) / 2, .14, 2.21, LEN[lv] - .5, .03, .02, '#7af0ff', glow=10)
+        licht('AREA', ((x0 + x1) / 2, .2, 2.45), 70, (.45, .95, 1), ((x0 + x1) / 2, 0, 2.9), groesse=LEN[lv] * .8)
+    if lv >= 5:                                          # goldene Zapfsaeule
+        xs = x0 + 1.5; dreh(xs, 1.68, [(0, 1.07), (.1, 1.07), (.09, 1.1), (.045, 1.13), (.04, 1.5), (.06, 1.53), (0, 1.55)], '#c9a227', seg=14, glow=.3, **MESSING)
+        stab((xs - .3, 1.45, 1.68), (xs + .3, 1.45, 1.68), .03, '#c9a227', glow=.3, **MESSING)
+        for dx in (-.26, 0, .26): stab((xs + dx, 1.45, 1.68), (xs + dx, 1.36, 1.8), .014, '#f4d060', **MESSING); stab((xs + dx, 1.47, 1.68), (xs + dx, 1.62, 1.63), .016, '#151515', seg=6); kugel(xs + dx, 1.63, 1.63, .025, .03, .025, ('#d9333f', '#f4f4f4', '#1f9d55')[int(dx * 4) + 1], seg=6, ringe=4)
+        box(xs - .34, 1.7, xs + .34, 1.92, 1.07, 1.085, '#8a8f98', **STAHL)
+    else:
+        for i in range(lv):                              # einzelne Zapfhaehne mit Tropfblech
+            x = x0 + .5 + i * .55; stab((x, 1.07, 1.68), (x, 1.36, 1.68), .022, '#d0d4d8', **STAHL); stab((x, 1.33, 1.68), (x, 1.28, 1.82), .014, '#d0d4d8', **STAHL)
+            stab((x, 1.36, 1.68), (x, 1.5, 1.63), .016, '#151515', seg=6); kugel(x, 1.51, 1.63, .024, .028, .024, ('#d9333f', '#f4c430', '#1f9d55', '#2d6cdf')[i % 4], seg=6, ringe=4)
+            box(x - .1, 1.72, x + .1, 1.92, 1.07, 1.082, '#8a8f98', **STAHL)
+    for i in range(min(4, lv + 1)):                      # Glaeser und Bierdeckel
+        x = x0 + .75 + i * .85
+        if x < x1 - .35: cyl(x, 1.074, 2.02, .06, .008, '#f4f0e0' if i % 2 else '#d9333f', seg=10); bierglas(x, 1.078, 2.02)
+    if lv >= 2:                                          # Kasse und Glaeserstapel
+        box(x0 + .08, 1.56, x0 + .42, 1.86, 1.07, 1.2, '#2a2a2e', rough=.4); box(x0 + .1, 1.58, x0 + .4, 1.66, 1.2, 1.34, '#2a2a2e', rough=.4); bc(x0 + .25, 1.27, 1.665, .24, .1, .01, '#7dffb0', glow=4)
+        for k in range(3): bierglas(x1 - .55 - k * .11, 1.07, 1.62, False)
+    n = 1 + lv // 2                                       # Haengelampen ueber dem Tresen
+    for k in range(n): haengelampe(x0 + LEN[lv] * (k + .5) / n, 1.86, 150, '#2a3a30' if lv < 3 else '#7a1a1e')
+
 def raum_theke():
-    huelle(('#6a3f24', '#5c351d', '#73462a', '#633a20'), '#4a2a22', '#40241d', '#c9a66a', '#3a2010', paneel=('#5a3620', '#47290f', '#6e4428'))
-    tuer('L', 1.15); tuer('B', 7.05); stehtisch(3.4, 4.3)
-    for y in (1.5, 2.05): box(.6, .02, 5.6, .3, y, y + .06, '#8a5a32')            # Flaschenregal
-    box(.6, .02, .68, .3, 1.4, 2.6, '#2a160d'); box(5.52, .02, 5.6, .3, 1.4, 2.6, '#2a160d')
-    box(.02, 2.3, .3, 4.35, .5, 2.0, '#4a3420'); box(.02, 2.3, .34, 4.35, .5, .56, '#6a4a2a'); box(.02, 2.3, .34, 4.35, 1.94, 2.0, '#6a4a2a'); box(.3, 2.34, .33, 4.31, 1.72, 1.75, '#b0b4b8', rough=.4)   # Fanshop-Regal
-    deckenlicht(2.2, 1.9, 380, 2.4, (1, .86, .62)); deckenlicht(4.4, 1.9, 380, 2.4, (1, .86, .62)); deckenlicht(3.4, 4.3, 300, 2.0, (1, .82, .6)); deckenlicht(6.5, 4.4, 240, 2.0, (1, .84, .66)); grundlicht()
-    x0 = .9; LEN = (2.6, 3.0, 3.6, 4.2, 4.8, 5.2)
-    FRONT = (None, '#9a6a3a', '#7a4524', '#4a2614', '#5a1e14', '#3a1410')
-    for lv in range(6):
-        teil('bar%d' % lv, 'bar', lv); x1 = x0 + LEN[lv]
-        if lv == 0:                                      # Campingtisch, Bierkasten, Kuehlbox
-            box(x0, 1.5, x1, 2.2, .92, 1.0, '#c8b48a')
-            for x, z in ((x0 + .05, 1.55), (x1 - .05, 1.55), (x0 + .05, 2.15), (x1 - .05, 2.15)): box(x - .03, z - .03, x + .03, z + .03, 0, .92, '#888888', rough=.4)
-            box(1.1, 2.7, 1.8, 3.2, 0, .4, '#2a6a3a'); box(1.1, 2.7, 1.8, 3.2, .42, .82, '#2f7a44'); box(2.2, 2.8, 2.95, 3.3, 0, .5, '#e8eef4'); box(2.2, 2.8, 2.95, 3.3, .5, .56, '#2d6cdf')
-            continue
-        top = '#2a1408' if lv >= 3 else '#5a3218'
-        box(x0, 1.5, x1, 2.2, 0, 1.05, FRONT[lv]); box(x0 - .06, 1.44, x1 + .06, 2.26, 1.05, 1.12, top, rough=.35)
-        if lv >= 2:
-            x = x0 + .3
-            while x < x1 - .1: box(x - .03, 2.2, x + .03, 2.23, .1, 1.0, '#2a160d'); x += .6
-        if lv >= 3: bc((x0 + x1) / 2, .3, 2.22, LEN[lv], .05, .04, '#f4c430', glow=1.0, rough=.3)
-        if lv >= 4:
-            bc((x0 + x1) / 2, .98, 2.23, LEN[lv], .04, .03, '#7af0ff', glow=8)
-            licht('AREA', ((x0 + x1) / 2, .9, 2.5), 60, (.5, .95, 1), ((x0 + x1) / 2, 0, 2.9), groesse=LEN[lv] * .8)
-        for i in range(lv):                              # Zapfhaehne
-            x = x0 + .4 + i * .6; cyl(x, 1.27, 1.65, .03, .3, '#d0d4d8', seg=8, rough=.25); box(x - .05, 1.6, x + .05, 1.78, 1.42, 1.47, '#8a8f98', rough=.3)
-        if lv >= 5: cyl(x1 - .675, 1.36, 1.695, .075, .48, '#c9a227', seg=12, glow=.5, rough=.3); cyl(x1 - .675, 1.63, 1.695, .125, .06, '#f4d060', seg=12, glow=.5, rough=.3)
-        for i in range(min(4, lv + 1)):                  # Bierglaeser auf dem Tresen
-            x = x0 + .6 + i * .9; cyl(x, 1.2, 2.0, .045, .16, '#e8a020', seg=10, glow=.6, rough=.2); cyl(x, 1.295, 2.0, .048, .03, '#fffbe8', seg=10)
-    teil('regalwand'); onB(3.1, 2.02, 4.9, 1.3, '#d8b888', glow=.5); licht('AREA', (3.1, 2.0, .5), 40, (1, .85, .6), (3.1, 2.0, 0), groesse=3.0)
-    teil('neon'); onB(3.1, 2.78, .9, .36, '#1a0a14')
-    for k in range(3): onB(2.86 + k * .24, 2.78, .16, .2, '#ff4fa3', d=.02, glow=9)
+    huelle(('#6a3f24', '#5c351d', '#73462a', '#633a20'), '#5a3028', '#4e2a23', '#c9a66a', '#3a2010', paneel=('#5a3620', '#47290f', '#6e4428'))
+    tuer('L', 1.15); tuer('B', 7.05)
+    dreh(3.4, 4.3, [(0, 0), (1.05, 0), (1.05, .012), (0, .012)], '#7a1a1e', seg=28, rough=1, art='stoff'); dreh(3.4, 4.3, [(0, .012), (.85, .012), (.85, .018), (0, .018)], '#a3262f', seg=28, rough=1, art='stoff'); dreh(3.4, 4.3, [(0, .018), (.5, .018), (.5, .022), (0, .022)], '#c9a227', seg=24, rough=1, art='stoff')
+    stehtisch(3.4, 4.3); haengelampe(3.4, 4.3, 130, '#7a1a1e')
+    # Flaschenregal hinter dem Tresen
+    for y in (1.5, 2.05): box(.6, .02, 5.6, .32, y, y + .06, '#8a5a32', art='holzx')
+    for x in (.6, 2.24, 3.88, 5.52): box(x, .02, x + .08, .3, 1.36, 2.62, '#2a160d', art='holzy')
+    box(.54, .02, 5.66, .34, 2.62, 2.7, '#3a2010', art='holzx'); box(.6, .02, 5.6, .3, 1.3, 1.36, '#3a2010', art='holzx')
+    box(.3, 0, 5.9, .5, 0, .9, '#3a2010', art='holzy'); box(.28, 0, 5.92, .54, .9, .95, '#2a1408', art='holzx', rough=.3)        # Unterschrank
+    for k in range(7): box(.4 + k * .78, .5, 1.08 + k * .78, .515, .12, .8, '#4a2a16', art='holzy'); kugel(.74 + k * .78, .62, .53, .02, .02, .02, '#c9a227', seg=6, ringe=4, **MESSING)
+    for k in range(5): bierglas(4.3 + k * .13, .95, .3, False)
+    # Kreidetafel neben dem Regal
+    onB(6.07, 1.8, .74, 1.06, HOLZ_D, art='holzy'); onB(6.07, 1.8, .64, .96, '#1c2420', d=.01)
+    for k in range(5): onB(6.0 + (k % 2) * .06, 2.12 - k * .16, .36 + (k * 7 % 3) * .08, .03, '#e8e8e0', d=.02)
+    onB(6.07, 1.42, .3, .1, '#f4c430', d=.02)
+    # Fanshop-Regal an der linken Wand
+    box(.02, 2.3, .3, 4.35, .5, 2.0, '#4a3420', art='holzy'); box(.02, 2.3, .34, 4.35, .5, .56, '#6a4a2a', art='holzx'); box(.02, 2.3, .34, 4.35, 1.94, 2.0, '#6a4a2a', art='holzx')
+    stab((.32, 1.74, 2.34), (.32, 1.74, 4.31), .012, '#b0b4b8', seg=6, **STAHL)
+    bild(5.75, 1.25, .34, .42, ('#2d6cdf', '#f4c430')); bild(4.75, 2.45, .5, .36, ('#d9333f', '#1f9d55', '#f4c430'))
+    deckenlicht(2.2, 1.9, 200, 2.4, (1, .86, .62)); deckenlicht(4.4, 1.9, 200, 2.4, (1, .86, .62)); deckenlicht(6.5, 4.4, 220, 2.0, (1, .84, .66)); grundlicht()
+    for lv in range(6): teil('bar%d' % lv, 'bar', lv); tresen(lv)
+    teil('regalwand')                                    # Spiegelrueckwand mit Licht
+    onB(3.1, 2.0, 4.86, 1.2, '#d8c8a8', glow=.7, rough=.15); licht('AREA', (3.1, 2.0, .5), 45, (1, .85, .6), (3.1, 2.0, 0), groesse=3.0)
+    for y in (1.47, 2.02): bc(3.1, y, .3, 4.8, .015, .015, '#ffd890', glow=8)
+    teil('neon'); onB(3.1, 2.86, 1.1, .4, '#1a0a14')
+    z = .078; B = lambda ox, pts: [(ox + a * .26, 2.74 + b * .26, z) for a, b in pts]
+    for ox, striche in ((2.68, ([(0, 0), (0, 1), (.55, 1), (.65, .8), (.55, .52), (0, .52)], [(.55, .52), (.7, .28), (.55, 0), (0, 0)])),
+                        (2.98, ([(0, 0), (.35, 1), (.7, 0)], [(.15, .42), (.55, .42)])), (3.28, ([(0, 0), (0, 1), (.55, 1), (.65, .76), (.55, .52), (0, .52)], [(.3, .52), (.7, 0)]))):
+        for st in striche: linie(B(ox, st), .014, '#ff4fa3', seg=6, glow=12)
+    licht('AREA', (3.1, 2.86, .4), 18, (1, .3, .65), (3.1, 2.4, 1.2), groesse=.8)
     COLS = ('#2fd673', '#d9333f', '#f4c430', '#9fd3ff', '#7a4a24', '#e8e8e8', '#3a8a3a', '#c06030')
     for i in range(22):                                  # fl0..fl5: je Ausbaustufe vier Flaschen mehr
         teil('fl%d' % (i // 4)); x = .9 + (i // 2) * .42; y = 2.11 if i % 2 else 1.56
-        if x <= 5.4: flasche(x, y, .16, COLS[(i * 3) % 8])
+        if x <= 5.4 and not any(abs(x - q - .04) < .1 for q in (.6, 2.24, 3.88, 5.52)): flasche(x, y, .16, COLS[(i * 3) % 8], i)
+        elif x <= 5.4: flasche(x + .16, y, .16, COLS[(i * 3) % 8], i)
     for edel in (0, 1):
-        for i in range(6):
-            teil('ho%s%d' % ('b' if edel else 'a', i), 'hocker', edel); hocker(x0 + .3 + i * .8, 2.75, edel)
-    for i in range(5):                                   # Trikots im Fanshop
+        for i in range(6): teil('ho%s%d' % ('b' if edel else 'a', i), 'hocker', edel); hocker(.9 + .3 + i * .8, 2.75, edel)
+    for i in range(5):                                   # Trikots auf Buegeln
         teil('fs%d' % i); z = 2.6 + i * .38; c = '#d9333f' if i % 2 else '#1f9d55'
-        box(.3, z - .15, .36, z + .15, 1.2, 1.7, c); box(.3, z - .24, .36, z - .15, 1.5, 1.7, c); box(.3, z + .15, .36, z + .24, 1.5, 1.7, c); box(.36, z - .05, .37, z + .05, 1.4, 1.5, '#ffffff')
+        stab((.32, 1.74, z), (.32, 1.68, z), .008, '#b0b4b8', seg=5); box(.3, z - .15, .345, z + .15, 1.18, 1.68, c, art='stoff'); box(.3, z - .25, .345, z - .15, 1.46, 1.68, c, art='stoff'); box(.3, z + .15, .345, z + .25, 1.46, 1.68, c, art='stoff')
+        box(.345, z - .06, .352, z + .06, 1.38, 1.52, '#ffffff'); box(.3, z - .05, .35, z + .05, 1.66, 1.7, '#f4f4f4'); box(.345, z - .15, .35, z + .15, 1.2, 1.24, '#f4f4f4')
     teil('fsschals')
     for i in range(5):
-        z = 2.6 + i * .38; box(.3, z - .1, .4, z + .1, .62, .9, '#f4f4f4' if i % 2 else '#d9333f'); box(.3, z - .1, .41, z + .1, .72, .8, '#1f9d55')
-    teil('foto'); onL(5.2, 1.95, 1.0, .75, HOLZ_D); onL(5.2, 1.95, .88, .63, '#efe6cf', d=.01); onL(5.2, 1.88, .7, .3, '#1f9d55', d=.02); onL(5.02, 2.1, .2, .14, '#f4c430', d=.02); onL(5.38, 2.1, .2, .14, '#d9333f', d=.02)
+        z = 2.55 + i * .38; cyl(.2, .64, z, .075, .26, '#f4f4f4' if i % 2 else '#d9333f', 'x', 12, art='stoff'); cyl(.2, .64, z, .078, .08, '#1f9d55', 'x', 12, art='stoff')
+        kugel(.19, 2.04, z + .02, .1, .07, .1, '#1f9d55' if i % 2 else '#d9333f', seg=10, ringe=6, art='stoff'); cyl(.28, 2.01, z + .02, .08, .012, '#151515', seg=10)
+    teil('foto'); bild(5.2, 1.95, 1.0, .75, ('#1f9d55', '#f4c430', '#d9333f'))
     teil('kicker')
-    for x, z in ((5.7, 3.95), (7.5, 3.95), (5.7, 4.75), (7.5, 4.75)): box(x - .05, z - .05, x + .05, z + .05, 0, .6, '#3a3a3a')
-    box(5.6, 3.85, 7.6, 4.85, .6, .9, '#5a3a22'); box(5.68, 3.93, 7.52, 4.77, .9, .91, '#2f8a4a')
+    for x, z, dx, dz in ((5.72, 3.97, -.05, -.05), (7.48, 3.97, .05, -.05), (5.72, 4.73, -.05, .05), (7.48, 4.73, .05, .05)): stab((x + dx, 0, z + dz), (x, .62, z), .04, '#2a2a2e', seg=8); cyl(x + dx, .015, z + dz, .06, .03, '#151515', seg=8)
+    prisma(rundeck(5.6, 3.85, 7.6, 4.85, .08), .6, .92, '#5a3a22', art='holzx', rough=.5); box(5.68, 3.93, 7.52, 4.77, .92, .925, '#2f8a4a', rough=1, art='stoff')
+    box(6.595, 3.93, 6.605, 4.77, .925, .928, '#f4f4f4'); cyl(6.6, .926, 4.35, .14, .004, '#f4f4f4', seg=16); cyl(6.6, .928, 4.35, .125, .004, '#2f8a4a', seg=16)
+    for sx in (5.6, 7.52): box(sx, 3.85, sx + .08, 4.85, .92, 1.02, '#5a3a22', art='holzx')
+    for sz in (3.85, 4.77): box(5.6, sz, 7.6, sz + .08, .92, 1.02, '#5a3a22', art='holzx')
     for i in range(4):
-        cyl(5.92 + i * .45, 1.0, 4.35, .02, 1.3, '#c0c4c8', 'z', 8, rough=.3)
-        for k in range(3): box(5.87 + i * .45, 4.05 + k * .3, 5.97 + i * .45, 4.13 + k * .3, .9, 1.0, '#d9333f' if i % 2 else '#2d6cdf')
-    teil('jukebox'); box(.15, 4.0, .75, 4.55, 0, 1.45, '#7a1a3a'); bc(.76, 1.05, 4.275, .02, .5, .4, '#ffe9a8', glow=5); bc(.76, .45, 4.275, .02, .4, .44, '#ff4fa3', glow=3); box(.12, 3.97, .78, 4.58, 1.45, 1.55, '#9a2a4a')
-    licht('AREA', (.95, 1.0, 4.275), 25, (1, .5, .75), (2, .6, 4.275), groesse=.6)
+        x = 5.92 + i * .45; c = '#d9333f' if i % 2 else '#2d6cdf'; stab((x, 1.0, 3.62), (x, 1.0, 5.08), .014, '#c0c4c8', seg=6, **STAHL)
+        stab((x, 1.0, 3.6 if i % 2 else 4.98), (x, 1.0, 3.72 if i % 2 else 5.1), .03, '#151515', seg=8)
+        for k in range(3): box(x - .03, 4.07 + k * .28, x + .03, 4.11 + k * .28, .93, 1.06, c); kugel(x, 1.09, 4.09 + k * .28, .03, .03, .03, '#f2c49b', seg=6, ringe=4)
+    kugel(6.3, .945, 4.5, .02, .02, .02, '#f4f4f4', seg=6, ringe=4)
+    teil('jukebox')
+    prisma(rundeck(.12, 3.98, .76, 4.57, .05), 0, 1.45, '#7a1a3a', rough=.35); cyl(.44, 1.45, 4.275, .295, .64, '#7a1a3a', 'x', 20, rough=.35)
+    bc(.765, .5, 4.275, .012, .5, .44, '#2a1420'); bc(.765, 1.1, 4.275, .012, .4, .44, '#ffe9a8', glow=5)
+    for k in range(6): bc(.772, .3 + k * .08, 4.275, .01, .025, .4, '#c9a227', **MESSING)
+    for k in range(4): bc(.774, 1.0 + k * .07, 4.275, .008, .03, .34, '#7a4a24')
+    linie([(.77, 1.45 + math.sin(math.pi * k / 10) * .25, 4.275 - math.cos(math.pi * k / 10) * .25) for k in range(11)], .02, '#ff4fa3', seg=6, glow=10)
+    linie([(.77, .08, 4.025), (.77, 1.45, 4.025)], .02, '#7af0ff', seg=6, glow=10); linie([(.77, .08, 4.525), (.77, 1.45, 4.525)], .02, '#7af0ff', seg=6, glow=10)
+    licht('AREA', (.95, 1.0, 4.275), 30, (1, .5, .75), (2, .6, 4.275), groesse=.6)
     teil('pflanze'); pflanze(7.45, 5.45)
 
 # ---------------- Trainingsraum ----------------
@@ -231,7 +383,7 @@ def raum_training():
 # ---------------- Buero ----------------
 def raum_buero():
     huelle(('#a37a4a', '#96703f', '#ad8450', '#9c7545'), '#33435a', '#2c3a4f', '#5a4a3a', '#3a2a1a')
-    tuer('L', 5.2); pflanze(7.45, 2.2)
+    tuer('L', 5.2); pflanze_einfach(7.45, 2.2)
     onL(1.6, 1.85, 1.65, 1.3, '#efe6cf'); onL(1.6, 1.85, 1.5, 1.15, '#bfe4ff', d=.01, glow=6, rough=.2); onL(1.6, 1.85, .05, 1.15, '#efe6cf', d=.02); onL(1.6, 1.85, 1.5, .05, '#efe6cf', d=.02)   # Fenster
     box(.02, .7, .2, 2.5, 1.14, 1.2, '#8a7a6a'); licht('AREA', (.4, 1.9, 1.6), 260, (.8, .9, 1), (4, .8, 2.6), groesse=1.3)
     for x, pins in ((1.5, ('#d9333f', '#2d6cdf', '#f4c430')), (4.0, ('#f4c430', '#1f9d55', '#d9333f'))):                       # Pinnwaende Liga und Pokal
@@ -305,6 +457,25 @@ def prinzip(m):
     out = next((n for n in nt.nodes if n.type == 'OUTPUT_MATERIAL'), None) or nt.nodes.new('ShaderNodeOutputMaterial')
     nt.links.new(b.outputs[0], out.inputs[0]); return b
 
+MUSTER_FEHLER = []
+def muster(m, b, col, art):
+    # Maserung fuer Holz, Wolken fuer Putz, feines Korn fuer Stoff: hell-dunkel-Mischung der Grundfarbe
+    nt = m.node_tree; tc = nt.nodes.new('ShaderNodeTexCoord'); mp = nt.nodes.new('ShaderNodeMapping'); nz = nt.nodes.new('ShaderNodeTexNoise')
+    mass, a, h = {'holzx': ((1.2, 26, 26), .62, 1.22), 'holzz': ((26, 1.2, 26), .62, 1.22), 'holzy': ((26, 26, 1.2), .62, 1.22), 'putz': ((2.2, 2.2, 2.2), .8, 1.12), 'stoff': ((70, 70, 70), .78, 1.15)}[art]
+    mp.inputs['Scale'].default_value = mass
+    for nm, val in (('Scale', 1.0), ('Detail', 4.0)):
+        if nm in nz.inputs: nz.inputs[nm].default_value = val
+    nt.links.new(tc.outputs['Object'], mp.inputs['Vector']); nt.links.new(mp.outputs['Vector'], nz.inputs['Vector'])
+    c = rgb(col); dunkel = (c[0] * a, c[1] * a, c[2] * a, 1); hell = (min(1, c[0] * h), min(1, c[1] * h), min(1, c[2] * h), 1)
+    try:
+        mx = nt.nodes.new('ShaderNodeMix'); mx.data_type = 'RGBA'
+        A = [i for i in mx.inputs if i.name == 'A' and i.type == 'RGBA'][0]; B = [i for i in mx.inputs if i.name == 'B' and i.type == 'RGBA'][0]
+        F = [i for i in mx.inputs if i.type == 'VALUE'][0]; O = [o for o in mx.outputs if o.type == 'RGBA'][0]
+    except Exception:
+        mx = nt.nodes.new('ShaderNodeMixRGB'); A, B, F, O = mx.inputs[1], mx.inputs[2], mx.inputs[0], mx.outputs[0]
+    A.default_value = dunkel; B.default_value = hell
+    nt.links.new(nz.outputs[0], F); nt.links.new(O, b.inputs['Base Color'])
+
 def aufraeumen():
     try:
         if bpy.context.object and bpy.context.object.mode != 'OBJECT': bpy.ops.object.mode_set(mode='OBJECT')
@@ -332,9 +503,14 @@ def blender_raum(rid):
     def mat(t, key):
         k = (t, key)
         if k in MATS: return MATS[k]
-        col, rough, glow = key; m = bpy.data.materials.new('BB_m'); b = prinzip(m)
+        col, rough, glow, art, metal = key; m = bpy.data.materials.new('BB_m'); b = prinzip(m)
         b.inputs['Base Color'].default_value = rgb(col)
         if 'Roughness' in b.inputs: b.inputs['Roughness'].default_value = rough
+        if metal and 'Metallic' in b.inputs: b.inputs['Metallic'].default_value = metal
+        if art:
+            try: muster(m, b, col, art)
+            except Exception as e:
+                if not MUSTER_FEHLER: MUSTER_FEHLER.append(1); log('Muster uebersprungen (Farben bleiben glatt):', e)
         if glow > 0:
             for nm in ('Emission Color', 'Emission'):
                 if nm in b.inputs: b.inputs[nm].default_value = rgb(col); break
@@ -357,6 +533,12 @@ def blender_raum(rid):
             try: r = bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=seg, radius1=rad, radius2=rad, depth=h, matrix=M)
             except TypeError: r = bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=seg, diameter1=rad, diameter2=rad, depth=h, matrix=M)
             setmat(r['verts'], mi)
+        elif art == 'netz':
+            V, F, glatt = p; vs = [bm.verts.new((x, -z, y)) for x, y, z in V]
+            for fl in F:
+                try: f = bm.faces.new([vs[i] for i in fl])
+                except ValueError: continue
+                f.material_index = mi; f.smooth = bool(glatt) and len(fl) <= 4
         else:
             cx, cy, z, r0, r1, a0, a1 = p; am = (a0 + a1) / 2
             P = lambda r, a: bm.verts.new((cx + math.sin(a) * r, -z, cy + math.cos(a) * r))
@@ -442,7 +624,7 @@ def blender_raum(rid):
 
 def blender_haupt():
     t0 = time.time(); os.makedirs(ORDNER, exist_ok=True); fertig = []
-    log('Fassung 5 | Blender', bpy.app.version_string, '| Ordner', ORDNER)
+    log('Fassung 6 | Blender', bpy.app.version_string, '| Ordner', ORDNER)
     for rid in RAEUME:
         try: blender_raum(rid); fertig.append(rid)
         except Exception: log('FEHLER in', rid); log(traceback.format_exc())
@@ -463,8 +645,15 @@ def vorschau(rid, ziel):
         b = len(d[0]) // 3
         for q in P: d[0].extend(q); d[1].extend(c)
         for i in range(1, len(P) - 1): d[2].extend((b, b + i, b + i + 1))
-    for art, t, (col, rough, glow), p in PR:
-        if art == 'box':
+    for art, t, key, p in PR:
+        col, rough, glow = key[:3]
+        if art == 'netz':
+            V, F, glatt = p
+            for fl in F:
+                P = [V[i] for i in fl]; a = [P[1][i] - P[0][i] for i in range(3)]; b = [P[-1][i] - P[0][i] for i in range(3)]
+                n = (a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]); ln = math.sqrt(sum(q * q for q in n)) or 1
+                quad(t, col, glow, P, tuple(q / ln for q in n))
+        elif art == 'box':
             x0, z0, x1, z1, y0, y1, ry = p; cx, cz = (x0 + x1) / 2, (z0 + z1) / 2; c, s = math.cos(ry), math.sin(ry)
             def R(x, y, z): dx, dz = x - cx, z - cz; return (cx + dx * c - dz * s, y, cz + dx * s + dz * c)
             for P, n in (([(x0, y1, z1), (x1, y1, z1), (x1, y1, z0), (x0, y1, z0)], (0, 1, 0)), ([(x0, y0, z0), (x1, y0, z0), (x1, y0, z1), (x0, y0, z1)], (0, -1, 0)),
@@ -484,7 +673,7 @@ def vorschau(rid, ziel):
         else:
             cx, cy, z, r0, r1, a0, a1 = p; am = (a0 + a1) / 2; P = lambda r, a: (cx + math.sin(a) * r, cy + math.cos(a) * r, z)
             quad(t, col, glow, [P(r0, a0), P(r0, am), P(r0, a1), P(r1, a1), P(r1, am), P(r1, a0)], (0, 0, 1))
-    J = {'asset': {'version': '2.0'}, 'scene': 0, 'scenes': [{'nodes': []}], 'nodes': [], 'meshes': [], 'materials': [{'name': 'vorschau', 'doubleSided': True, 'pbrMetallicRoughness': {'metallicFactor': 0, 'roughnessFactor': 1}}], 'accessors': [], 'bufferViews': [], 'buffers': [{}]}
+    J = {'asset': {'version': '2.0'}, 'scene': 0, 'scenes': [{'nodes': []}], 'nodes': [], 'meshes': [], 'materials': [{'name': 'vorschau', 'doubleSided': False, 'pbrMetallicRoughness': {'metallicFactor': 0, 'roughnessFactor': 1}}], 'accessors': [], 'bufferViews': [], 'buffers': [{}]}
     B = bytearray()
     def acc(fmt, data, typ, ct, target, mm=None):
         while len(B) % 4: B.append(0)

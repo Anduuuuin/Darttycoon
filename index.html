@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Bullseye Boss</title>
-<meta name="dt-version" content="7.1">
+<meta name="dt-version" content="7.2">
 <meta name="theme-color" content="#060d0a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -3339,7 +3339,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='7.1';
+const GAME_VERSION='7.2';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
@@ -4975,7 +4975,7 @@ function hubEinst(){
    ${row('es_mute',S.mute?'🔇 Ton ist aus':'🔊 Ton ist an')}${row('es_music',S.music?'🎵 Musik ist an':'🎵 Musik ist aus')}${row('es_tips',S.tips===false?'💡 Tipps sind aus':'💡 Tipps sind an')}${row('es_help','❔ Anleitung')}
   </div>
   <div class="panel"><h3>🏙 Grafik</h3>
-   ${row('es_3d',S.opt3d?'🏙 3D-Ansicht ist an':'🏙 3D-Ansicht ist aus','Stadt, Vereinsheim und Räume in 3D zum Testen. Läuft es nicht flüssig, hier wieder ausschalten.')}${unlSet()._all?'':row('es_unl','🔓 Alles sofort freischalten','Für erfahrene Spieler: Liga, Pokal, Online und der Rest sind ohne Warten da.')}${S.opt3d?row('es_fps',UI.fps?'⏱ Bildrate wird angezeigt':'⏱ Bildrate anzeigen'):''}
+   ${row('es_3d',S.opt3d?'🏙 3D-Ansicht ist an':'🏙 3D-Ansicht ist aus','Stadt, Vereinsheim und Räume in 3D zum Testen. Läuft es nicht flüssig, hier wieder ausschalten.')}${unlSet()._all?'':row('es_unl','🔓 Alles sofort freischalten','Für erfahrene Spieler: Liga, Pokal, Online und der Rest sind ohne Warten da.')}${S.opt3d?row('es_fps',UI.fps?'⏱ Bildrate wird angezeigt':'⏱ Bildrate anzeigen'):''}${S.opt3d?row('es_bl',S.optB?'🧪 Blender-Probe ist an':'🧪 Blender-Probe ist aus','Test: Der Scheibenraum kommt aus Blender mit ausgerechnetem Licht. Zeigt immer 4 Scheiben, unabhängig vom Ausbau.'):''}
   </div>
   <div class="panel"><h3>💾 Spielstand</h3>
    ${row('es_exp','💾 Spielstand sichern','Als Code speichern oder kopieren')}${row('es_imp','⤵ Spielstand laden','Einen gesicherten Code einfügen')}${!isStandalone()?row('es_inst','📲 Als App installieren'):''}
@@ -4996,6 +4996,7 @@ function hubEinst(){
 function bindEinst(app){const q=(id,f)=>{const e=app.querySelector(id);if(e)e.onclick=f};
   q('#es_mute',()=>{S.mute=!S.mute;save();render();snd('click')});
   q('#es_music',()=>{musicToggle(!S.music);render()});
+  q('#es_bl',()=>{S.optB=!S.optB;save();snd('click');render()});
   q('#es_unl',()=>{const u=unlSet();u._all=1;Object.keys(UNL).forEach(k=>u[k]=1);save();snd('coin');toast('🔓 Alles freigeschaltet');render()});
   q('#es_3d',()=>{S.opt3d=!S.opt3d;save();snd('click');render()});q('#es_fps',()=>{UI.fps=!UI.fps;snd('click');render()});
   q('#es_tips',()=>{S.tips=S.tips===false;if(S.tips)S.seen={};save();render()});
@@ -5442,6 +5443,7 @@ function prog(nl){const VS=`attribute vec3 aP,aN,aC;attribute vec2 aU;attribute 
 void main(){vec4 t=texture2D(uT,vU);
  if(uMode==1){gl_FragColor=vec4(0.,0.,0.,t.a*vC.r);return;}
  if(uMode==2){gl_FragColor=vec4(vC*t.a,t.a);return;}
+ if(uMode==3){gl_FragColor=vec4(t.rgb*vC,1.);return;}
  vec3 base=vC*t.rgb,n=normalize(vN);
  vec3 li=uAmb+uSky*max(n.y,0.)+uSun*max(dot(n,normalize(vec3(.62,.6,.5))),0.);
  ${nl?`for(int i=0;i<${nl};i++){vec3 L=uLP[i]-vP;float d=length(L);L/=d;float sp=smoothstep(uLK[i],uLK[i]+.22,dot(-L,uLD[i]));li+=uLC[i]*sp*max(dot(n,L),0.)/(1.+.1*d*d);}`:''}
@@ -5460,11 +5462,23 @@ function init(){if(tried)return!dead;tried=true;
   lab.addEventListener('click',e=>{const el=e.target.closest('.c3l');if(el)fire(HITS[+el.dataset.i])});
  }catch(e){dead=true;console.warn('3D-Stadt aus:',e.message)}
  return!dead}
+/* ---------- Blender-Raum (GLB mit gebackenem Licht) ---------- */
+const BL={st:0,buf:null,n:0,tex:null};let BLON=false;
+function blParse(buf){const dv=new DataView(buf);if(dv.getUint32(0,true)!==0x46546C67)throw new Error('keine GLB');let off=12,json=null,bin=null;
+ while(off<buf.byteLength){const len=dv.getUint32(off,true),typ=dv.getUint32(off+4,true);if(typ===0x4E4F534A)json=JSON.parse(new TextDecoder().decode(new Uint8Array(buf,off+8,len)));else if(typ===0x004E4942)bin=buf.slice(off+8,off+8+len);off+=8+len}
+ const CT={5121:Uint8Array,5123:Uint16Array,5125:Uint32Array,5126:Float32Array},NC={SCALAR:1,VEC2:2,VEC3:3};
+ const acc=i=>{const a=json.accessors[i],bv=json.bufferViews[a.bufferView],T=CT[a.componentType],n=NC[a.type],base=(bv.byteOffset||0)+(a.byteOffset||0);return new T(bin.slice(base,base+a.count*n*T.BYTES_PER_ELEMENT))};
+ const out=[];json.meshes.forEach(m=>m.primitives.forEach(p=>{const P=acc(p.attributes.POSITION),U=acc(p.attributes.TEXCOORD_0),I=p.indices!=null?acc(p.indices):null,cnt=I?I.length:P.length/3;for(let k=0;k<cnt;k++){const i=I?I[k]:k;out.push(P[i*3],P[i*3+1],P[i*3+2],0,1,0,1,1,1,U[i*2],U[i*2+1],0)}}));
+ const im=json.images[0],bv=json.bufferViews[im.bufferView];return{verts:new Float32Array(out),img:new Blob([bin.slice(bv.byteOffset||0,(bv.byteOffset||0)+bv.byteLength)],{type:im.mimeType||'image/jpeg'})}}
+function blLoad(){if(BL.st)return;BL.st=1;fetch('scheibenraum.glb').then(r=>{if(!r.ok)throw new Error('fehlt');return r.arrayBuffer()}).then(b=>{const g=blParse(b),url=URL.createObjectURL(g.img),img=new Image();
+  img.onload=()=>{try{BL.tex=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,BL.tex);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,img);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+    BL.buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,BL.buf);gl.bufferData(gl.ARRAY_BUFFER,g.verts,gl.STATIC_DRAW);BL.n=g.verts.length/STR;BL.st=2;URL.revokeObjectURL(url);key='';if(wrap.isConnected)render()}catch(e){BL.st=3}};img.onerror=()=>{BL.st=3};img.src=url}).catch(()=>{BL.st=3})}
 function texUp(tx,c){gl.bindTexture(gl.TEXTURE_2D,tx);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,c);gl.generateMipmap(gl.TEXTURE_2D);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR)}
 function upload(){const room=SCN!=='city';REG=room?REGR:REGC;
  if(room){if(!texR){texR=gl.createTexture();texUp(texR,mkRoomAtlas())}}else if(texNight!==night){texNight=night;texUp(tex,mkAtlas(night))}
  const st=room?buildRoom(SCN):build();const mk=(old,buf)=>{const b2=old||gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b2);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(buf.a),gl.STATIC_DRAW);b2.n=buf.a.length/STR;return b2};
  bS=mk(bS,st.S0);bSH=mk(bSH,st.SH);bGL=mk(bGL,st.GL);TEX=room?texR:tex;
+ BLON=SCN==='scheiben'&&!!(S&&S.optB)&&BL.st===2;if(SCN==='scheiben'&&S&&S.optB&&BL.st===0)blLoad();
  cur=(room||night)?PR.night:PR.day;gl.useProgram(cur.p);const U=cur.U;
  if(room)gl.uniform3f(U.uAmb,.22,.26,.32),gl.uniform3f(U.uSky,.10,.12,.10),gl.uniform3f(U.uSun,.18,.17,.15);
  else if(night){gl.uniform3f(U.uAmb,.20,.23,.34);gl.uniform3f(U.uSky,.10,.11,.14);gl.uniform3f(U.uSun,.16,.17,.26);LIGHTS=[];
@@ -5499,9 +5513,11 @@ function draw(t,now,w,h,thumb){
  gl.useProgram(cur.p);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,TEX);gl.uniform1i(cur.U.uT,0);
  if(thumb)gl.clearColor(.035,.06,.05,1);else gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);gl.enable(gl.CULL_FACE);gl.uniformMatrix4fv(cur.U.uVP,false,new Float32Array(VP));
  const dyn=(b2,buf)=>{gl.bindBuffer(gl.ARRAY_BUFFER,b2);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(buf.a),gl.DYNAMIC_DRAW);bind(b2);if(buf.a.length)gl.drawArrays(gl.TRIANGLES,0,buf.a.length/STR)};
- gl.disable(gl.BLEND);gl.depthMask(true);gl.uniform1i(cur.U.uMode,0);bind(bS);gl.drawArrays(gl.TRIANGLES,0,bS.n);dyn(bD,D);
- gl.enable(gl.BLEND);gl.depthMask(false);gl.disable(gl.CULL_FACE);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.uniform1i(cur.U.uMode,1);bind(bSH);if(bSH.n)gl.drawArrays(gl.TRIANGLES,0,bSH.n);dyn(bDS,DS);
- gl.blendFunc(gl.ONE,gl.ONE);gl.uniform1i(cur.U.uMode,2);bind(bGL);if(bGL.n)gl.drawArrays(gl.TRIANGLES,0,bGL.n);dyn(bDG,DG);gl.depthMask(true);
+ gl.disable(gl.BLEND);gl.depthMask(true);
+ if(BLON){DYN.forEach(o=>blob(DS,o.x,o.z,.34,.34,.75));gl.disable(gl.CULL_FACE);gl.uniform1i(cur.U.uMode,3);gl.bindTexture(gl.TEXTURE_2D,BL.tex);bind(BL.buf);gl.drawArrays(gl.TRIANGLES,0,BL.n);gl.bindTexture(gl.TEXTURE_2D,TEX);gl.enable(gl.CULL_FACE);gl.uniform1i(cur.U.uMode,0)}
+ else{gl.uniform1i(cur.U.uMode,0);bind(bS);gl.drawArrays(gl.TRIANGLES,0,bS.n)}dyn(bD,D);
+ gl.enable(gl.BLEND);gl.depthMask(false);gl.disable(gl.CULL_FACE);gl.blendFunc(gl.SRC_ALPHA,gl.ONE_MINUS_SRC_ALPHA);gl.uniform1i(cur.U.uMode,1);bind(bSH);if(bSH.n&&!BLON)gl.drawArrays(gl.TRIANGLES,0,bSH.n);dyn(bDS,DS);
+ gl.blendFunc(gl.ONE,gl.ONE);gl.uniform1i(cur.U.uMode,2);bind(bGL);if(bGL.n&&!BLON)gl.drawArrays(gl.TRIANGLES,0,bGL.n);dyn(bDG,DG);gl.depthMask(true);
  if(thumb||!LABS.length)return;
  const els=lab.children;for(let i=0;i<LABS.length;i++){const p=LABS[i].p,cw=VP[3]*p[0]+VP[7]*p[1]+VP[11]*p[2]+VP[15],sx=(VP[0]*p[0]+VP[4]*p[1]+VP[8]*p[2]+VP[12])/cw,sy=(VP[1]*p[0]+VP[5]*p[1]+VP[9]*p[2]+VP[13])/cw;LABS[i].sx=(sx*.5+.5)*w;LABS[i].sy=(.5-sy*.5)*h}
  if(els.length&&!LABS[0].w)LABS.forEach((L,i)=>{L.w=els[i].offsetWidth+4;L.hh=els[i].offsetHeight+(L.cls?3:8)});
@@ -5519,7 +5535,7 @@ function fire(H){if(!H||flash)return;flash={h:H,t:performance.now()};if(!H.act)s
  setTimeout(()=>{if(H.plot)return plotDialog(H.plot);if(H.deco)return decoDialog(H.deco);if(H.act)return doAct(H.act);const g=H.go;if(g.startsWith('v_'))return venueDialog(g.slice(2));UI.tab=g;render();window.scrollTo(0,0)},170)}
 return{
  on(){if(!urlDone){urlDone=true;try{const m=/[?&]stadt3d=([01])/.exec(location.search);if(m){S.opt3d=m[1]==='1';save()}}catch(e){}}return!!(S&&S.opt3d)&&init()},
- mount(host,scn){if(!init())return;scn=scn||'city';fixTycoon(S);const n=cityNight(),k=scn==='city'?JSON.stringify([n,!!S.pl,S.rep>=PL_REP,S.b,S.rep>=TIERS[1].rep,S.rep>=TIERS[3].rep,S.hq,S.plots,S.hall.up,S.hall.built]):'r'+roomKey(scn);
+ mount(host,scn){if(!init())return;scn=scn||'city';fixTycoon(S);const n=cityNight(),k=scn==='city'?JSON.stringify([n,!!S.pl,S.rep>=PL_REP,S.b,S.rep>=TIERS[1].rep,S.rep>=TIERS[3].rep,S.hq,S.plots,S.hall.up,S.hall.built]):'r'+roomKey(scn)+(S.optB?'b'+BL.st:'');
   host.appendChild(wrap);if(scn!==SCN)yaw=0;if(k!==key){key=k;SCN=scn;night=n;upload()}if(!running){running=true;fpsT=performance.now();fpsN=0;requestAnimationFrame(frame)}},
 venue(v){if(!init())return'';return cached('c3v'+v,()=>({url:snap('v_'+v,640,380,3.9)})).url},
  thumb(id){if(!init())return'';return cached('c3t'+roomKey(id),()=>({url:snap(id,480,366,3)})).url},

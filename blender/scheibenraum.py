@@ -1,4 +1,4 @@
-# Bullseye Boss – Scheibenraum fuer Blender (Fassung 3)
+# Bullseye Boss – Scheibenraum fuer Blender (Fassung 4)
 # Baut den Raum, rechnet das Licht aus ("Backen") und speichert alles als scheibenraum.glb
 # Ausfuehren: Blender > oben Reiter "Scripting" > "Neu" > diesen Text einfuegen > Pfeil-Knopf "Skript ausfuehren"
 import bpy, bmesh, math, os, time, traceback
@@ -7,7 +7,7 @@ from mathutils import Matrix
 # ---------- Einstellungen (bei Bedarf aendern und nochmal ausfuehren) ----------
 AUFLOESUNG = 2048     # Groesse des Lichtbilds. 1024 = schneller, 2048 = schaerfer
 QUALITAET  = 48       # Rechenschritte pro Bildpunkt. Mehr = sauberer, aber langsamer
-HELLIGKEIT = 1.3      # 1.0 = normal, 1.5 = heller, 0.7 = dunkler
+HELLIGKEIT = 0.75      # 1.0 = normal, 1.5 = heller, 0.7 = dunkler
 ORDNER = os.path.join(os.path.expanduser('~'), 'Desktop', 'BullseyeBoss_Blender')
 
 LOG = []
@@ -148,7 +148,7 @@ def licht(name, typ, ort, energie, farbe, ziel=None, groesse=1.0, winkel=70):
 
 def haupt():
     t0 = time.time(); os.makedirs(ORDNER, exist_ok=True)
-    log('Fassung 3 | Blender', bpy.app.version_string, '| Ordner', ORDNER)
+    log('Fassung 4 | Blender', bpy.app.version_string, '| Ordner', ORDNER)
     try:
         if bpy.context.object and bpy.context.object.mode != 'OBJECT': bpy.ops.object.mode_set(mode='OBJECT')
     except Exception: pass

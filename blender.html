@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="de"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Bullseye Boss – Blender-Test</title>
+<style>
+html,body{margin:0;background:#060d0a;color:#f1f6f2;font:15px/1.45 system-ui,sans-serif;overscroll-behavior:none}
+#wrap{max-width:560px;margin:0 auto;padding:12px}
+h1{font-size:18px;margin:4px 2px 10px}
+#stage{position:relative;border-radius:16px;overflow:hidden;box-shadow:0 0 0 2px #0a0f0c,0 0 0 4px #b8902c,0 0 0 5px #5a430c;background:radial-gradient(90% 70% at 50% 40%,#1c2a22,#070b09 80%)}
+canvas{display:block;width:100%;touch-action:none;cursor:grab}
+#info{position:absolute;left:10px;top:8px;font-size:11px;color:#ffffffaa}
+#msg{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:24px;color:#c9d6cc}
+p{color:#93a89a;font-size:13px;margin:10px 2px}
+label.btn{display:block;margin:12px 0;padding:14px;border-radius:12px;background:#f4c430;color:#141016;font-weight:800;text-align:center;cursor:pointer}
+input[type=file]{position:absolute;opacity:0;width:1px;height:1px}
+label.btn:focus-within{outline:3px solid #fff}
+</style></head><body><div id="wrap">
+<h1>Blender-Test: Scheibenraum</h1>
+<div id="stage"><canvas id="c"></canvas><div id="info"></div><div id="msg">Lade scheibenraum.glb …</div></div>
+<label class="btn">Eigene GLB-Datei vom Gerät ansehen<input type="file" id="f" accept=".glb,model/gltf-binary"></label>
+<p>Mit dem Finger oder der Maus ziehen dreht den Raum, zwei Finger oder das Mausrad zoomen. Die Datei bleibt auf deinem Gerät und wird nirgends hochgeladen.</p>
+</div>
+<script>
+'use strict';
+const cv=document.getElementById('c'),msg=document.getElementById('msg'),info=document.getElementById('info');
+const gl=cv.getContext('webgl',{antialias:true,alpha:true});
+const sub=(a,b)=>[a[0]-b[0],a[1]-b[1],a[2]-b[2]],dot=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2],crs=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]],nrm=a=>{const l=Math.hypot(a[0],a[1],a[2])||1;return[a[0]/l,a[1]/l,a[2]/l]};
+const mul=(a,b)=>{const o=new Array(16);for(let c=0;c<4;c++)for(let r=0;r<4;r++)o[c*4+r]=a[r]*b[c*4]+a[4+r]*b[c*4+1]+a[8+r]*b[c*4+2]+a[12+r]*b[c*4+3];return o};
+const persp=(f,as,n,fa)=>{const t=1/Math.tan(f/2);return[t/as,0,0,0,0,t,0,0,0,0,(fa+n)/(n-fa),-1,0,0,2*fa*n/(n-fa),0]};
+const look=(e,c,u)=>{let z=nrm(sub(e,c)),x=nrm(crs(u,z)),y=crs(z,x);return[x[0],y[0],z[0],0,x[1],y[1],z[1],0,x[2],y[2],z[2],0,-dot(x,e),-dot(y,e),-dot(z,e),1]};
+function trs(n){if(n.matrix)return n.matrix;const t=n.translation||[0,0,0],q=n.rotation||[0,0,0,1],s=n.scale||[1,1,1],[x,y,z,w]=q;
+ return[(1-2*(y*y+z*z))*s[0],(2*(x*y+z*w))*s[0],(2*(x*z-y*w))*s[0],0,(2*(x*y-z*w))*s[1],(1-2*(x*x+z*z))*s[1],(2*(y*z+x*w))*s[1],0,(2*(x*z+y*w))*s[2],(2*(y*z-x*w))*s[2],(1-2*(x*x+y*y))*s[2],0,t[0],t[1],t[2],1]}
+const sh=(t,s)=>{const o=gl.createShader(t);gl.shaderSource(o,s);gl.compileShader(o);return o};
+const pr=gl.createProgram();gl.attachShader(pr,sh(gl.VERTEX_SHADER,'attribute vec3 aP;attribute vec2 aU;uniform mat4 uM;varying vec2 vU;void main(){vU=aU;gl_Position=uM*vec4(aP,1.);}'));
+gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,'precision mediump float;varying vec2 vU;uniform sampler2D uT;uniform vec4 uC;uniform float uHas;void main(){vec4 t=mix(vec4(1.),texture2D(uT,vU),uHas);gl_FragColor=vec4(t.rgb*uC.rgb,1.);}'));
+gl.linkProgram(pr);gl.useProgram(pr);
+const aP=gl.getAttribLocation(pr,'aP'),aU=gl.getAttribLocation(pr,'aU'),uM=gl.getUniformLocation(pr,'uM'),uC=gl.getUniformLocation(pr,'uC'),uHas=gl.getUniformLocation(pr,'uHas');
+let PARTS=[],BB=null,yaw=.66,pit=.5,zoom=1,drag=null,pinch=0;
+const CT={5120:Int8Array,5121:Uint8Array,5122:Int16Array,5123:Uint16Array,5125:Uint32Array,5126:Float32Array},NC={SCALAR:1,VEC2:2,VEC3:3,VEC4:4,MAT4:16};
+async function loadGLB(buf){
+ const dv=new DataView(buf);if(dv.getUint32(0,true)!==0x46546C67)throw new Error('Das ist keine GLB-Datei');
+ let off=12,json=null,bin=null;while(off<buf.byteLength){const len=dv.getUint32(off,true),typ=dv.getUint32(off+4,true);if(typ===0x4E4F534A)json=JSON.parse(new TextDecoder().decode(new Uint8Array(buf,off+8,len)));else if(typ===0x004E4942)bin=buf.slice(off+8,off+8+len);off+=8+len}
+ const acc=i=>{const a=json.accessors[i],bv=json.bufferViews[a.bufferView],T=CT[a.componentType],n=NC[a.type],st=bv.byteStride||0,base=(bv.byteOffset||0)+(a.byteOffset||0);
+  if(!st||st===T.BYTES_PER_ELEMENT*n)return{d:new T(bin.slice(base,base+a.count*n*T.BYTES_PER_ELEMENT)),n,norm:a.normalized,T};
+  const out=new T(a.count*n),v=new DataView(bin);for(let k=0;k<a.count;k++)for(let c=0;c<n;c++){const p=base+k*st+c*T.BYTES_PER_ELEMENT;out[k*n+c]=T===Float32Array?v.getFloat32(p,true):T===Uint16Array?v.getUint16(p,true):T===Uint32Array?v.getUint32(p,true):T===Int16Array?v.getInt16(p,true):v.getUint8(p)}return{d:out,n,norm:a.normalized,T}};
+ const texs={};const tex=async ti=>{if(ti==null)return null;if(texs[ti])return texs[ti];const im=json.images[json.textures[ti].source],bv=json.bufferViews[im.bufferView];
+  const blob=new Blob([bin.slice(bv.byteOffset||0,(bv.byteOffset||0)+bv.byteLength)],{type:im.mimeType||'image/png'}),url=URL.createObjectURL(blob),img=new Image();await new Promise((ok,no)=>{img.onload=ok;img.onerror=()=>no(new Error('Bild in der Datei nicht lesbar'));img.src=url});
+  const t=gl.createTexture();gl.bindTexture(gl.TEXTURE_2D,t);gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,img);const p2=x=>(x&(x-1))===0;
+  if(p2(img.width)&&p2(img.height)){gl.generateMipmap(gl.TEXTURE_2D);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR)}else{gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE)}
+  URL.revokeObjectURL(url);t.w=img.width;return texs[ti]=t};
+ const parts=[],lo=[1e9,1e9,1e9],hi=[-1e9,-1e9,-1e9];let tris=0,tw=0;
+ const walk=async(ni,M)=>{const n=json.nodes[ni],W=mul(M,trs(n));
+  if(n.mesh!=null)for(const p of json.meshes[n.mesh].primitives){if(p.mode!=null&&p.mode!==4)continue;const P=acc(p.attributes.POSITION),U=p.attributes.TEXCOORD_0!=null?acc(p.attributes.TEXCOORD_0):null,I=p.indices!=null?acc(p.indices).d:null,cnt=I?I.length:P.d.length/3,out=new Float32Array(cnt*5);
+    const us=U?(U.T===Float32Array?1:U.T===Uint16Array?1/65535:1/255):1;
+    for(let k=0;k<cnt;k++){const i=I?I[k]:k,x=P.d[i*3],y=P.d[i*3+1],z=P.d[i*3+2],wx=W[0]*x+W[4]*y+W[8]*z+W[12],wy=W[1]*x+W[5]*y+W[9]*z+W[13],wz=W[2]*x+W[6]*y+W[10]*z+W[14];
+     out[k*5]=wx;out[k*5+1]=wy;out[k*5+2]=wz;out[k*5+3]=U?U.d[i*2]*us:0;out[k*5+4]=U?U.d[i*2+1]*us:0;lo[0]=Math.min(lo[0],wx);lo[1]=Math.min(lo[1],wy);lo[2]=Math.min(lo[2],wz);hi[0]=Math.max(hi[0],wx);hi[1]=Math.max(hi[1],wy);hi[2]=Math.max(hi[2],wz)}
+    const m=p.material!=null?json.materials[p.material]:{},pbr=m.pbrMetallicRoughness||{},t=await tex(pbr.baseColorTexture?pbr.baseColorTexture.index:(m.emissiveTexture?m.emissiveTexture.index:null));if(t)tw=Math.max(tw,t.w);
+    const b=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b);gl.bufferData(gl.ARRAY_BUFFER,out,gl.STATIC_DRAW);parts.push({b,n:cnt,t,c:pbr.baseColorFactor||[1,1,1,1]});tris+=cnt/3}
+  for(const c of n.children||[])await walk(c,W)};
+ const I4=[1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1];for(const r of (json.scenes[json.scene||0].nodes))await walk(r,I4);
+ if(!parts.length)throw new Error('In der Datei ist kein Modell');
+ PARTS=parts;BB={lo,hi};msg.style.display='none';window.__LOADED={tris:Math.round(tris),tw,kb:Math.round(buf.byteLength/1024)};
+ info.textContent=`${Math.round(tris).toLocaleString('de-DE')} Dreiecke · Bild ${tw||'–'} px · ${Math.round(buf.byteLength/1024)} KB`}
+function fail(e){msg.style.display='flex';msg.textContent=e.message||String(e)}
+fetch('scheibenraum.glb').then(r=>{if(!r.ok)throw new Error('Noch keine scheibenraum.glb online. Wähle unten deine Datei aus Blender aus.');return r.arrayBuffer()}).then(loadGLB).catch(fail);
+document.getElementById('f').onchange=e=>{const f=e.target.files[0];if(!f)return;msg.style.display='flex';msg.textContent='Lese '+f.name+' …';f.arrayBuffer().then(loadGLB).catch(fail)};
+cv.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,yaw,pit};cv.setPointerCapture(e.pointerId)});
+cv.addEventListener('pointermove',e=>{if(!drag||pinch)return;yaw=drag.yaw-(e.clientX-drag.x)*.008;pit=Math.max(.08,Math.min(1.4,drag.pit+(e.clientY-drag.y)*.006))});
+cv.addEventListener('pointerup',()=>drag=null);cv.addEventListener('pointercancel',()=>drag=null);
+cv.addEventListener('wheel',e=>{e.preventDefault();zoom=Math.max(.35,Math.min(2.5,zoom*(e.deltaY>0?1.1:.9)))},{passive:false});
+cv.addEventListener('touchmove',e=>{if(e.touches.length===2){const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);if(pinch)zoom=Math.max(.35,Math.min(2.5,zoom*pinch/d));pinch=d}},{passive:true});
+cv.addEventListener('touchend',()=>pinch=0);
+let fc=0,ft=0;
+function frame(now){const w=cv.clientWidth,dpr=Math.min(2,window.devicePixelRatio||1),h=Math.round(w*.82);if(cv.width!==Math.round(w*dpr)){cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);cv.style.height=h+'px'}
+ gl.viewport(0,0,cv.width,cv.height);gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);
+ if(BB){const c=[(BB.lo[0]+BB.hi[0])/2,(BB.lo[1]+BB.hi[1])/2,(BB.lo[2]+BB.hi[2])/2],rad=Math.hypot(BB.hi[0]-BB.lo[0],BB.hi[1]-BB.lo[1],BB.hi[2]-BB.lo[2])/2,R=rad*2.9*zoom;
+  const eye=[c[0]+Math.sin(yaw)*Math.cos(pit)*R,c[1]+Math.sin(pit)*R,c[2]+Math.cos(yaw)*Math.cos(pit)*R],VP=mul(persp(.56,cv.width/cv.height,rad*.05,rad*12),look(eye,c,[0,1,0]));
+  gl.enable(gl.DEPTH_TEST);gl.uniformMatrix4fv(uM,false,new Float32Array(VP));
+  for(const p of PARTS){gl.bindBuffer(gl.ARRAY_BUFFER,p.b);gl.enableVertexAttribArray(aP);gl.vertexAttribPointer(aP,3,gl.FLOAT,false,20,0);gl.enableVertexAttribArray(aU);gl.vertexAttribPointer(aU,2,gl.FLOAT,false,20,12);
+   gl.uniform4fv(uC,p.c);gl.uniform1f(uHas,p.t?1:0);if(p.t)gl.bindTexture(gl.TEXTURE_2D,p.t);gl.drawArrays(gl.TRIANGLES,0,p.n)}}
+ requestAnimationFrame(frame)}
+requestAnimationFrame(frame);
+</script></body></html>

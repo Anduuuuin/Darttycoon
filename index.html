@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Bullseye Boss</title>
-<meta name="dt-version" content="7.4">
+<meta name="dt-version" content="7.5">
 <meta name="theme-color" content="#060d0a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -3340,7 +3340,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='7.4';
+const GAME_VERSION='7.5';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
@@ -5257,21 +5257,21 @@ function mkRoomAtlas(){
 const RW=8,RD=6,RH=3;
 const lookOf=L=>({skin:L.s||'#e0ac80',hair:L.bald?(L.s||'#e0ac80'):(L.h||'#2b1d14'),shirt:L.t||'#1fa55a',pants:L.p||'#2b2f3a',long:L.g==='f',bald:!!L.bald,beard:!!L.beard&&L.g!=='f',trim:L.w||'#f4f4f4'});
 function buildRoom(id){
- fixTycoon(S);const S0=new Buf(),SH=new Buf(),GL=new Buf(),b=S.b;HITS=[];LABS=[];LIGHTS=[];DYN=[];
+ fixTycoon(S);const S0=new Buf(),SH=new Buf(),GL=new Buf(),b=S.b;HITS=[];LABS=[];LIGHTS=[];DYN=[];SHL=[];
  const bx=(x0,z0,x1,z1,y0,y1,col,o)=>S0.box(B((x0+x1)/2,(y0+y1)/2,(z0+z1)/2,x1-x0,y1-y0,z1-z0),col,o);
  const onB=(x,y,w,h,col,o,d)=>S0.box(B(x,y,.035+(d||0),w,h,.05),col,o);
  const onL=(z,y,w,h,col,o,d)=>S0.box(chain(M4.T(.035+(d||0),y,z),M4.RY(Math.PI/2),M4.S(w,h,.05)),col,o);
  const T=(k,e)=>({faces:{0:k},te:e||0});
  const hit=o=>{HITS.push(o);return o};
  const lab=(h,t,x,y,z,cls,col,sub)=>LABS.push({h,t,p:[x,y,z],col:col||'#fff',sub,cls:cls||'sm'});
- const sh=(x,z,rx,rz,a)=>blob(SH,x,z,rx,rz||rx,a||.7);
+ const sh=(x,z,rx,rz,a)=>{SHL.push([x,z,rx,rz||rx,a||.7]);blob(SH,x,z,rx,rz||rx,a||.7)};
  const light=(x,y,z,d,c,k)=>LIGHTS.push([x,y,z,nrm(d),c,k]);
  const lamp=(x,z,c)=>{glowQ(GL,x,.03,z,1.3,'#2a2410','y');light(x,RH-.4,z,[0,-1,0],c||[2.0,1.8,1.4],.45)};
  const door=(side,c,name,target)=>{let H;if(side==='B'){bx(c-.54,0,c+.54,.03,0,2.16,'#3a2616');S0.box(B(c,1.04,.055,.92,2.08,.05),'#6a4426',T('door'));H=hit({go:'r_'+target,a:[c-.5,0,0],b:[c+.5,2.1,.2]});lab(H,'🚪 '+name,c,2.32,.1,'door','#f4c430')}
   else{bx(0,c-.54,.03,c+.54,0,2.16,'#3a2616');S0.box(chain(M4.T(.055,1.04,c),M4.RY(Math.PI/2),M4.S(.92,2.08,.05)),'#6a4426',T('door'));H=hit({go:'r_'+target,a:[0,0,c-.5],b:[.2,2.1,c+.5]});lab(H,'🚪 '+name,.1,2.32,c,'door','#f4c430')}};
  const plus=(did,x,y,z)=>{const H=hit({deco:did,a:[x-.3,y-.3,z-.3],b:[x+.3,y+.3,z+.3]});LABS.push({h:H,t:'+',p:[x,y,z],col:'#f4c430',cls:'plus'})};
  const deco=(did,a,b2)=>hit({deco:did,a,b:b2});
- const fig=(L,x,z,ry,o)=>{const f=Object.assign(lookOf(L),{x,z,ry:ry||0,s:1},o||{});DYN.push(f);sh(x,z,.36);return f};
+ const fig=(L,x,z,ry,o)=>{const f=Object.assign(lookOf(L),{x,z,ry:ry||0,s:1},o||{});DYN.push(f);blob(SH,x,z,.36,.36,.7);return f};
  const tisch=(x,z)=>{bx(x-.25,z-.25,x+.25,z+.25,0,.06,'#2b2f33');bx(x-.04,z-.04,x+.04,z+.04,.06,1.06,'#8a8f94');bx(x-.37,z-.37,x+.37,z+.37,1.06,1.12,'#7a5232');[[-.18,-.1,'#f6c64f'],[.16,.12,'#f6c64f']].forEach(([dx,dz,c])=>{S0.box(B(x+dx,1.19,z+dz,.08,.14,.08),c,{e:.5});S0.box(B(x+dx,1.275,z+dz,.085,.03,.085),'#fffbe8',{e:.4})});sh(x,z,.55)};
  const board=(x,y,r,spot)=>{onB(x,y,r*2.8,r*2.8,'#2a1a0e');S0.box(B(x,y,.075,r*2.5,r*2.5,.03),'#121212');S0.flat([[x-r,y-r,.095],[x+r,y-r,.095],[x+r,y+r,.095],[x-r,y+r,.095]],[0,0,1],'#ffffff','board',.25);
   if(spot){S0.box(B(x,RH-.38,.42,.07,.07,.84),'#2b2f33');S0.box(B(x,RH-.44,.84,.3,.14,.2),'#17191b');S0.box(B(x,RH-.51,.84,.24,.02,.14),'#fff2c0',{e:3});glowQ(GL,x,RH-.53,.86,.5,'#6a5a30');glowQ(GL,x,y,.11,r*2,'#3a3320')}};
@@ -5464,7 +5464,7 @@ function init(){if(tried)return!dead;tried=true;
  }catch(e){dead=true;console.warn('3D-Stadt aus:',e.message)}
  return!dead}
 /* ---------- Blender-Raum (GLB mit gebackenem Licht) ---------- */
-const BL={st:0,buf:null,n:0,tex:null};let BLON=false;
+const BL={st:0,buf:null,n:0,tex:null};let BLON=false,SHL=[];
 function blParse(buf){const dv=new DataView(buf);if(dv.getUint32(0,true)!==0x46546C67)throw new Error('keine GLB');let off=12,json=null,bin=null;
  while(off<buf.byteLength){const len=dv.getUint32(off,true),typ=dv.getUint32(off+4,true);if(typ===0x4E4F534A)json=JSON.parse(new TextDecoder().decode(new Uint8Array(buf,off+8,len)));else if(typ===0x004E4942)bin=buf.slice(off+8,off+8+len);off+=8+len}
  const CT={5121:Uint8Array,5123:Uint16Array,5125:Uint32Array,5126:Float32Array},NC={SCALAR:1,VEC2:2,VEC3:3};
@@ -5479,7 +5479,7 @@ function upload(){const room=SCN!=='city';REG=room?REGR:REGC;
  if(room){if(!texR){texR=gl.createTexture();texUp(texR,mkRoomAtlas())}}else if(texNight!==night){texNight=night;texUp(tex,mkAtlas(night))}
  const st=room?buildRoom(SCN):build();const mk=(old,buf)=>{const b2=old||gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,b2);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(buf.a),gl.STATIC_DRAW);b2.n=buf.a.length/STR;return b2};
  bS=mk(bS,st.S0);bSH=mk(bSH,st.SH);bGL=mk(bGL,st.GL);TEX=room?texR:tex;
- BLON=SCN==='scheiben'&&!!(S&&S.optB)&&BL.st===2;if(SCN==='scheiben'&&S&&S.optB){if(BL.st===0)blLoad();V3.boot()}
+ BLON=false;if(V3.has(SCN)&&S&&S.optB)V3.boot();
  cur=(room||night)?PR.night:PR.day;gl.useProgram(cur.p);const U=cur.U;
  if(room)gl.uniform3f(U.uAmb,.22,.26,.32),gl.uniform3f(U.uSky,.10,.12,.10),gl.uniform3f(U.uSun,.18,.17,.15);
  else if(night){gl.uniform3f(U.uAmb,.20,.23,.34);gl.uniform3f(U.uSky,.10,.11,.14);gl.uniform3f(U.uSun,.16,.17,.26);LIGHTS=[];
@@ -5514,7 +5514,7 @@ function draw(t,now,w,h,thumb){
  gl.useProgram(cur.p);gl.activeTexture(gl.TEXTURE0);gl.bindTexture(gl.TEXTURE_2D,TEX);gl.uniform1i(cur.U.uT,0);
  if(thumb)gl.clearColor(.035,.06,.05,1);else gl.clearColor(0,0,0,0);gl.clear(gl.COLOR_BUFFER_BIT|gl.DEPTH_BUFFER_BIT);gl.enable(gl.DEPTH_TEST);gl.enable(gl.CULL_FACE);gl.uniformMatrix4fv(cur.U.uVP,false,new Float32Array(VP));
  const dyn=(b2,buf)=>{gl.bindBuffer(gl.ARRAY_BUFFER,b2);gl.bufferData(gl.ARRAY_BUFFER,new Float32Array(buf.a),gl.DYNAMIC_DRAW);bind(b2);if(buf.a.length)gl.drawArrays(gl.TRIANGLES,0,buf.a.length/STR)};
- const OV=!thumb&&SCN==='scheiben'&&!!(S&&S.optB)&&V3.ready();if(OV)V3.draw(t,CAM,cv,wrap,DYN);else V3.hide();
+ const OV=!thumb&&!!(S&&S.optB)&&V3.ready(SCN);if(OV)V3.draw(t,CAM,cv,wrap,DYN,SCN,SHL);else V3.hide();
  if(!OV){gl.disable(gl.BLEND);gl.depthMask(true);
  if(BLON){DYN.forEach(o=>blob(DS,o.x,o.z,.34,.34,.75));gl.disable(gl.CULL_FACE);gl.uniform1i(cur.U.uMode,3);gl.bindTexture(gl.TEXTURE_2D,BL.tex);bind(BL.buf);gl.drawArrays(gl.TRIANGLES,0,BL.n);gl.bindTexture(gl.TEXTURE_2D,TEX);gl.enable(gl.CULL_FACE);gl.uniform1i(cur.U.uMode,0)}
  else{gl.uniform1i(cur.U.uMode,0);bind(bS);gl.drawArrays(gl.TRIANGLES,0,bS.n)}dyn(bD,D);
@@ -5672,19 +5672,35 @@ function offEvents(base,list,i){const b=Math.max(20,Math.round(base*.4/5)*5),pl=
   document.querySelectorAll('[data-oe]').forEach(bn=>bn.onclick=()=>{try{E[2+ +bn.dataset.oe][2]()}catch(e){}snd('coin');closeModal();save();offEvents(base,list,i+1)})}
 
 /* ================= V3: Blender-Raum mit animierten Figuren (three.js, wird nur bei Bedarf geladen) ================= */
-const V3=(()=>{let st=0,T,R,scene,cam,cvs,src={},figs=[],clone,blobT,lastT=0;
+const V3=(()=>{let st=0,T,R,scene,cam,cvs,src={},figs=[],clone,blobT,lastT=0,ld,rooms={},blobs=[],trG=null,trSig='';
+ const RID=['scheiben','theke','training','buero'];
  const rnd=i=>{const x=Math.sin(i*127.1+311.7)*43758.5453;return x-Math.floor(x)};
  async function boot(){if(st)return;st=1;
   try{T=await import('./lib/three.module.min.js');const G=await import('./lib/GLTFLoader.js'),SU=await import('./lib/SkeletonUtils.js');clone=SU.clone;
-   const L=new G.GLTFLoader(),ld=u=>new Promise((ok,no)=>L.load(u,ok,undefined,()=>no(new Error('fehlt: '+u))));
+   const L=new G.GLTFLoader();ld=u=>new Promise((ok,no)=>L.load(u,ok,undefined,()=>no(new Error('fehlt: '+u))));
    cvs=document.createElement('canvas');cvs.className='v3cv';R=new T.WebGLRenderer({canvas:cvs,antialias:true,alpha:true});R.outputColorSpace=T.SRGBColorSpace;
    scene=new T.Scene();cam=new T.PerspectiveCamera(32,1,.5,60);scene.add(new T.HemisphereLight(0xfff0dc,0x33403a,1.5));const sun=new T.DirectionalLight(0xffe6c0,2.2);sun.position.set(5,6,6);scene.add(sun);
-   const rm=await ld('scheibenraum.glb');rm.scene.traverse(o=>{if(o.isMesh)o.material=new T.MeshBasicMaterial({map:o.material.map,side:T.DoubleSide})});scene.add(rm.scene);
    src=await ld('models/spieler.glb');
    const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d'),q=g.createRadialGradient(32,32,2,32,32,31);q.addColorStop(0,'rgba(0,0,0,.55)');q.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=q;g.fillRect(0,0,64,64);blobT=new T.CanvasTexture(c);
    cvs.addEventListener('webglcontextlost',e=>{e.preventDefault();st=3});
    st=2;try{render()}catch(e){}}catch(e){st=3;console.warn('Blender-Ansicht aus:',e&&e.message)}}
  const sig=o=>[o.skin,o.hair,o.shirt,o.pants,o.trim,o.long,o.bald,o.beard].join();
+ // Räume: Hülle + Einzelteile aus Blender; fehlt die Datei, zeichnet das Spiel den Raum wie bisher selbst
+ function room(id){let r=rooms[id];if(r)return r;r=rooms[id]={st:1,parts:{},alt:false};
+  const ok=g=>{g.scene.traverse(o=>{if(o.isMesh)o.material=new T.MeshBasicMaterial(o.material.map?{map:o.material.map,side:T.DoubleSide}:{vertexColors:true,side:T.DoubleSide})});g.scene.children.forEach(c=>r.parts[c.name]=c);r.grp=g.scene;r.grp.visible=false;scene.add(r.grp);r.st=2;try{render()}catch(e){}};
+  ld('raeume/raum_'+id+'.glb').then(ok).catch(()=>{if(id==='scheiben')ld('scheibenraum.glb').then(g=>{r.alt=true;ok(g)}).catch(()=>{r.st=3});else r.st=3});return r}
+ function parts(id){const b=S.b,V=new Set(),hd=k=>(S.deco||[]).includes(k),add=(p,n)=>{for(let i=0;i<n;i++)V.add(p+i)};
+  if(id==='scheiben'){const n=Math.min(8,b.boards),two=n>4,ns=Math.min(5,b.sponsor||0);add(two?'d':'e',n);if(ns)add('sp',ns);else V.add('sprahmen');['tv','bank'].forEach(k=>hd(k)&&V.add(k));if(!two&&hd('wappen'))V.add('wappen')}
+  else if(id==='theke'){const lv=Math.min(5,b.bar),x1=.9+[2.6,3.0,3.6,4.2,4.8,5.2][lv];V.add('bar'+lv);if(lv>=3)V.add('regalwand');if(lv>=2)V.add('neon');add('fl',Math.min(6,b.bar+1));
+   for(let i=0;i<Math.min(6,b.bar+1);i++)if(.9+.3+i*.8<=x1)V.add((lv>=3?'hob':'hoa')+i);add('fs',b.fanshop>0?Math.min(5,b.fanshop+1):0);if(b.fanshop>=3)V.add('fsschals');['foto','kicker','jukebox','pflanze'].forEach(k=>hd(k)&&V.add(k))}
+  else if(id==='training'){const lv=b.training;if(!lv)V.add('bau');else{V.add('basis');for(let k=2;k<=Math.min(5,lv);k++)V.add('lv'+k);if(hd('poster'))V.add('poster')}if(hd('wasser'))V.add('wasser')}
+  else{const c=hd('chefdesk')?'c':'n';V.add(S.trophies.length>12?'schrank_g':'schrank_k');V.add(hd('sessel')?'sessel':'stuhl');V.add('tisch_'+c);V.add('mon'+(hd('monitor')?2:1)+c);['teppich','aquarium','kaffee'].forEach(k=>hd(k)&&V.add(k))}
+  return V}
+ function trophies(on){const tr=on?S.trophies:[],big=tr.length>12,sg=on?tr.slice(0,20).map(t=>t.tier).join()+big:'';if(sg===trSig)return;trSig=sg;if(trG){scene.remove(trG);trG.traverse(o=>{if(o.isMesh){o.geometry.dispose();o.material.dispose()}})}trG=new T.Group();scene.add(trG);if(!on)return;
+  const cw=big?2.1:1.5,c0=5.6,per=big?5:3;tr.slice(0,big?20:12).forEach((t,i)=>{const x=c0+.28+(i%per)*((cw-.56)/(per-1)),y=.54+Math.floor(i/per)*.55,m=new T.MeshStandardMaterial({color:t.tier===-1?0xd0d4d8:t.tier===20?0x9fd3ff:0xf4c430,metalness:.5,roughness:.35,emissive:0x3a2a08});
+   const a=new T.Mesh(new T.CylinderGeometry(.06,.07,.05,10),new T.MeshStandardMaterial({color:0x5a3a22}));a.position.set(x,y+.025,.6);const s2=new T.Mesh(new T.CylinderGeometry(.018,.018,.1,6),m);s2.position.set(x,y+.1,.6);const c=new T.Mesh(new T.CylinderGeometry(.08,.04,.14,12),m);c.position.set(x,y+.22,.6);trG.add(a,s2,c)})}
+ function shadows(L){while(blobs.length<L.length){const b=new T.Mesh(new T.PlaneGeometry(1,1),new T.MeshBasicMaterial({map:blobT,transparent:true,depthWrite:false}));b.rotation.x=-Math.PI/2;b.position.y=.028;scene.add(b);blobs.push(b)}
+  blobs.forEach((b,i)=>{const q=L[i];b.visible=!!q;if(q){b.position.x=q[0];b.position.z=q[1];b.scale.set(q[2]*2.7,q[3]*2.7,1);b.material.opacity=Math.min(1,q[4]*1.1)}})}
  function mk(i,o){const G=src,root=clone(G.scene);root.scale.setScalar(.7);const C={skin:o.skin,hair:o.hair,hair_long:o.hair,beard:o.hair,shirt:o.shirt,trim:o.trim,pants:o.pants};
   root.traverse(m=>{if(!m.isMesh)return;m.frustumCulled=false;const n=m.material.name;m.material=m.material.clone();if(C[n])m.material.color.set(C[n]);if(n==='hair')m.visible=!o.bald;if(n==='hair_long')m.visible=!!o.long&&!o.bald;if(n==='beard')m.visible=!!o.beard;if(n==='cap')m.visible=false});
   const grp=new T.Group();grp.add(root);const b=new T.Mesh(new T.PlaneGeometry(.95,.95),new T.MeshBasicMaterial({map:blobT,transparent:true,depthWrite:false}));b.rotation.x=-Math.PI/2;b.position.y=.035;grp.add(b);scene.add(grp);
@@ -5700,9 +5716,11 @@ const V3=(()=>{let st=0,T,R,scene,cam,cvs,src={},figs=[],clone,blobT,lastT=0;
     const k=cyc%4,tg=j=>{const a=rnd(cyc-k+j+o.off)*6.28,r=rnd(cyc-k+j+7.3+o.off)*o.br*.62;return[o.bx+Math.cos(a)*r,o.by+Math.sin(a)*r,.2]};
     f.darts.forEach((d,j)=>{if(k>=3||j>k){d.visible=false;return}const q=tg(j);if(j<k||ph>=.86){d.visible=true;d.position.set(q[0],q[1],q[2])}else if(ph>=.74){const u=(ph-.74)/.12,s0=[o.x-.22,1.45,o.z-.42];d.visible=true;d.position.set(s0[0]+(q[0]-s0[0])*u,s0[1]+(q[1]-s0[1])*u+Math.sin(u*3.14)*.12,s0[2]+(q[2]-s0[2])*u)}else d.visible=false})}
    else{f.grp.position.set(o.x,o.y||0,o.z);f.grp.rotation.y=o.ry||0;loop(f,'Idle');f.mix.update(dt)}})}
- return{boot,ready:()=>st===2,state:()=>st,
+ return{boot,has:id=>RID.includes(id),ready:id=>st===2&&RID.includes(id)&&room(id).st===2,state:()=>st,roomState:id=>rooms[id]?rooms[id].st:0,parts,
   hide(){if(cvs&&cvs.parentNode)cvs.remove()},
-  draw(t,CAM,cv,wrap,D){if(st!==2)return;if(cvs.parentNode!==wrap)wrap.insertBefore(cvs,wrap.children[1]||null);if(cvs.width!==cv.width||cvs.height!==cv.height)R.setSize(cv.width,cv.height,false);
+  draw(t,CAM,cv,wrap,D,id,SL){if(st!==2)return;const rm=rooms[id];if(!rm||rm.st!==2)return;for(const k in rooms){const r=rooms[k];if(r.grp)r.grp.visible=r===rm}
+   if(!rm.alt){const V=parts(id);for(const n in rm.parts)rm.parts[n].visible=n==='huelle'||V.has(n)}shadows(rm.alt?[]:SL||[]);trophies(id==='buero'&&!rm.alt);
+   if(cvs.parentNode!==wrap)wrap.insertBefore(cvs,wrap.children[1]||null);if(cvs.width!==cv.width||cvs.height!==cv.height)R.setSize(cv.width,cv.height,false);
    const dt=Math.max(0,Math.min(.1,t-lastT));lastT=t;cam.fov=CAM.fov*180/Math.PI;cam.aspect=CAM.as;cam.updateProjectionMatrix();cam.position.set(CAM.eye[0],CAM.eye[1],CAM.eye[2]);cam.lookAt(CAM.tgt[0],CAM.tgt[1],CAM.tgt[2]);
    sync(D,t,dt);R.render(scene,cam)}}})();
 

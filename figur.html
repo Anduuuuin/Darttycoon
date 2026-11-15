@@ -20,7 +20,7 @@ p{color:#93a89a;font-size:13px;margin:10px 2px}
 <div id="stage"><canvas id="c"></canvas><div id="info"></div><div id="msg">Lade Raum und Figuren …</div></div>
 <div class="row" id="pick"></div>
 <p>Die gewählte Figur geht zur Scheibe, wirft drei Pfeile, jubelt und geht zurück. Die anderen sitzen auf der Bank oder stehen am Tisch. Ziehen dreht den Raum.</p>
-<p>Die Figuren sind frei nutzbare Testfiguren (KayKit Adventurers von Kay Lousberg, Lizenz CC0). Für das Spiel bekommen sie Trikots statt Rüstung.</p>
+<p>Die Körper sind eigene Dart-Spieler mit Trikot, Frisur und Hautfarbe aus dem Spiel. Skelett und Bewegungen stammen aus dem freien Paket KayKit Adventurers von Kay Lousberg (Lizenz CC0).</p>
 </div>
 <script type="module">
 import * as THREE from './lib/three.module.min.js';
@@ -30,20 +30,22 @@ const R=new THREE.WebGLRenderer({canvas:cv,antialias:true,alpha:true});R.outputC
 const scene=new THREE.Scene(),cam=new THREE.PerspectiveCamera(32,1,.5,80);
 scene.add(new THREE.HemisphereLight(0xfff0dc,0x33403a,1.5));const sun=new THREE.DirectionalLight(0xffe6c0,2.2);sun.position.set(5,6,6);scene.add(sun);
 const L=new GLTFLoader(),load=u=>new Promise((ok,no)=>L.load(u,ok,undefined,()=>no(new Error('Datei fehlt: '+u))));
-const NAMES=[['rogue','Schurke'],['knight','Ritter'],['mage','Magierin'],['barbarian','Barbar']],BOARD=[2.45,1.72,.1];
-let chars={},mainK='rogue',t0=0,yaw=.66,pit=.5,drag=null,ready=false;
+const NAMES=[['a','Max'],['b','Jule'],['c','Bernd'],['d','Kalle']],LOOKS={a:{s:'#f2c49b',h:'#6b3e1f',t:'#1fa55a',w:'#f4f4f4',p:'#1d3557'},b:{s:'#d9a06e',h:'#b04a20',t:'#e23d4b',w:'#f6c64f',p:'#2b2f3a',g:'f'},c:{s:'#f2c49b',h:'#8a8a8a',t:'#2d6cdf',w:'#f4f4f4',p:'#4a3b2a',beard:1},d:{s:'#a86a3d',h:'#111111',t:'#f6c64f',w:'#141414',p:'#3b3b3b',bald:1,cap:'#141414'}},BOARD=[2.45,1.72,.1];
+let chars={},mainK='a',t0=0,yaw=.66,pit=.5,drag=null,ready=false;
 // weicher Schatten unter den Figuren
 const blobT=(()=>{const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d'),q=g.createRadialGradient(32,32,2,32,32,31);q.addColorStop(0,'rgba(0,0,0,.55)');q.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=q;g.fillRect(0,0,64,64);return new THREE.CanvasTexture(c)})();
 const mkBlob=()=>{const m=new THREE.Mesh(new THREE.PlaneGeometry(.95,.95),new THREE.MeshBasicMaterial({map:blobT,transparent:true,depthWrite:false}));m.rotation.x=-Math.PI/2;m.position.y=.035;return m};
 const darts=[0,1,2].map(()=>{const g=new THREE.Group(),b=new THREE.Mesh(new THREE.CylinderGeometry(.012,.012,.2,6),new THREE.MeshBasicMaterial({color:0xd0d4d8}));b.rotation.x=Math.PI/2;const f=new THREE.Mesh(new THREE.BoxGeometry(.07,.07,.02),new THREE.MeshBasicMaterial({color:0xe23d4b}));f.position.z=.1;g.add(b,f);g.visible=false;scene.add(g);return g});
 async function start(){
  const room=await load('scheibenraum.glb');room.scene.traverse(o=>{if(o.isMesh){const m=o.material.map;o.material=new THREE.MeshBasicMaterial({map:m,side:THREE.DoubleSide})}});scene.add(room.scene);
- for(const [k] of NAMES){const g=await load('models/'+k+'.glb'),root=g.scene;root.scale.setScalar(.7);
+ for(const [k] of NAMES){const g=await load('models/spieler.glb'),root=g.scene;root.scale.setScalar(.7);dress(root,LOOKS[k]);
   const grp=new THREE.Group();grp.add(root);grp.add(mkBlob());scene.add(grp);const mix=new THREE.AnimationMixer(root),acts={};g.animations.forEach(a=>acts[a.name]=mix.clipAction(a));
   root.traverse(o=>{if(o.isMesh){o.frustumCulled=false}});chars[k]={grp,mix,acts,cur:null}}
  document.getElementById('pick').innerHTML=NAMES.map(([k,n])=>`<button data-k="${k}" aria-pressed="${k===mainK}">${n}</button>`).join('');
  document.querySelectorAll('#pick button').forEach(b=>b.onclick=()=>{mainK=b.dataset.k;t0=performance.now()/1000;document.querySelectorAll('#pick button').forEach(x=>x.setAttribute('aria-pressed',x===b))});
  msg.style.display='none';ready=true;t0=performance.now()/1000;window.__READY=true}
+function dress(root,L){const C={skin:L.s,hair:L.h,hair_long:L.h,beard:L.h,shirt:L.t,trim:L.w||'#f4f4f4',pants:L.p,cap:L.cap||L.t};root.traverse(o=>{if(!o.isMesh)return;const n=o.material.name;o.material=o.material.clone();if(C[n])o.material.color.set(C[n]);
+  if(n==='hair')o.visible=!L.bald;if(n==='hair_long')o.visible=L.g==='f'&&!L.bald;if(n==='beard')o.visible=!!L.beard&&L.g!=='f';if(n==='cap')o.visible=!!L.cap})}
 function play(c,name,once){if(c.cur===name)return;const a=c.acts[name];if(!a)return;a.reset();a.setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,Infinity);a.clampWhenFinished=true;a.fadeIn(.2).play();if(c.cur&&c.acts[c.cur])c.acts[c.cur].fadeOut(.2);c.cur=name}
 const OCHE=[BOARD[0]+.12,2.62],HOME=[3.6,4.4],WALK=2.2,THROW=1.25;
 function stepMain(c,t){ // Ablauf: hin (WALK) · 3 Würfe · Jubel · zurück · warten

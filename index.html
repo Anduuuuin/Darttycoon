@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <title>Bullseye Boss</title>
-<meta name="dt-version" content="7.3">
+<meta name="dt-version" content="7.4">
 <meta name="theme-color" content="#060d0a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -3340,7 +3340,7 @@ function musicStart(){if(MUS||!S||!S.music)return;try{const ctx=new(window.Audio
 document.addEventListener('pointerdown',()=>{if(S&&S.music&&!MUS)musicStart()},{passive:true});
 
 /* ================= Feedback ================= */
-const GAME_VERSION='7.3';
+const GAME_VERSION='7.4';
 /* ================= App (PWA): Installieren & Updates ================= */
 let installEvt=null;
 const isStandalone=()=>{try{return matchMedia('(display-mode: standalone)').matches||navigator.standalone===true}catch(e){return false}};
@@ -5255,7 +5255,7 @@ function mkRoomAtlas(){
 
 /* ---------- Räume: Aufbau ---------- */
 const RW=8,RD=6,RH=3;
-const lookOf=L=>({skin:L.s||'#e0ac80',hair:L.bald?(L.s||'#e0ac80'):(L.h||'#2b1d14'),shirt:L.t||'#1fa55a',pants:L.p||'#2b2f3a',long:L.g==='f'});
+const lookOf=L=>({skin:L.s||'#e0ac80',hair:L.bald?(L.s||'#e0ac80'):(L.h||'#2b1d14'),shirt:L.t||'#1fa55a',pants:L.p||'#2b2f3a',long:L.g==='f',bald:!!L.bald,beard:!!L.beard&&L.g!=='f',trim:L.w||'#f4f4f4'});
 function buildRoom(id){
  fixTycoon(S);const S0=new Buf(),SH=new Buf(),GL=new Buf(),b=S.b;HITS=[];LABS=[];LIGHTS=[];DYN=[];
  const bx=(x0,z0,x1,z1,y0,y1,col,o)=>S0.box(B((x0+x1)/2,(y0+y1)/2,(z0+z1)/2,x1-x0,y1-y0,z1-z0),col,o);
@@ -5673,24 +5673,26 @@ function offEvents(base,list,i){const b=Math.max(20,Math.round(base*.4/5)*5),pl=
 
 /* ================= V3: Blender-Raum mit animierten Figuren (three.js, wird nur bei Bedarf geladen) ================= */
 const V3=(()=>{let st=0,T,R,scene,cam,cvs,src={},figs=[],clone,blobT,lastT=0;
- const NM=['rogue','knight','mage','barbarian'],rnd=i=>{const x=Math.sin(i*127.1+311.7)*43758.5453;return x-Math.floor(x)};
+ const rnd=i=>{const x=Math.sin(i*127.1+311.7)*43758.5453;return x-Math.floor(x)};
  async function boot(){if(st)return;st=1;
   try{T=await import('./lib/three.module.min.js');const G=await import('./lib/GLTFLoader.js'),SU=await import('./lib/SkeletonUtils.js');clone=SU.clone;
    const L=new G.GLTFLoader(),ld=u=>new Promise((ok,no)=>L.load(u,ok,undefined,()=>no(new Error('fehlt: '+u))));
    cvs=document.createElement('canvas');cvs.className='v3cv';R=new T.WebGLRenderer({canvas:cvs,antialias:true,alpha:true});R.outputColorSpace=T.SRGBColorSpace;
    scene=new T.Scene();cam=new T.PerspectiveCamera(32,1,.5,60);scene.add(new T.HemisphereLight(0xfff0dc,0x33403a,1.5));const sun=new T.DirectionalLight(0xffe6c0,2.2);sun.position.set(5,6,6);scene.add(sun);
    const rm=await ld('scheibenraum.glb');rm.scene.traverse(o=>{if(o.isMesh)o.material=new T.MeshBasicMaterial({map:o.material.map,side:T.DoubleSide})});scene.add(rm.scene);
-   for(const k of NM)src[k]=await ld('models/'+k+'.glb');
+   src=await ld('models/spieler.glb');
    const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d'),q=g.createRadialGradient(32,32,2,32,32,31);q.addColorStop(0,'rgba(0,0,0,.55)');q.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=q;g.fillRect(0,0,64,64);blobT=new T.CanvasTexture(c);
    cvs.addEventListener('webglcontextlost',e=>{e.preventDefault();st=3});
    st=2;try{render()}catch(e){}}catch(e){st=3;console.warn('Blender-Ansicht aus:',e&&e.message)}}
- function mk(i){const G=src[NM[i%4]],root=clone(G.scene);root.scale.setScalar(.7);root.traverse(o=>{if(o.isMesh)o.frustumCulled=false});
+ const sig=o=>[o.skin,o.hair,o.shirt,o.pants,o.trim,o.long,o.bald,o.beard].join();
+ function mk(i,o){const G=src,root=clone(G.scene);root.scale.setScalar(.7);const C={skin:o.skin,hair:o.hair,hair_long:o.hair,beard:o.hair,shirt:o.shirt,trim:o.trim,pants:o.pants};
+  root.traverse(m=>{if(!m.isMesh)return;m.frustumCulled=false;const n=m.material.name;m.material=m.material.clone();if(C[n])m.material.color.set(C[n]);if(n==='hair')m.visible=!o.bald;if(n==='hair_long')m.visible=!!o.long&&!o.bald;if(n==='beard')m.visible=!!o.beard;if(n==='cap')m.visible=false});
   const grp=new T.Group();grp.add(root);const b=new T.Mesh(new T.PlaneGeometry(.95,.95),new T.MeshBasicMaterial({map:blobT,transparent:true,depthWrite:false}));b.rotation.x=-Math.PI/2;b.position.y=.035;grp.add(b);scene.add(grp);
   const mix=new T.AnimationMixer(root),acts={};G.animations.forEach(a=>acts[a.name]=mix.clipAction(a));
   const darts=[0,1,2].map(()=>{const d=new T.Group(),sh=new T.Mesh(new T.CylinderGeometry(.012,.012,.2,6),new T.MeshBasicMaterial({color:0xd0d4d8}));sh.rotation.x=Math.PI/2;const fl=new T.Mesh(new T.BoxGeometry(.07,.07,.02),new T.MeshBasicMaterial({color:[0xe23d4b,0x2d6cdf,0x1fa55a,0xf6c64f][i%4]}));fl.position.z=.1;d.add(sh,fl);d.visible=false;scene.add(d);return d});
-  return{grp,mix,acts,cur:null,darts}}
+  return{grp,mix,acts,cur:null,darts,sig:sig(o)}}
  function loop(f,name){if(f.cur===name)return;const a=f.acts[name];if(!a)return;if(f.cur&&f.acts[f.cur])f.acts[f.cur].stop();a.reset();a.paused=false;a.play();f.cur=name}
- function sync(D,t,dt){if(figs.length!==D.length){figs.forEach(f=>{scene.remove(f.grp);f.darts.forEach(d=>scene.remove(d))});figs=D.map((_,i)=>mk(i))}
+ function sync(D,t,dt){if(figs.length!==D.length||D.some((o,i)=>figs[i].sig!==sig(o))){figs.forEach(f=>{scene.remove(f.grp);f.darts.forEach(d=>scene.remove(d));f.grp.traverse(m=>{if(m.isMesh&&m.material&&m.material.name)m.material.dispose()})});figs=D.map((o,i)=>mk(i,o))}
   D.forEach((o,i)=>{const f=figs[i];
    if(o.sit){f.grp.position.set(o.sit[0],-.06,o.sit[1]);f.grp.rotation.y=0;loop(f,'Sit_Chair_Idle');f.mix.update(dt)}
    else if(o.per&&f.acts.Throw){f.grp.position.set(o.x,o.y||0,o.z);f.grp.rotation.y=o.ry||0;const tt=t+o.off,ph=(tt%o.per)/o.per,cyc=Math.floor(tt/o.per),A=f.acts.Throw,dur=A.getClip().duration;

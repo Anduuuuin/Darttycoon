@@ -1,4 +1,4 @@
-# Bullseye Boss – Scheibenraum fuer Blender (Fassung 2)
+# Bullseye Boss – Scheibenraum fuer Blender (Fassung 3)
 # Baut den Raum, rechnet das Licht aus ("Backen") und speichert alles als scheibenraum.glb
 # Ausfuehren: Blender > oben Reiter "Scripting" > "Neu" > diesen Text einfuegen > Pfeil-Knopf "Skript ausfuehren"
 import bpy, bmesh, math, os, time, traceback
@@ -7,7 +7,7 @@ from mathutils import Matrix
 # ---------- Einstellungen (bei Bedarf aendern und nochmal ausfuehren) ----------
 AUFLOESUNG = 2048     # Groesse des Lichtbilds. 1024 = schneller, 2048 = schaerfer
 QUALITAET  = 48       # Rechenschritte pro Bildpunkt. Mehr = sauberer, aber langsamer
-HELLIGKEIT = 1.0      # 1.0 = normal, 1.5 = heller, 0.7 = dunkler
+HELLIGKEIT = 1.3      # 1.0 = normal, 1.5 = heller, 0.7 = dunkler
 ORDNER = os.path.join(os.path.expanduser('~'), 'Desktop', 'BullseyeBoss_Blender')
 
 LOG = []
@@ -67,6 +67,7 @@ def ringstueck(cx, cy, z, r0, r1, a0, a1, mi):
     f = bm.faces.new(vs); f.material_index = mi
 
 RW, RD, RH = 8.0, 6.0, 3.0
+SCHEIBEN = (1.0, 2.45, 3.9, 5.35)   # wie im Spiel: rechts daneben bleibt Platz fuer die Tuer zum Training
 def baue():
     holz_d, holz_m, holz_h = mat('holz_d', '#4e331d'), mat('holz_m', '#6a4628'), mat('holz_h', '#8a5e34')
     # Boden aus Dielen
@@ -93,7 +94,7 @@ def baue():
     sw, cr, rt, gr = mat('schwarz', '#151515', .9), mat('creme', '#efe3c2', .9), mat('rot', '#d9333f', .9), mat('gruen', '#1f9d55', .9)
     teppich, teppich2, gold = mat('teppich', '#2b3b33', 1), mat('teppich2', '#16241d', 1), mat('gold', '#f6c64f', .4, 1.2)
     metall, lampe = mat('metall', '#2b2f33', .5), mat('lampe', '#fff2c0', .5, 14)
-    for x in (1.4, 2.9, 4.4, 5.9):
+    for x in SCHEIBEN:
         cy, R = 1.72, .36
         box(x - .52, .035, x + .52, .075, cy - .52, cy + .52, mat('schrank', '#2a1a0e'))
         box(x - .56, .035, x - .52, .09, cy - .56, cy + .56, holz_d); box(x + .52, .035, x + .56, .09, cy - .56, cy + .56, holz_d)
@@ -110,22 +111,23 @@ def baue():
         box(x - .44, 2.34, x + .44, 2.4, .02, .03, gold)
         box(x - .035, .04, x + .035, .86, RH - .42, RH - .35, metall); box(x - .15, .76, x + .15, .96, RH - .5, RH - .36, metall)
         box(x - .11, .8, x + .11, .92, RH - .52, RH - .5, lampe)
-    # Tuer, Fernseher, Sponsorenbanner
-    box(0, 4.52, .06, 5.58, 0, 2.16, holz_d); box(.06, 4.6, .1, 5.5, 0, 2.08, holz_m)
-    box(.1, 4.68, .115, 5.42, 1.1, 1.95, holz_d); box(.1, 4.68, .115, 5.42, .15, .95, holz_d); cyl(.14, 1.02, 4.72, .035, .04, gold, seg=10)
-    box(.03, 2.6, .09, 4.3, 1.45, 2.4, sw); box(.09, 2.67, .1, 4.23, 1.52, 2.33, mat('tv', '#3a6ad0', .3, 2.5))
-    box(.1, 2.9, .105, 3.4, 1.8, 2.1, mat('tvgelb', '#ffc340', .3, 5)); box(.1, 3.55, .105, 4.05, 1.8, 2.1, mat('tvgruen', '#7dffb0', .3, 5))
+    # Tuer zur Theke (linke Wand) und Tuer zum Training (Rueckwand rechts)
+    box(0, .31, .06, 1.39, 0, 2.16, holz_d); box(.06, .39, .1, 1.31, 0, 2.08, holz_m)
+    box(.1, .47, .115, 1.23, 1.1, 1.95, holz_d); box(.1, .47, .115, 1.23, .15, .95, holz_d); cyl(.14, 1.02, 1.2, .035, .04, gold, seg=10)
+    box(6.51, 0, 7.59, .06, 0, 2.16, holz_d); box(6.59, .06, 7.51, .1, 0, 2.08, holz_m)
+    box(6.67, .1, 7.43, .115, 1.1, 1.95, holz_d); box(6.67, .1, 7.43, .115, .15, .95, holz_d); cyl(7.4, 1.02, .14, .035, .04, gold, quer=True, seg=10)
+    # Sponsorenbanner und Fernseher an der linken Wand
     for i, c in enumerate(('#1fa55a', '#2d6cdf', '#e23d4b')):
-        z = 1.0 + i * .5; box(.035, z - .19, .06, z + .19, 1.4, 2.6, mat('ban%d' % i, c, .9)); box(.03, z - .21, .07, z + .21, 2.6, 2.64, mat('stange', '#b0b4b8', .4))
-        cyl(.065, 2.3, z, .09, .012, mat('weiss', '#f4f4f4', .9), quer=False, seg=14)
-    # Bank, Pokalregal, Stehtische, Pflanze
-    box(6.1, .1, 7.7, .55, .42, .5, mat('bank', '#7a5232')); box(6.1, .04, 7.7, .12, .5, 1.0, holz_m)
-    for x in (6.2, 6.9, 7.6): box(x - .04, .12, x + .04, .5, 0, .42, holz_d)
-    box(6.0, .035, 7.0, .3, 2.0, 2.06, holz_h)
-    for i, x in enumerate((6.2, 6.5, 6.8)):
-        box(x - .07, .1, x + .07, .22, 2.06, 2.12, holz_d); cyl(x, 2.19, .16, .025, .14, gold, seg=10); cyl(x, 2.33, .16, .08 - i * .01, .14, gold, seg=14)
+        z = 1.95 + i * .52; box(.035, z - .2, .06, z + .2, 1.3, 2.6, mat('ban%d' % i, c, .9)); box(.03, z - .22, .07, z + .22, 2.6, 2.64, mat('stange', '#b0b4b8', .4))
+        box(.06, z - .1, .066, z + .1, 2.15, 2.35, mat('weiss', '#f4f4f4', .9))
+    box(.03, 4.55, .09, 5.85, 1.45, 2.35, sw); box(.09, 4.62, .1, 5.78, 1.52, 2.28, mat('tv', '#3a6ad0', .3, 2.5))
+    box(.1, 4.75, .105, 5.12, 1.75, 2.05, mat('tvgelb', '#ffc340', .3, 5)); box(.1, 5.28, .105, 5.65, 1.75, 2.05, mat('tvgruen', '#7dffb0', .3, 5))
+    # Bank frei im Raum, rechts hinter den Bahnen (nicht mehr unter einer Scheibe)
+    box(5.7, 3.35, 7.7, 3.8, .4, .47, mat('bank', '#7a5232')); box(5.7, 3.3, 7.7, 3.38, .47, .98, holz_m)
+    for x in (5.8, 6.7, 7.6): box(x - .04, 3.36, x + .04, 3.78, 0, .4, holz_d)
+    # Stehtische und Pflanze
     glas, schaum = mat('bier', '#f6c64f', .2, .6), mat('schaum', '#fffbe8', .8)
-    for (tx, tz) in ((6.75, 3.75), (3.4, 4.75)):
+    for (tx, tz) in ((4.6, 4.8), (1.9, 4.5)):
         cyl(tx, .03, tz, .28, .06, metall); cyl(tx, .56, tz, .04, 1.0, mat('chrom', '#8a8f94', .3), seg=12); cyl(tx, 1.09, tz, .4, .06, mat('bank', '#7a5232'), seg=28)
         for (dx, dz) in ((-.18, -.1), (.16, .12)):
             cyl(tx + dx, 1.19, tz + dz, .045, .14, glas, seg=12); cyl(tx + dx, 1.275, tz + dz, .048, .03, schaum, seg=12)
@@ -146,7 +148,7 @@ def licht(name, typ, ort, energie, farbe, ziel=None, groesse=1.0, winkel=70):
 
 def haupt():
     t0 = time.time(); os.makedirs(ORDNER, exist_ok=True)
-    log('Fassung 2 | Blender', bpy.app.version_string, '| Ordner', ORDNER)
+    log('Fassung 3 | Blender', bpy.app.version_string, '| Ordner', ORDNER)
     try:
         if bpy.context.object and bpy.context.object.mode != 'OBJECT': bpy.ops.object.mode_set(mode='OBJECT')
     except Exception: pass
@@ -165,14 +167,16 @@ def haupt():
     log('Raum gebaut:', len(me.polygons), 'Flaechen,', len(MAT_LIST), 'Farben')
     # weiche Kanten
     try:
-        mod = ob.modifiers.new('Kanten', 'BEVEL'); mod.width = .012; mod.segments = 2; mod.limit_method = 'ANGLE'
+        mod = ob.modifiers.new('Kanten', 'BEVEL'); mod.width = .011; mod.segments = 1; mod.limit_method = 'ANGLE'
         bpy.ops.object.modifier_apply(modifier='Kanten'); log('Kanten abgerundet:', len(me.polygons), 'Flaechen')
     except Exception as e: log('Kanten uebersprungen:', e)
     # Licht
-    for x in (1.4, 2.9, 4.4, 5.9): licht('Strahler', 'SPOT', (x, RH - .5, .86), 260, (1, .93, .78), ziel=(x, 1.5, .2), winkel=75)
+    for x in SCHEIBEN: licht('Strahler', 'SPOT', (x, RH - .56, .9), 520, (1, .93, .78), ziel=(x, 1.55, .1), winkel=80)
     licht('Decke1', 'AREA', (3.2, 3.6, 3.2), 420, (1, .9, .75), ziel=(3.2, 0, 3.2), groesse=3.0)
     licht('Decke2', 'AREA', (6.4, 3.4, 4.2), 260, (1, .85, .65), ziel=(6.4, 0, 4.2), groesse=2.0)
-    licht('Fuell', 'AREA', (9.5, 2.6, 8.0), 300, (.7, .8, 1), ziel=(4, 1, 3), groesse=4.0)
+    licht('Fuell', 'AREA', (9.5, 2.6, 8.0), 420, (.7, .8, 1), ziel=(4, 1, 3), groesse=4.0)
+    licht('Wand1', 'AREA', (4.0, 2.2, 3.4), 380, (1, .92, .8), ziel=(4.0, 1.9, 0), groesse=5.0)
+    licht('Wand2', 'AREA', (3.6, 2.2, 3.0), 300, (1, .92, .8), ziel=(0, 1.9, 3.0), groesse=4.0)
     w = bpy.data.worlds.new('BB_Welt'); sc.world = w
     try: w.use_nodes = True
     except Exception: pass
@@ -181,7 +185,7 @@ def haupt():
         if bg is None:
             bg = w.node_tree.nodes.new('ShaderNodeBackground'); wo = next((n for n in w.node_tree.nodes if n.type == 'OUTPUT_WORLD'), None) or w.node_tree.nodes.new('ShaderNodeOutputWorld')
             w.node_tree.links.new(bg.outputs[0], wo.inputs[0])
-        bg.inputs[0].default_value = (.05, .07, .1, 1); bg.inputs[1].default_value = .6 * HELLIGKEIT
+        bg.inputs[0].default_value = (.05, .07, .1, 1); bg.inputs[1].default_value = 1.0 * HELLIGKEIT
     except Exception as e: log('Welt-Licht uebersprungen:', e)
     # Abwicklung fuer das Lichtbild
     bpy.context.view_layer.update(); bpy.context.view_layer.objects.active = ob; ob.select_set(True)
@@ -211,7 +215,7 @@ def haupt():
     me.polygons.foreach_set('material_index', [0] * len(me.polygons)); me.update()
     glb = os.path.join(ORDNER, 'scheibenraum.glb')
     ok = False
-    for extra in ({'export_image_format': 'JPEG', 'export_image_quality': 88}, {'export_image_format': 'JPEG', 'export_jpeg_quality': 88}, {'export_image_format': 'JPEG'}, {}):
+    for extra in ({'export_image_format': 'JPEG', 'export_image_quality': 84, 'export_normals': False}, {'export_image_format': 'JPEG', 'export_image_quality': 84}, {'export_image_format': 'JPEG', 'export_jpeg_quality': 84}, {'export_image_format': 'JPEG'}, {}):
         try:
             bpy.ops.export_scene.gltf(filepath=glb, export_format='GLB', use_selection=True, export_apply=True, **extra); ok = True; log('Export mit', extra or 'Standard'); break
         except TypeError as e: log('Export-Variante passt nicht:', e)

@@ -14,7 +14,7 @@ except ImportError:
 # ---------- Einstellungen ----------
 AUFLOESUNG = 2048     # Groesse des Lichtbilds je Raum
 QUALITAET  = 32       # Rechenschritte pro Bildpunkt
-HELLIGKEIT = 0.75
+HELLIGKEIT = 0.45
 RAEUME = ['theke']     # zuerst nur die Theke komplett; moeglich sind: 'scheiben', 'theke', 'training', 'buero'
 ORDNER = os.path.join(os.path.expanduser('~'), 'Desktop', 'BullseyeBoss_Blender')
 

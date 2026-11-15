@@ -1,4 +1,4 @@
-# Bullseye Boss – Scheibenraum fuer Blender
+# Bullseye Boss – Scheibenraum fuer Blender (Fassung 2)
 # Baut den Raum, rechnet das Licht aus ("Backen") und speichert alles als scheibenraum.glb
 # Ausfuehren: Blender > oben Reiter "Scripting" > "Neu" > diesen Text einfuegen > Pfeil-Knopf "Skript ausfuehren"
 import bpy, bmesh, math, os, time, traceback
@@ -19,11 +19,21 @@ def lin(c):  # sRGB -> linear
 def rgb(h):
     h = h.lstrip('#'); return tuple(lin(int(h[i:i + 2], 16) / 255) for i in (0, 2, 4)) + (1.0,)
 
+def prinzip(m):
+    # liefert den Principled-Knoten eines Materials, legt ihn bei Bedarf an (Blender 2.8 bis 5.x)
+    try: m.use_nodes = True
+    except Exception: pass
+    nt = m.node_tree
+    for n in nt.nodes:
+        if n.type == 'BSDF_PRINCIPLED': return n
+    b = nt.nodes.new('ShaderNodeBsdfPrincipled')
+    out = next((n for n in nt.nodes if n.type == 'OUTPUT_MATERIAL'), None) or nt.nodes.new('ShaderNodeOutputMaterial')
+    nt.links.new(b.outputs[0], out.inputs[0]); return b
+
 MATS = {}; MAT_LIST = []
 def mat(name, hexcol, rough=0.85, glow=0.0):
     if name in MATS: return MATS[name]
-    m = bpy.data.materials.new('BB_' + name); m.use_nodes = True
-    b = m.node_tree.nodes.get('Principled BSDF')
+    m = bpy.data.materials.new('BB_' + name); b = prinzip(m)
     if b:
         b.inputs['Base Color'].default_value = rgb(hexcol)
         if 'Roughness' in b.inputs: b.inputs['Roughness'].default_value = rough
@@ -136,7 +146,7 @@ def licht(name, typ, ort, energie, farbe, ziel=None, groesse=1.0, winkel=70):
 
 def haupt():
     t0 = time.time(); os.makedirs(ORDNER, exist_ok=True)
-    log('Blender', bpy.app.version_string, '| Ordner', ORDNER)
+    log('Fassung 2 | Blender', bpy.app.version_string, '| Ordner', ORDNER)
     try:
         if bpy.context.object and bpy.context.object.mode != 'OBJECT': bpy.ops.object.mode_set(mode='OBJECT')
     except Exception: pass
@@ -146,7 +156,11 @@ def haupt():
     me = bpy.data.meshes.new('Scheibenraum'); bm.normal_update(); bm.to_mesh(me); bm.free()
     for m in MAT_LIST: me.materials.append(m)
     ob = bpy.data.objects.new('Scheibenraum', me); sc.collection.objects.link(ob)
-    for o in bpy.context.view_layer.objects: o.select_set(False)
+    bpy.context.view_layer.update()
+    for o in list(sc.objects):
+        try:
+            if o is not None and o is not ob: o.select_set(False)
+        except Exception: pass
     bpy.context.view_layer.objects.active = ob; ob.select_set(True)
     log('Raum gebaut:', len(me.polygons), 'Flaechen,', len(MAT_LIST), 'Farben')
     # weiche Kanten
@@ -159,10 +173,18 @@ def haupt():
     licht('Decke1', 'AREA', (3.2, 3.6, 3.2), 420, (1, .9, .75), ziel=(3.2, 0, 3.2), groesse=3.0)
     licht('Decke2', 'AREA', (6.4, 3.4, 4.2), 260, (1, .85, .65), ziel=(6.4, 0, 4.2), groesse=2.0)
     licht('Fuell', 'AREA', (9.5, 2.6, 8.0), 300, (.7, .8, 1), ziel=(4, 1, 3), groesse=4.0)
-    w = bpy.data.worlds.new('BB_Welt'); w.use_nodes = True; sc.world = w
-    bg = w.node_tree.nodes.get('Background')
-    if bg: bg.inputs[0].default_value = (.05, .07, .1, 1); bg.inputs[1].default_value = .6 * HELLIGKEIT
+    w = bpy.data.worlds.new('BB_Welt'); sc.world = w
+    try: w.use_nodes = True
+    except Exception: pass
+    try:
+        bg = next((n for n in w.node_tree.nodes if n.type == 'BACKGROUND'), None)
+        if bg is None:
+            bg = w.node_tree.nodes.new('ShaderNodeBackground'); wo = next((n for n in w.node_tree.nodes if n.type == 'OUTPUT_WORLD'), None) or w.node_tree.nodes.new('ShaderNodeOutputWorld')
+            w.node_tree.links.new(bg.outputs[0], wo.inputs[0])
+        bg.inputs[0].default_value = (.05, .07, .1, 1); bg.inputs[1].default_value = .6 * HELLIGKEIT
+    except Exception as e: log('Welt-Licht uebersprungen:', e)
     # Abwicklung fuer das Lichtbild
+    bpy.context.view_layer.update(); bpy.context.view_layer.objects.active = ob; ob.select_set(True)
     bpy.ops.object.mode_set(mode='EDIT'); bpy.ops.mesh.select_all(action='SELECT')
     try: bpy.ops.uv.smart_project(angle_limit=math.radians(66), island_margin=0.0015)
     except TypeError: bpy.ops.uv.smart_project()
@@ -178,12 +200,12 @@ def haupt():
     try: sc.render.bake.margin = 6
     except Exception: pass
     log('Licht wird ausgerechnet, Blender reagiert jetzt einige Minuten nicht ...')
+    bpy.context.view_layer.objects.active = ob; ob.select_set(True)
     bpy.ops.object.bake(type='COMBINED')
     png = os.path.join(ORDNER, 'scheibenraum_licht.png'); img.filepath_raw = png; img.file_format = 'PNG'; img.save()
     log('Lichtbild gespeichert nach', round(time.time() - t0), 'Sekunden')
     # Ein Material mit dem fertigen Bild
-    fm = bpy.data.materials.new('BB_Fertig'); fm.use_nodes = True
-    b = fm.node_tree.nodes.get('Principled BSDF'); tx = fm.node_tree.nodes.new('ShaderNodeTexImage'); tx.image = img
+    fm = bpy.data.materials.new('BB_Fertig'); b = prinzip(fm); tx = fm.node_tree.nodes.new('ShaderNodeTexImage'); tx.image = img
     fm.node_tree.links.new(tx.outputs['Color'], b.inputs['Base Color'])
     me.materials.clear(); me.materials.append(fm)
     me.polygons.foreach_set('material_index', [0] * len(me.polygons)); me.update()

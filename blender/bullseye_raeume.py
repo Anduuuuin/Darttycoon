@@ -1,4 +1,4 @@
-# Bullseye Boss – alle Raeume des Vereinsheims fuer Blender (Fassung 6)
+# Bullseye Boss – alle Raeume des Vereinsheims fuer Blender (Fassung 7)
 # Baut Scheibenraum, Theke, Training und Buero, rechnet das Licht aus und speichert je Raum eine .glb-Datei.
 # Jeder Raum besteht aus einer Huelle und einzelnen Teilen (Scheiben, Tresen-Stufen, Moebel),
 # damit das Spiel genau das zeigt, was du schon gebaut hast.
@@ -14,8 +14,8 @@ except ImportError:
 # ---------- Einstellungen ----------
 AUFLOESUNG = 2048     # Groesse des Lichtbilds je Raum
 QUALITAET  = 32       # Rechenschritte pro Bildpunkt
-HELLIGKEIT = 0.45
-RAEUME = ['theke']     # zuerst nur die Theke komplett; moeglich sind: 'scheiben', 'theke', 'training', 'buero'
+HELLIGKEIT = 0.6
+RAEUME = ['scheiben', 'theke', 'training', 'buero']     # hier kann man einzelne Raeume streichen
 ORDNER = os.path.join(os.path.expanduser('~'), 'Desktop', 'BullseyeBoss_Blender')
 
 LOG = []
@@ -68,9 +68,9 @@ def dreh(cx, cz, profil, col, seg=14, sx=1.0, sz=1.0, zu=True, **k):
         if len(R[0]) > 1: F.append(tuple(R[0]))
         if len(R[-1]) > 1: F.append(tuple(reversed(R[-1])))
     netz(V, F, col, **k)
-def kugel(cx, cy, cz, rx, ry, rz, col, seg=12, ringe=8, **k):
+def kugel(cx, cy, cz, rx, ry, rz, col, seg=10, ringe=6, **k):
     dreh(cx, cz, [(math.sin(math.pi * i / ringe), cy - math.cos(math.pi * i / ringe) * ry) for i in range(ringe + 1)], col, seg=seg, sx=rx, sz=rz, **k)
-def torus(cx, cy, cz, R, r, col, seg=18, rs=8, **k):
+def torus(cx, cy, cz, R, r, col, seg=14, rs=6, **k):
     dreh(cx, cz, [(R + r * math.cos(-math.pi / 2 + 2 * math.pi * i / rs), cy + r * math.sin(-math.pi / 2 + 2 * math.pi * i / rs)) for i in range(rs)], col, seg=seg, zu=False, **k)
 def stab(p0, p1, r, col, seg=8, **k):
     # runder Stab zwischen zwei Punkten
@@ -172,31 +172,8 @@ def hocker_einfach(x, z, edel):
     cyl(x, .02, z, .16, .04, '#c0c4c8' if edel else '#3a2a1a', rough=.4); cyl(x, .37, z, .03, .66, '#c0c4c8' if edel else '#3a2a1a', seg=8, rough=.4); cyl(x, .74, z, .19, .08, '#a32020' if edel else '#7a4a24', seg=18)
 def deckenlicht(x, z, e=420, g=3.0, f=(1, .9, .75)): licht('AREA', (x, 3.6, z), e, f, (x, 0, z), groesse=g)
 def grundlicht():
-    licht('AREA', (9.5, 2.6, 8.0), 420, (.7, .8, 1), (4, 1, 3), groesse=4.0)
-    licht('AREA', (4.0, 2.2, 3.4), 380, (1, .92, .8), (4.0, 1.9, 0), groesse=5.0); licht('AREA', (3.6, 2.2, 3.0), 300, (1, .92, .8), (0, 1.9, 3.0), groesse=4.0)
-
-# ---------------- Scheibenraum ----------------
-def raum_scheiben():
-    huelle(('#8a5a32', '#7a4c2a', '#946238', '#80522e'), '#2b4034', '#253a2e', '#c9b98c', HOLZ_D, paneel=(HOLZ_M, HOLZ_D, HOLZ_H))
-    tuer('L', .85); tuer('B', 7.05); stehtisch_einfach(4.6, 4.75)
-    deckenlicht(3.2, 3.2); deckenlicht(6.4, 4.2, 260, 2.0, (1, .85, .65)); grundlicht()
-    cx = lambda c: 1.0 + c * 1.45
-    for i in range(4):                                   # e0..e3: eine Reihe, grosse Scheiben
-        teil('e%d' % i, 'reihe', 'einzel'); scheibe(cx(i), 1.72, .36); strahler(cx(i), 1.72); bahn(cx(i))
-    for i in range(8):                                   # d0..d7: zwei Reihen, etwas kleinere Scheiben
-        teil('d%d' % i, 'reihe', 'doppel'); scheibe(cx(i % 4), 2.12 if i < 4 else 1.22, .3)
-        if i < 4: strahler(cx(i), 1.7); bahn(cx(i))
-    teil('sprahmen', 'sponsor', 'leer')
-    box(.02, 1.7, .06, 4.3, 1.3, 1.34, '#3a4a42'); box(.02, 1.7, .06, 4.3, 2.56, 2.6, '#3a4a42'); box(.02, 1.7, .06, 1.74, 1.3, 2.6, '#3a4a42'); box(.02, 4.26, .06, 4.3, 1.3, 2.6, '#3a4a42')
-    BAN = ('#1fa55a', '#2d6cdf', '#e23d4b', '#f6c64f', '#7d3cc8')
-    for i, c in enumerate(BAN):
-        teil('sp%d' % i, 'sponsor', 'voll'); z = 1.95 + i * .52
-        box(.035, z - .2, .06, z + .2, 1.3, 2.6, c, rough=.9); box(.03, z - .22, .07, z + .22, 2.6, 2.64, '#b0b4b8', rough=.4); box(.06, z - .1, .066, z + .1, 2.15, 2.35, '#f4f4f4'); box(.06, z - .13, .066, z + .13, 1.5, 1.56, '#f4f4f4')
-    teil('tv'); box(.03, 4.55, .09, 5.85, 1.45, 2.35, '#151515'); box(.09, 4.62, .1, 5.78, 1.52, 2.28, '#3a6ad0', glow=2.5, rough=.3)
-    box(.1, 4.75, .105, 5.12, 1.75, 2.05, '#ffc340', glow=5, rough=.3); box(.1, 5.28, .105, 5.65, 1.75, 2.05, '#7dffb0', glow=5, rough=.3)
-    teil('wappen'); onB(6.05, 2.55, .5, .62, '#c9a227', glow=.4, rough=.4); onB(6.05, 2.58, .4, .46, '#1f9d55', d=.02); onB(6.05, 2.58, .16, .16, '#f4f4f4', d=.04); onB(6.05, 2.27, .3, .06, '#c9a227', d=.02, glow=.4)
-    teil('bank'); box(5.6, 3.3, 7.7, 3.75, .38, .46, '#7a5232'); box(5.6, 3.3, 7.7, 3.38, .46, .95, HOLZ_M)
-    for x in (5.75, 6.65, 7.55): box(x - .04, 3.34, x + .04, 3.72, 0, .38, HOLZ_D)
+    licht('AREA', (9.5, 2.6, 8.0), 240, (.7, .8, 1), (4, 1, 3), groesse=4.0)
+    licht('AREA', (4.0, 2.2, 3.4), 200, (1, .92, .8), (4.0, 1.9, 0), groesse=5.0); licht('AREA', (3.6, 2.2, 3.0), 160, (1, .92, .8), (0, 1.9, 3.0), groesse=4.0)
 
 # ---------------- Theke (komplett ausgearbeitet) ----------------
 MESSING = dict(rough=.3, metal=.7); STAHL = dict(rough=.25, metal=.7)
@@ -226,7 +203,7 @@ def stehtisch(x, z):
 def haengelampe(x, z, staerke=140, farbe='#2a3a30'):
     stab((x, RH + .05, z), (x, 2.32, z), .008, '#151515', seg=5)
     dreh(x, z, [(.2, 2.08), (.19, 2.1), (.07, 2.28), (.04, 2.32), (0, 2.32)], farbe, seg=16, rough=.4); dreh(x, z, [(0, 2.09), (.185, 2.09), (.06, 2.27), (0, 2.27)], '#fff2c0', seg=16, glow=3)
-    kugel(x, 2.12, z, .05, .06, .05, '#fff6d8', seg=8, ringe=6, glow=20); licht('SPOT', (x, 2.05, z), staerke, (1, .86, .62), (x, 0, z), winkel=110)
+    kugel(x, 2.12, z, .05, .06, .05, '#fff6d8', seg=8, ringe=6, glow=20); licht('SPOT', (x, 2.05, z), staerke * 2.2, (1, .8, .55), (x, 0, z), winkel=115)
 def pflanze(x, z):
     dreh(x, z, [(0, 0), (.17, 0), (.24, .42), (.25, .46), (.21, .46), (.2, .43), (0, .43)], '#a0562c', seg=14); cyl(x, .425, z, .2, .02, '#3a2a1a', seg=14)
     for i in range(11):
@@ -352,78 +329,191 @@ def raum_theke():
     licht('AREA', (.95, 1.0, 4.275), 30, (1, .5, .75), (2, .6, 4.275), groesse=.6)
     teil('pflanze'); pflanze(7.45, 5.45)
 
-# ---------------- Trainingsraum ----------------
+# ---------------- Scheibenraum (komplett ausgearbeitet) ----------------
+def anzeige(x, y, farbe='#ff3b30'):
+    onB(x, y, .46, .2, '#101214', d=.01, rough=.4)
+    for k in range(3): onB(x - .13 + k * .13, y, .09, .12, farbe, d=.03, glow=7)
+def wanduhr(x, y):
+    cyl(x, y, .07, .2, .05, '#2a1a0e', 'z', 20); cyl(x, y, .1, .17, .012, '#f4f0e0', 'z', 20, glow=.3)
+    stab((x, y, .11), (x + .07, y + .08, .11), .008, '#151515', seg=5); stab((x, y, .11), (x - .02, y + .12, .11), .006, '#151515', seg=5)
+def bahn_neu(x, z1=2.37):
+    box(x - .5, 0, x + .5, z1 + .38, 0, .012, '#16241d', rough=1, art='stoff'); box(x - .44, 0, x + .44, z1 + .33, .012, .02, '#2b3b33', rough=1, art='stoff')
+    box(x - .44, z1 - .03, x + .44, z1 + .03, .02, .045, '#8a5e34', art='holzx'); box(x - .44, z1 - .012, x + .44, z1 + .012, .045, .05, GOLD, glow=1.2, rough=.4)
+def raum_scheiben():
+    huelle(('#8a5a32', '#7a4c2a', '#946238', '#80522e'), '#2b4034', '#253a2e', '#c9b98c', HOLZ_D, paneel=(HOLZ_M, HOLZ_D, HOLZ_H))
+    tuer('L', .85); tuer('B', 7.05); wanduhr(7.05, 2.62)
+    dreh(4.6, 4.75, [(0, 0), (.95, 0), (.95, .012), (0, .012)], '#1d3a2c', seg=28, rough=1, art='stoff'); dreh(4.6, 4.75, [(0, .012), (.78, .012), (.78, .018), (0, .018)], '#2b5a44', seg=28, rough=1, art='stoff')
+    stehtisch(4.6, 4.75); haengelampe(4.6, 4.75, 360, '#2a3a30'); pflanze(.5, 5.5)
+    # Kreidetafel fuer Spielstaende neben der Tuer zum Training
+    onB(6.2, 1.85, .5, .9, HOLZ_D, art='holzy'); onB(6.2, 1.85, .42, .82, '#1c2420', d=.01)
+    for k in range(6): onB(6.12 + (k % 2) * .16, 2.14 - (k // 2) * .2, .12, .025, '#e8e8e0', d=.02)
+    onB(6.2, 2.21, .34, .012, '#e8e8e0', d=.02); box(5.98, .06, 6.42, .12, 1.36, 1.39, HOLZ_H)
+    deckenlicht(3.2, 3.2, 260); deckenlicht(6.4, 4.2, 180, 2.0, (1, .85, .65)); grundlicht()
+    cx = lambda c: 1.0 + c * 1.45
+    for i in range(4):
+        teil('e%d' % i, 'reihe', 'einzel'); scheibe(cx(i), 1.72, .36); strahler(cx(i), 1.72); bahn_neu(cx(i)); anzeige(cx(i), 2.42)
+        box(cx(i) + .6, .035, cx(i) + .66, .1, .95, 1.25, HOLZ_D)                                          # Halter mit drei Darts
+        for k in range(3): stab((cx(i) + .63, 1.0 + k * .09, .1), (cx(i) + .63, 1.03 + k * .09, .3), .008, ('#d9333f', '#f4c430', '#2d6cdf')[k], seg=5)
+    for i in range(8):
+        teil('d%d' % i, 'reihe', 'doppel'); scheibe(cx(i % 4), 2.12 if i < 4 else 1.22, .3)
+        if i < 4: strahler(cx(i), 1.7); bahn_neu(cx(i))
+    teil('sprahmen', 'sponsor', 'leer')
+    box(.02, 1.7, .06, 4.3, 1.3, 1.34, '#3a4a42'); box(.02, 1.7, .06, 4.3, 2.56, 2.6, '#3a4a42'); box(.02, 1.7, .06, 1.74, 1.3, 2.6, '#3a4a42'); box(.02, 4.26, .06, 4.3, 1.3, 2.6, '#3a4a42')
+    for i, c in enumerate(('#1fa55a', '#2d6cdf', '#e23d4b', '#f6c64f', '#7d3cc8')):
+        teil('sp%d' % i, 'sponsor', 'voll'); z = 1.95 + i * .52
+        stab((.07, 2.62, z - .24), (.07, 2.62, z + .24), .014, '#b0b4b8', seg=6, **STAHL); box(.04, z - .2, .062, z + .2, 1.34, 2.6, c, rough=.9, art='stoff')
+        box(.04, z - .2, .064, z + .2, 1.3, 1.34, GOLD, glow=.4); cyl(.066, 2.25, z, .1, .008, '#f4f4f4', 'x', 14); box(.062, z - .13, .068, z + .13, 1.52, 1.58, '#f4f4f4'); box(.062, z - .09, .068, z + .09, 1.66, 1.7, '#f4f4f4')
+    teil('tv'); box(.03, 4.55, .09, 5.85, 1.45, 2.35, '#151515', rough=.4); box(.09, 4.6, .1, 5.8, 1.5, 2.3, '#16305e', glow=1.5, rough=.2)
+    box(.1, 4.72, .105, 5.12, 1.72, 2.08, '#ffc340', glow=5, rough=.3); box(.1, 5.28, .105, 5.68, 1.72, 2.08, '#7dffb0', glow=5, rough=.3); box(.1, 4.72, .105, 5.68, 1.56, 1.62, '#e8e8e8', glow=3)
+    stab((.0, 1.9, 5.2), (.05, 1.9, 5.2), .05, '#2a2a2e', seg=8); licht('AREA', (.3, 1.9, 5.2), 22, (.6, .8, 1), (2, 1.2, 5.2), groesse=.9)
+    teil('wappen'); onB(6.05, 2.55, .5, .62, '#c9a227', glow=.4, rough=.4, metal=.6); onB(6.05, 2.58, .4, .46, '#1f9d55', d=.02); onB(6.05, 2.58, .16, .16, '#f4f4f4', d=.04); onB(6.05, 2.27, .3, .06, '#c9a227', d=.02, glow=.4)
+    teil('bank')
+    for k in range(3): box(5.6, 3.31 + k * .15, 7.7, 3.44 + k * .15, .41, .46, '#8a5e34', art='holzx')
+    for k in range(2): box(5.6, 3.3, 7.7, 3.35, .6 + k * .2, .76 + k * .2, '#7a5232', art='holzx')
+    for x in (5.68, 6.65, 7.62): box(x - .04, 3.3, x + .04, 3.36, 0, .98, HOLZ_D); box(x - .04, 3.36, x + .04, 3.74, .34, .41, HOLZ_D); box(x - .04, 3.68, x + .04, 3.74, 0, .34, HOLZ_D)
+    prisma(rundeck(6.9, 3.42, 7.3, 3.7, .05), .46, .52, '#1f9d55', art='stoff')
+
+# ---------------- Trainingsraum (komplett ausgearbeitet) ----------------
+def roehre(x0, x1, z, staerke=260):
+    box(x0, z - .09, x1, z + .09, 2.86, 2.92, '#d0d4d8', rough=.4); box(x0 + .04, z - .06, x1 - .04, z + .06, 2.83, 2.86, '#f4fbff', glow=14)
+    for x in (x0 + .2, x1 - .2): stab((x, 2.92, z), (x, RH + .05, z), .008, '#8a8f94', seg=5)
+    licht('AREA', ((x0 + x1) / 2, 2.8, z), staerke, (.95, .98, 1), ((x0 + x1) / 2, 0, z), groesse=(x1 - x0) * .8)
 def raum_training():
     huelle(('#4a4f55', '#42474d', '#52575e'), '#3a4a44', '#33423c', '#9aa0a8', '#1a1c20', fliesen=True)
-    tuer('L', .85)
-    deckenlicht(3.6, 3.4, 460, 3.2, (1, .97, .92)); deckenlicht(5.6, 4.6, 300, 2.4, (1, .97, .92)); grundlicht()
+    tuer('L', .85); box(0, 0, RW, .045, .12, .95, '#2a3430'); box(0, 0, .045, RD, .12, .95, '#2a3430'); box(0, 0, RW, .055, .95, 1.0, '#f4c430', glow=.3); box(0, 0, .055, RD, .95, 1.0, '#f4c430', glow=.3)
+    roehre(2.2, 4.6, 3.3); roehre(4.4, 6.8, 4.7, 200); grundlicht()
+    box(7.3, 2.8, 7.8, 4.2, 0, 1.9, '#3a4a5a', rough=.4, metal=.3)                                         # Spinde
+    for k in range(3): box(7.28, 2.83 + k * .46, 7.3, 3.25 + k * .46, .06, 1.86, '#4a5c70', rough=.4, metal=.3); box(7.26, 2.9 + k * .46, 7.28, 2.94 + k * .46, 1.0, 1.12, '#c0c4c8', **STAHL); box(7.27, 2.92 + k * .46, 7.28, 3.16 + k * .46, 1.6, 1.72, '#1a1c20')
     teil('bau', 'stufe', 'bau')                          # Stufe 0: Baustelle
-    box(2.4, 1.2, 3.6, 2.4, 0, 1.0, '#a07a4a'); box(3.8, 1.6, 4.8, 2.6, 0, .8, '#8a6a3a'); box(2.6, 1.4, 3.4, 2.2, 1.0, 1.7, '#b08a5a')
+    box(2.4, 1.2, 3.6, 2.4, 0, 1.0, '#a07a4a', art='putz'); box(3.8, 1.6, 4.8, 2.6, 0, .8, '#8a6a3a', art='putz'); box(2.6, 1.4, 3.4, 2.2, 1.0, 1.7, '#b08a5a', art='putz', ry=.2)
+    for bx0, bz0, bx1, bz1, y in ((2.4, 1.2, 3.6, 2.4, 1.0), (3.8, 1.6, 4.8, 2.6, .8)): box(bx0, (bz0 + bz1) / 2 - .04, bx1, (bz0 + bz1) / 2 + .04, y, y + .004, '#d8c090')
     for i in range(18): onB(.6 + i * .4, 2.05, .4, .16, '#f4c430' if i % 2 else '#111111')
+    for kx, kz in ((5.6, 3.0), (6.2, 3.7), (1.6, 3.6)):
+        dreh(kx, kz, [(0, 0), (.2, 0), (.2, .03), (.13, .03), (.03, .62), (0, .62)], '#ff6a1a', seg=12, rough=.5); cyl(kx, .3, kz, .095, .08, '#f4f4f4', seg=12)
+    for s_ in (0, 1):
+        z = 4.2 + s_ * .5; stab((5.0, 0, z), (5.25, 1.9, 4.45), .025, '#c9a227', seg=6, **STAHL)
+    for k in range(5): stab((5.03 + k * .04, .3 + k * .32, 4.22 + k * .04), (5.03 + k * .04, .3 + k * .32, 4.68 - k * .04), .018, '#c9a227', seg=6, **STAHL)
+    dreh(3.2, 3.6, [(0, 0), (.15, 0), (.17, .3), (.175, .32), (0, .32)], '#e8eef4', seg=12, rough=.4); cyl(3.2, .325, 3.6, .15, .01, '#2d6cdf', seg=12); linie([(3.03, .3, 3.6), (3.03, .46, 3.6), (3.37, .46, 3.6), (3.37, .3, 3.6)], .008, '#8a8f94', seg=5)
     teil('basis', 'stufe', 'fertig')                     # ab Stufe 1: Scheibe, Bahn, Taktiktafel
-    scheibe(2.0, 1.72, .36); strahler(2.0, 1.72); bahn(2.0)
-    onL(3.85, 1.9, 1.7, 1.05, '#b0b4b8', rough=.4); onL(3.85, 1.9, 1.6, .95, '#f4f4f4', d=.01)
-    for k, c in enumerate(('#d9333f', '#2d6cdf', '#1f9d55')): onL(3.35 + k * .45, 2.05 - k * .14, .34, .04, c, d=.02)
-    onL(3.85, 1.38, 1.7, .05, '#8a8f94', d=.03)
-    teil('lv2')                                          # Hantelbank
-    box(4.0, 4.35, 6.2, 4.8, 0, .5, '#4a4f58'); box(4.0, 4.35, 6.2, 4.8, .5, .56, '#2a2d34')
-    for x in (4.3, 4.9, 5.5): cyl(x, .63, 4.575, .03, .4, '#c0c4c8', 'x', 8, rough=.3); cyl(x - .21, .63, 4.575, .11, .06, '#17191b', 'x', 14); cyl(x + .21, .63, 4.575, .11, .06, '#17191b', 'x', 14)
-    teil('lv3')                                          # zweite Scheibe und blaue Matte
-    scheibe(5.0, 1.72, .36); strahler(5.0, 1.72); bahn(5.0); box(.8, 3.3, 3.4, 5.25, 0, .014, '#2a5aa0', rough=1); box(.9, 3.4, 3.3, 5.15, .014, .02, '#1f4a8a', rough=1)
-    teil('lv4')                                          # Spiegel und Kamera
-    onL(5.4, 1.4, 1.0, 2.3, '#9aa0a8', rough=.3); onL(5.4, 1.4, .9, 2.2, '#bfd8e8', d=.01, glow=.5, rough=.1)
-    cyl(6.53, .6, .88, .03, 1.2, '#3a3a3a', seg=8); box(6.36, .78, 6.7, .98, 1.2, 1.42, '#18181c'); cyl(6.53, 1.31, 1.0, .06, .06, '#3a6ad0', 'z', 12, glow=1.5)
+    scheibe(2.0, 1.72, .36); strahler(2.0, 1.72); bahn_neu(2.0); anzeige(2.0, 2.42, '#3aff8c')
+    onL(3.85, 1.9, 1.7, 1.05, '#b0b4b8', rough=.4, metal=.5); onL(3.85, 1.9, 1.6, .95, '#f4f4f4', d=.01, rough=.3)
+    linie([(.07, 1.6, 3.2), (.07, 1.9, 3.5), (.07, 1.75, 3.8), (.07, 2.15, 4.1)], .01, '#d9333f', seg=5); linie([(.07, 2.2, 3.2), (.07, 2.0, 3.6), (.07, 2.25, 4.4)], .01, '#2d6cdf', seg=5)
+    for k in range(4): cyl(.075, 1.55 + (k % 2) * .5, 4.3 - k * .25, .04, .01, '#1f9d55' if k % 2 else '#151515', 'x', 10)
+    box(.03, 3.05, .12, 4.65, 1.33, 1.37, '#8a8f94', **STAHL)
+    for k, c in enumerate(('#d9333f', '#2d6cdf', '#1f9d55')): stab((.09, 1.385, 3.3 + k * .16), (.09, 1.385, 3.42 + k * .16), .014, c, seg=6)
+    box(.75, .5, 1.25, .95, 0, .45, '#2a2d34'); prisma(rundeck(.72, .47, 1.28, .98, .05), .45, .52, '#1f4a8a', art='stoff'); box(.85, .6, 1.15, .82, .52, .58, '#151515'); box(.85, .6, 1.15, .82, .58, .585, '#c9a227', glow=.3)
+    teil('lv2')                                          # Hantelbank mit Ablage und Kurzhanteln
+    prisma(rundeck(4.2, 4.4, 5.6, 4.78, .08), .42, .52, '#1a1c20', art='stoff', rough=.6)
+    for x in (4.35, 5.45): box(x - .03, 4.44, x + .03, 4.74, 0, .42, '#8a8f94', **STAHL); box(x - .2, 4.56, x + .2, 4.62, 0, .04, '#8a8f94', **STAHL)
+    for z in (4.36, 4.82): stab((5.55, 0, z), (5.55, 1.05, z), .025, '#8a8f94', **STAHL); stab((5.55, 1.05, z), (5.55, 1.12, z - .06 if z < 4.5 else z + .06), .02, '#8a8f94', **STAHL)
+    stab((5.55, 1.08, 3.95), (5.55, 1.08, 5.23), .02, '#d0d4d8', **STAHL)
+    for z in (4.08, 4.18, 5.0, 5.1): cyl(5.55, 1.08, z, .2 if z in (4.18, 5.0) else .15, .05, '#17191b', 'z', 16, rough=.6)
+    for k in range(3):
+        x = 6.1 + k * .28; stab((x, .12, 4.45), (x, .12, 4.7), .016, '#d0d4d8', seg=6, **STAHL); cyl(x, .12, 4.43, .08 + k * .012, .08, '#17191b', 'z', 10); cyl(x, .12, 4.72, .08 + k * .012, .08, '#17191b', 'z', 10)
+    box(5.95, 4.36, 6.85, 4.8, 0, .03, '#2a2d34')
+    teil('lv3')                                          # zweite Scheibe, Matte, Gymnastikball
+    scheibe(5.0, 1.72, .36); strahler(5.0, 1.72); bahn_neu(5.0); anzeige(5.0, 2.42, '#3aff8c')
+    prisma(rundeck(.8, 3.3, 3.4, 5.25, .06), 0, .02, '#2a5aa0', rough=1, art='stoff'); prisma(rundeck(.9, 3.4, 3.3, 5.15, .05), .02, .026, '#1f4a8a', rough=1, art='stoff')
+    kugel(1.3, .3, 5.0, .3, .3, .3, '#d9333f', seg=14, ringe=8, rough=.4); cyl(2.9, .1, 5.0, .1, 1.2, '#7d3cc8', 'z', 12, art='stoff')
+    teil('lv4')                                          # Spiegel und Kamera auf Stativ
+    onL(5.4, 1.4, 1.0, 2.3, '#9aa0a8', rough=.3, metal=.6); onL(5.4, 1.4, .9, 2.2, '#bfd8e8', d=.01, glow=.5, rough=.05, metal=.8)
+    for a in (0, 2.09, 4.19): stab((6.53 + math.cos(a) * .28, 0, .95 + math.sin(a) * .28), (6.53, 1.15, .95), .014, '#3a3a3a', seg=6)
+    stab((6.53, 1.15, .95), (6.53, 1.3, .95), .018, '#3a3a3a', seg=6); prisma(rundeck(6.4, .85, 6.66, 1.06, .03), 1.3, 1.48, '#18181c', rough=.4)
+    cyl(6.53, 1.39, 1.1, .06, .1, '#2a2a2e', 'z', 12); cyl(6.53, 1.39, 1.155, .045, .01, '#3a6ad0', 'z', 12, glow=2); kugel(6.6, 1.5, .95, .015, .015, .015, '#ff3b30', seg=6, ringe=4, glow=8)
     teil('lv5')                                          # Auswertung und Pokalsaeule
-    onB(7.0, 1.95, 1.5, 1.1, '#0e1420')
+    onB(7.0, 1.95, 1.5, 1.1, '#0e1420', rough=.3)
     for k, h in enumerate((.3, .5, .42, .7, .62)): onB(6.5 + k * .25, 1.55 + h / 2, .16, h, '#3aff8c' if k % 2 else '#7af0ff', d=.02, glow=5)
-    box(7.2, .2, 7.6, .6, 0, .9, '#2a2a2a'); cyl(7.4, 1.0, .4, .06, .2, '#f4c430', seg=10, glow=.8, rough=.3); cyl(7.4, 1.2, .4, .14, .22, '#f4c430', seg=14, glow=.8, rough=.3)
-    teil('poster'); onB(3.5, 1.9, .7, 1.05, '#f4f4f4'); onB(3.5, 2.0, .58, .6, '#d9333f', d=.01); onB(3.5, 2.0, .3, .3, '#f4c430', d=.02); onB(3.5, 1.5, .5, .08, '#151515', d=.01)
-    teil('wasser'); box(7.0, 4.8, 7.45, 5.25, 0, .9, '#e8eef4'); cyl(7.225, 1.2, 5.025, .17, .6, '#7ac8ff', seg=14, glow=.8, rough=.15)
+    licht('AREA', (7.0, 1.95, .4), 25, (.5, 1, .9), (7.0, 1.2, 1.5), groesse=1.0)
+    prisma(rundeck(7.2, .2, 7.6, .6, .04), 0, .9, '#2a2a2a', rough=.4); dreh(7.4, .4, [(0, .9), (.1, .9), (.09, .93), (.03, .96), (.025, 1.06), (.11, 1.16), (.13, 1.3), (.115, 1.3), (.1, 1.18), (0, 1.14)], '#f4c430', seg=14, glow=.6, **MESSING)
+    teil('poster'); onB(3.5, 1.9, .7, 1.05, '#f4f4f4'); onB(3.5, 2.0, .58, .6, '#d9333f', d=.01); cyl(3.5, 2.0, .07, .17, .01, '#f4c430', 'z', 16); cyl(3.5, 2.0, .078, .06, .01, '#d9333f', 'z', 12); onB(3.5, 1.5, .5, .08, '#151515', d=.01)
+    teil('wasser'); prisma(rundeck(7.0, 4.8, 7.45, 5.25, .06), 0, .92, '#e8eef4', rough=.35); dreh(7.225, 5.025, [(0, .92), (.06, .92), (.07, .98), (.17, 1.04), (.17, 1.45), (.14, 1.5), (0, 1.5)], '#7ac8ff', seg=14, glow=.9, rough=.1)
+    for dz, c in ((-.08, '#2d6cdf'), (.08, '#d9333f')): stab((6.99, .68, 5.025 + dz), (6.94, .66, 5.025 + dz), .015, c, seg=6)
+    box(6.9, 4.9, 7.0, 5.15, .5, .52, '#b0b4b8', **STAHL)
 
-# ---------------- Buero ----------------
+# ---------------- Buero (komplett ausgearbeitet) ----------------
+def schreiblampe(x, z, y, farbe='#1f6a4a'):
+    dreh(x, z, [(0, y), (.09, y), (.08, y + .02), (.02, y + .035), (0, y + .035)], '#c9a227', seg=12, **MESSING); stab((x, y + .03, z), (x, y + .3, z), .012, '#c9a227', seg=6, **MESSING)
+    cyl(x, y + .33, z, .07, .26, farbe, 'x', 12, rough=.3); box(x - .12, z - .05, x + .12, z + .05, y + .255, y + .27, '#fff2c0', glow=10)
+    licht('SPOT', (x, y + .25, z), 40, (1, .9, .7), (x, y - .2, z + .2), winkel=120)
 def raum_buero():
-    huelle(('#a37a4a', '#96703f', '#ad8450', '#9c7545'), '#33435a', '#2c3a4f', '#5a4a3a', '#3a2a1a')
-    tuer('L', 5.2); pflanze_einfach(7.45, 2.2)
-    onL(1.6, 1.85, 1.65, 1.3, '#efe6cf'); onL(1.6, 1.85, 1.5, 1.15, '#bfe4ff', d=.01, glow=6, rough=.2); onL(1.6, 1.85, .05, 1.15, '#efe6cf', d=.02); onL(1.6, 1.85, 1.5, .05, '#efe6cf', d=.02)   # Fenster
-    box(.02, .7, .2, 2.5, 1.14, 1.2, '#8a7a6a'); licht('AREA', (.4, 1.9, 1.6), 260, (.8, .9, 1), (4, .8, 2.6), groesse=1.3)
-    for x, pins in ((1.5, ('#d9333f', '#2d6cdf', '#f4c430')), (4.0, ('#f4c430', '#1f9d55', '#d9333f'))):                       # Pinnwaende Liga und Pokal
-        onB(x, 1.85, 2.1, 1.2, HOLZ_D); onB(x, 1.85, 1.96, 1.06, '#b98a52', d=.01)
+    huelle(('#a37a4a', '#96703f', '#ad8450', '#9c7545'), '#33435a', '#2c3a4f', '#c9b98c', '#3a2a1a')
+    for i in range(27): box(i * .3 + .01, 0, min(RW, i * .3 + .29), .03, .12, .85, '#e8e2d2' if i % 2 else '#ddd6c4')
+    for i in range(20): box(0, i * .3 + .01, .03, min(RD, i * .3 + .29), .12, .85, '#ddd6c4' if i % 2 else '#e8e2d2')
+    box(0, 0, RW, .05, .85, .9, '#f4f0e0'); box(0, 0, .05, RD, .85, .9, '#f4f0e0')
+    tuer('L', 5.2); pflanze(7.45, 2.2); wanduhr(2.75, 2.7)
+    # Fenster mit Vorhang und Fensterbank
+    onL(1.6, 1.85, 1.65, 1.3, '#efe6cf'); onL(1.6, 1.85, 1.5, 1.15, '#bfe4ff', d=.01, glow=6, rough=.2); onL(1.6, 1.85, .05, 1.15, '#efe6cf', d=.02); onL(1.6, 1.85, 1.5, .05, '#efe6cf', d=.02)
+    box(.02, .7, .22, 2.5, 1.14, 1.19, '#f4f0e0'); stab((.1, 2.62, .6), (.1, 2.62, 2.6), .016, '#c9a227', seg=6, **MESSING)
+    for s_ in (0, 1):
+        for k in range(4): cyl(.1, 1.85, (.68 + k * .07) if s_ == 0 else (2.52 - k * .07), .04, 1.5, '#a3262f' if k % 2 else '#8a1e26', seg=8, art='stoff')
+    dreh(.12, 1.2, [(0, 1.19), (.05, 1.19), (.06, 1.28), (0, 1.28)], '#a0562c', seg=10); kugel(.12, 1.36, 1.2, .07, .08, .07, '#3fa55a', seg=8, ringe=5)
+    licht('AREA', (.4, 1.9, 1.6), 300, (.8, .9, 1), (4, .6, 3.2), groesse=1.3)
+    for x, pins in ((1.5, ('#d9333f', '#2d6cdf', '#f4c430')), (4.0, ('#f4c430', '#1f9d55', '#d9333f'))):       # Pinnwaende Liga und Pokal
+        onB(x, 1.85, 2.1, 1.2, HOLZ_D, art='holzx'); onB(x, 1.85, 1.96, 1.06, '#b98a52', d=.01, art='putz')
         for k in range(6):
-            px, py = x - .7 + (k % 3) * .7, 2.1 - (k // 3) * .5; onB(px, py, .46, .34, '#f4f0e0', d=.02); onB(px, py + .17, .05, .05, pins[k % 3], d=.035)
-    deckenlicht(3.4, 2.9, 420, 3.0); deckenlicht(6.2, 1.6, 280, 2.2); deckenlicht(6.4, 4.6, 240, 2.0); grundlicht()
-    for nm, cw in (('schrank_k', 1.5), ('schrank_g', 2.1)):                                                                  # Pokalschrank klein / gross
+            px, py = x - .7 + (k % 3) * .7, 2.1 - (k // 3) * .5; onB(px, py, .46, .34, '#f4f0e0', d=.02)
+            for q in range(3): onB(px - .04 + (q % 2) * .04, py + .06 - q * .07, .3, .02, '#9aa0a8', d=.03)
+            kugel(px, py + .15, .075, .022, .022, .022, pins[k % 3], seg=6, ringe=4)
+    linie([(4.0 - .7, 2.25, .08), (4.0, 1.75, .08), (4.0 + .7, 2.25, .08)], .005, '#d9333f', seg=4)
+    haengelampe(3.4, 2.9, 380, '#33435a'); haengelampe(6.4, 4.4, 300, '#33435a'); deckenlicht(4, 3, 200, 4.0); grundlicht()
+    for nm, cw in (('schrank_k', 1.5), ('schrank_g', 2.1)):                                                    # offener Pokalschrank, die Pokale stellt das Spiel hinein
         teil(nm, 'schrank', nm); c0 = 5.6
-        box(c0, .08, c0 + cw, .16, 0, 2.5, '#2a3a4c'); box(c0, .08, c0 + .07, .74, 0, 2.5, '#4a3020'); box(c0 + cw - .07, .08, c0 + cw, .74, 0, 2.5, '#4a3020')   # offener Schrank, die Pokale stellt das Spiel hinein
-        box(c0, .08, c0 + cw, .76, 2.5, 2.58, '#4a3020'); box(c0, .08, c0 + cw, .74, 0, .5, '#4a3020'); bc(c0 + cw / 2, 2.46, .45, cw - .3, .03, .3, '#fff2c0', glow=6)
+        box(c0, .08, c0 + cw, .16, 0, 2.5, '#2a3a4c'); box(c0, .08, c0 + .07, .74, 0, 2.5, '#4a3020', art='holzy'); box(c0 + cw - .07, .08, c0 + cw, .74, 0, 2.5, '#4a3020', art='holzy')
+        box(c0 - .04, .06, c0 + cw + .04, .8, 2.5, 2.6, '#3a2416', art='holzx'); box(c0, .08, c0 + cw, .74, 0, .5, '#4a3020', art='holzy'); bc(c0 + cw / 2, 2.46, .45, cw - .3, .03, .3, '#fff2c0', glow=6)
+        n = 2 if cw < 2 else 3
+        for k in range(n): xa = c0 + .1 + k * (cw - .2) / n; box(xa + .02, .74, xa + (cw - .2) / n - .02, .755, .06, .44, '#5a3a22', art='holzy'); kugel(xa + (cw - .2) / n / 2, .25, .77, .02, .02, .02, '#c9a227', seg=6, ringe=4, **MESSING)
         licht('AREA', (c0 + cw / 2, 2.4, .45), 30, (1, .9, .7), (c0 + cw / 2, 0, .5), groesse=cw * .6)
-        for s in range(4): box(c0 + .06, .1, c0 + cw - .06, .74, .5 + s * .55, .54 + s * .55, '#7a5a3a')
-    teil('teppich'); box(1.2, 1.65, 5.8, 4.2, 0, .012, '#c9a227', rough=1); box(1.4, 1.85, 5.6, 4.0, .012, .02, '#a3262f', rough=1)
-    teil('aquarium'); box(.1, 2.7, .75, 3.9, 0, .75, '#3a2a1a'); bc(.425, 1.1, 3.3, .6, .66, 1.14, '#3a8ad0', glow=2.5, rough=.1); box(.1, 2.7, .75, 3.9, 1.43, 1.48, '#3a2a1a')
-    for z, y, c in ((3.0, 1.0, '#f4c430'), (3.4, 1.2, '#ff6040'), (3.7, .95, '#f4c430')): bc(.74, y, z, .03, .07, .14, c, glow=4)
-    licht('AREA', (.95, 1.1, 3.3), 30, (.4, .7, 1), (2.2, .6, 3.3), groesse=.8)
-    teil('stuhl', 'sitz', 'stuhl'); cyl(3.4, .22, 1.8, .04, .45, '#555555', seg=8); cyl(3.4, .03, 1.8, .26, .05, '#333333', seg=14); box(3.05, 1.5, 3.75, 2.15, .45, .55, '#3a3d44'); box(3.05, 1.42, 3.75, 1.54, .55, 1.2, '#3a3d44')
-    teil('sessel', 'sitz', 'sessel'); box(2.95, 1.45, 3.85, 2.2, 0, .6, '#7a1a1e'); box(2.95, 1.3, 3.85, 1.52, .6, 1.75, '#a3262f'); box(2.87, 1.45, 2.97, 2.15, .3, .85, '#7a1a1e'); box(3.83, 1.45, 3.93, 2.15, .3, .85, '#7a1a1e')
+        for s_ in range(4): box(c0 + .06, .1, c0 + cw - .06, .74, .5 + s_ * .55, .54 + s_ * .55, '#7a5a3a', art='holzx')
+    teil('teppich'); prisma(rundeck(1.2, 1.65, 5.8, 4.2, .08), 0, .012, '#c9a227', rough=1, art='stoff'); prisma(rundeck(1.35, 1.8, 5.65, 4.05, .06), .012, .018, '#a3262f', rough=1, art='stoff'); prisma(rundeck(1.7, 2.1, 5.3, 3.75, .05), .018, .022, '#8a1e26', rough=1, art='stoff')
+    for k in range(24): box(1.17, 1.7 + k * .105, 1.2, 1.74 + k * .105, 0, .01, '#f4f0e0'); box(5.8, 1.7 + k * .105, 5.83, 1.74 + k * .105, 0, .01, '#f4f0e0')
+    teil('aquarium'); box(.1, 2.7, .75, 3.9, 0, .72, '#3a2a1a', art='holzy'); box(.08, 2.68, .77, 3.92, .72, .76, '#2a1a0e'); bc(.425, 1.1, 3.3, .6, .66, 1.14, '#2a7ac8', glow=2.2, rough=.05); box(.1, 2.7, .75, 3.9, .76, .82, '#d8c8a0'); box(.08, 2.68, .77, 3.92, 1.43, 1.5, '#2a1a0e')
+    for z, y, c in ((3.0, 1.0, '#f4c430'), (3.4, 1.2, '#ff6040'), (3.7, .95, '#f4c430'), (3.2, 1.3, '#7dffb0')): kugel(.745, y, z, .02, .035, .07, c, seg=8, ringe=5, glow=4)
+    for z in (2.85, 3.55, 3.75): stab((.745, .82, z), (.745, 1.15, z + .03), .012, '#3aff8c', seg=5, glow=1.5)
+    licht('AREA', (.95, 1.1, 3.3), 35, (.4, .7, 1), (2.2, .6, 3.3), groesse=.8)
+    teil('stuhl', 'sitz', 'stuhl')                       # Buerostuhl mit Rollen
+    for a in range(5): stab((3.4, .1, 1.8), (3.4 + math.cos(a * 1.257) * .3, .06, 1.8 + math.sin(a * 1.257) * .3), .02, '#2a2a2e', seg=6); kugel(3.4 + math.cos(a * 1.257) * .3, .04, 1.8 + math.sin(a * 1.257) * .3, .04, .04, .04, '#151515', seg=6, ringe=4)
+    stab((3.4, .1, 1.8), (3.4, .45, 1.8), .03, '#8a8f94', **STAHL); prisma(rundeck(3.08, 1.52, 3.72, 2.12, .1), .45, .56, '#3a3d44', art='stoff'); prisma(rundeck(3.1, 1.42, 3.7, 1.54, .05), .62, 1.25, '#3a3d44', art='stoff'); stab((3.4, .5, 1.5), (3.4, .7, 1.47), .025, '#2a2a2e', seg=6)
+    for x in (3.04, 3.76): box(x - .03, 1.6, x + .03, 2.0, .72, .76, '#2a2a2e'); stab((x, .52, 1.8), (x, .72, 1.8), .015, '#2a2a2e', seg=6)
+    teil('sessel', 'sitz', 'sessel')                     # Chefsessel
+    prisma(rundeck(2.95, 1.45, 3.85, 2.2, .12), .18, .6, '#7a1a1e', rough=.45); prisma(rundeck(2.95, 1.28, 3.85, 1.52, .1), .3, 1.8, '#a3262f', rough=.45); prisma(rundeck(2.85, 1.4, 3.0, 2.15, .06), .3, .88, '#7a1a1e', rough=.45); prisma(rundeck(3.8, 1.4, 3.95, 2.15, .06), .3, .88, '#7a1a1e', rough=.45)
+    for k in range(6): kugel(3.15 + (k % 3) * .25, 1.15 + (k // 3) * .35, 1.525, .022, .022, .012, '#c9a227', seg=6, ringe=4, **MESSING)
+    for x, z in ((3.02, 1.52), (3.78, 1.52), (3.02, 2.12), (3.78, 2.12)): cyl(x, .09, z, .035, .18, '#2a160d', seg=8)
     for chef in (0, 1):
         d0, d1, dz1, th = (1.5, 5.3, 3.4, .86) if chef else (1.9, 4.9, 3.25, .76)
         teil('tisch_c' if chef else 'tisch_n', 'tisch', chef)
         if chef:
-            box(d0, 2.3, d1, dz1, 0, th, '#5a1e14'); box(d0 - .06, 2.24, d1 + .06, dz1 + .06, th, th + .07, '#3a120c', rough=.3)
-            x = d0 + .45
-            while x < d1: box(x - .03, dz1, x + .03, dz1 + .02, .06, th - .06, '#c9a227', glow=.5, rough=.3); x += .9
-            cyl(d1 - .5, th + .11, 2.9, .12, .08, '#5a3a22', seg=12); cyl(d1 - .5, th + .3, 2.9, .07, .3, '#f4c430', seg=12, glow=.8, rough=.3)
+            box(d0, 2.3, d1, dz1, .08, th, '#5a1e14', art='holzy', rough=.4); box(d0 + .04, 2.34, d1 - .04, dz1 - .04, 0, .08, '#2a0e08'); prisma(rundeck(d0 - .07, 2.22, d1 + .07, dz1 + .07, .08), th, th + .07, '#3a120c', rough=.2, art='holzx')
+            n = 4
+            for k in range(n): xa = d0 + .12 + k * (d1 - d0 - .24) / n; box(xa + .04, dz1, xa + (d1 - d0 - .24) / n - .04, dz1 + .015, .16, th - .08, '#6a2418', art='holzy'); box(xa + .1, dz1 + .015, xa + (d1 - d0 - .24) / n - .1, dz1 + .025, .22, th - .14, '#4a1810', art='holzy')
+            box(d0, dz1, d1, dz1 + .02, th - .05, th - .02, '#c9a227', glow=.6, **MESSING); box(d0, dz1, d1, dz1 + .02, .1, .13, '#c9a227', glow=.6, **MESSING)
+            cyl(d1 - .5, th + .11, 2.9, .12, .08, '#5a3a22', seg=12); dreh(d1 - .5, 2.9, [(0, th + .15), (.03, th + .15), (.025, th + .24), (.09, th + .32), (.1, th + .44), (.085, th + .44), (.08, th + .34), (0, th + .31)], '#f4c430', seg=12, glow=.7, **MESSING)
+            box(3.0, 3.2, 3.8, 3.3, th + .07, th + .15, '#2a160d'); box(3.05, 3.3, 3.75, 3.305, th + .085, th + .135, '#c9a227', glow=.5, **MESSING)
         else:
-            box(d0, 2.3, d1, dz1, th - .08, th, '#c08a50')
-            for x, z in ((d0 + .08, 2.38), (d1 - .08, 2.38), (d0 + .08, dz1 - .08), (d1 - .08, dz1 - .08)): box(x - .05, z - .05, x + .05, z + .05, 0, th - .08, '#6a4220')
-            box(d0 + .1, 2.34, d1 - .1, 2.4, .2, th - .08, '#8a5a30')
+            box(d0, 2.3, d1, dz1, th - .06, th, '#c08a50', art='holzx', rough=.4)
+            for x, z in ((d0 + .08, 2.38), (d1 - .08, 2.38), (d0 + .08, dz1 - .08)): box(x - .04, z - .04, x + .04, z + .04, 0, th - .06, '#6a4220')
+            box(d1 - .75, 2.36, d1 - .05, dz1 - .05, .04, th - .06, '#8a5a30', art='holzy')
+            for k in range(3): box(d1 - .71, dz1 - .05, d1 - .09, dz1 - .04, .08 + k * .21, .26 + k * .21, '#a06a3a', art='holzx'); stab((d1 - .5, .17 + k * .21, dz1 - .03), (d1 - .3, .17 + k * .21, dz1 - .03), .01, '#c0c4c8', seg=5, **STAHL)
+            box(d0 + .1, 2.34, d1 - .8, 2.38, .25, th - .06, '#8a5a30')
         top = th + (.07 if chef else 0)
-        bc(2.4, top + .015, 2.95, .5, .03, .36, '#efe6cf')
-        for dual in (0, 1):                              # Bildschirm einfach / doppelt, passend zur Tischhoehe
+        for k in range(3): bc(2.4, top + .008 + k * .012, 2.95, .5 - k * .03, .012, .36, ('#efe6cf', '#f4f4f4', '#e8e2d2')[k], ry=k * .08)
+        box(2.75, 3.02, 3.45, 3.24, top, top + .02, '#2a2a2e'); kugel(3.75, top + .02, 3.12, .04, .02, .06, '#2a2a2e', seg=8, ringe=4)
+        dreh(4.25, 3.0, [(0, top), (.045, top), (.05, top + .1), (.04, top + .1), (.038, top + .02), (0, top + .02)], '#f4f4f4', seg=10); cyl(4.25, top + .085, 3.0, .037, .01, '#3a2010', seg=10)
+        schreiblampe(d0 + .35, 2.6, top, '#1f6a4a' if chef else '#2a2a2e')
+        for dual in (0, 1):
             teil('mon%d%s' % (2 if dual else 1, 'c' if chef else 'n'), 'mon' + ('c' if chef else 'n'), dual)
             mw, mh = (1.5, .58) if dual else (.9, .52); my = top + .12 + mh / 2
-            cyl(3.4, top + .06, 2.56, .04, .12, '#18181c', seg=8); cyl(3.4, top + .01, 2.56, .14, .02, '#18181c', seg=12)
-            bc(3.4, my, 2.58, mw, mh, .05, '#18181c'); bc(3.4, my, 2.55, mw - .08, mh - .08, .012, '#3a7ad8', glow=3.5, rough=.2)
-            for k in range(3): bc(3.4 - mw * .25 + k * mw * .25, my + .08 - k * .08, 2.542, mw * .18, .05, .008, '#bfe4ff', glow=5)
-    teil('kaffee'); box(6.6, 4.7, 7.6, 5.5, 0, .9, '#5a3a22'); box(6.85, 4.9, 7.3, 5.3, .9, 1.45, '#2a2a2e'); bc(7.075, 1.1, 5.31, .3, .12, .02, '#c0c4c8', glow=.8, rough=.3); cyl(7.45, .96, 5.2, .05, .12, '#ffffff', seg=10)
+            dreh(3.4, 2.56, [(0, top), (.16, top), (.15, top + .015), (.03, top + .03), (.025, top + .14), (0, top + .14)], '#18181c', seg=12, rough=.4)
+            for q in range(2 if dual else 1):
+                xm = 3.4 + ((q - .5) * .76 if dual else 0); w = .72 if dual else mw
+                bc(xm, my, 2.58, w, mh, .04, '#18181c', rough=.4); bc(xm, my, 2.556, w - .06, mh - .06, .012, '#2a5ab8', glow=3.5, rough=.1)
+                for k in range(3): bc(xm - w * .2 + k * w * .2, my + .1 - k * .1, 2.548, w * .3, .05, .008, '#bfe4ff' if k != 1 else '#7dffb0', glow=5)
+            licht('AREA', (3.4, my, 2.4), 18, (.5, .7, 1), (3.4, top, 1.9), groesse=.8)
+    teil('kaffee'); box(6.6, 4.7, 7.6, 5.5, .08, .86, '#5a3a22', art='holzy'); box(6.64, 4.74, 7.56, 5.46, 0, .08, '#2a1a0e'); prisma(rundeck(6.56, 4.66, 7.64, 5.54, .05), .86, .92, '#e8e2d2', rough=.25)
+    for k in range(2): box(6.66 + k * .47, 5.5, 7.09 + k * .47, 5.515, .14, .8, '#6a4628', art='holzy'); kugel(7.04 + k * .1, .5, 5.53, .02, .02, .02, '#c9a227', seg=6, ringe=4, **MESSING)
+    prisma(rundeck(6.82, 4.86, 7.3, 5.26, .05), .92, 1.5, '#2a2a2e', rough=.3, metal=.4); box(6.86, 5.26, 7.26, 5.34, .96, 1.0, '#8a8f94', **STAHL); bc(7.06, 1.36, 5.265, .3, .1, .012, '#7dffb0', glow=4)
+    for dx in (-.08, .08): stab((7.06 + dx, 1.22, 5.27), (7.06 + dx, 1.12, 5.3), .014, '#c0c4c8', seg=6, **STAHL)
+    dreh(7.06, 5.3, [(0, 1.0), (.04, 1.0), (.048, 1.09), (0, 1.09)], '#f4f4f4', seg=10); dreh(7.47, 5.05, [(0, .92), (.07, .92), (.07, 1.12), (.05, 1.14), (0, 1.14)], '#7a4a24', seg=10, glow=.2, rough=.15); cyl(7.47, 1.15, 5.05, .055, .02, '#c9a227', seg=10, **MESSING)
+    for k in range(3): dreh(6.68, 5.05, [(0, .92 + k * .05), (.04, .92 + k * .05), (.048, .99 + k * .05), (0, .99 + k * .05)], '#f4f4f4', seg=10)
 
 BAU = {'scheiben': raum_scheiben, 'theke': raum_theke, 'training': raum_training, 'buero': raum_buero}
 
@@ -624,7 +714,7 @@ def blender_raum(rid):
 
 def blender_haupt():
     t0 = time.time(); os.makedirs(ORDNER, exist_ok=True); fertig = []
-    log('Fassung 6 | Blender', bpy.app.version_string, '| Ordner', ORDNER)
+    log('Fassung 7 | Blender', bpy.app.version_string, '| Ordner', ORDNER)
     for rid in RAEUME:
         try: blender_raum(rid); fertig.append(rid)
         except Exception: log('FEHLER in', rid); log(traceback.format_exc())
